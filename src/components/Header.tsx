@@ -9,18 +9,19 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 mt-[env(safe-area-inset-top)]">
-      <div className="flex items-center justify-between px-6 md:px-10 lg:px-16 py-4 md:py-5">
-        {/* Mobile Menu Button */}
-        <button
-          type="button"
-          className="md:hidden p-2 -ml-2"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileMenuOpen ? <X size={24} strokeWidth={1.5} /> : <Menu size={24} strokeWidth={1.5} />}
-        </button>
+      <div className="grid grid-cols-[auto_1fr_auto] items-center px-6 py-4 md:px-10 md:py-5 lg:grid-cols-[1fr_auto_1fr] lg:px-16">
+        <div className="flex items-center justify-start">
+          <button
+            type="button"
+            className="p-2 -ml-2 md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={24} strokeWidth={1.5} /> : <Menu size={24} strokeWidth={1.5} />}
+          </button>
+        </div>
 
-        <Link href="/" className="absolute left-1/2 transform -translate-x-1/2">
+        <Link href="/" className="justify-self-center">
           <div className="flex flex-col items-stretch">
             <div className="flex items-center gap-1.5 font-sans">
               <span className="text-[20px] md:text-[24px] lg:text-[28px] font-black tracking-tight leading-none text-black">
@@ -41,8 +42,8 @@ export default function Header() {
           </div>
         </Link>
 
-        {/* Right Navigation */}
-          <div className="flex gap-8">
+        <div className="flex items-center justify-end">
+          <nav className="hidden items-center gap-8 lg:flex">
             <Link href="/products" className="text-sm tracking-wide text-gray-800 hover:text-black transition-colors font-sans">
               Products
             </Link>
@@ -52,12 +53,12 @@ export default function Header() {
             <Link href="/stories" className="text-sm tracking-wide text-gray-800 hover:text-black transition-colors font-sans">
               Stories
             </Link>
-          </div>
+          </nav>
 
-        {/* Mobile Search */}
-        <button type="button" className="md:hidden p-2 -mr-2" aria-label="Search">
-          <Search size={20} strokeWidth={1.5} />
-        </button>
+          <button type="button" className="p-2 -mr-2 md:hidden" aria-label="Search">
+            <Search size={20} strokeWidth={1.5} />
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}

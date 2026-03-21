@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { MapPin } from "lucide-react";
 
 export default function Locations() {
@@ -11,11 +12,13 @@ export default function Locations() {
         <div className="flex flex-col lg:flex-row bg-white shadow-sm border border-gray-200 overflow-hidden">
           {/* Map Image Section */}
           <div className="w-full lg:w-1/2 h-[400px] lg:h-auto min-h-[500px] relative bg-white flex items-center justify-center p-8">
-            <div className="relative w-full max-w-sm aspect-[4/5] mx-auto opacity-80">
-              <img
+            <div className="relative w-full max-w-sm aspect-[4/5] mx-auto">
+              <Image
                 src="/korea-map.svg"
                 alt="Map of South Korea"
-                className="w-full h-full object-contain filter grayscale contrast-125"
+                fill
+                unoptimized
+                className="object-contain opacity-80 filter grayscale contrast-125"
               />
               
               {/* Seoul Pin */}
@@ -25,7 +28,7 @@ export default function Locations() {
               >
                 <div className="relative">
                   <div className="absolute -inset-2 bg-black/20 rounded-full animate-ping" />
-                  <MapPin className="w-6 h-6 text-black relative z-10 drop-shadow-md transition-transform group-hover:scale-110" strokeWidth={2} fill="white" />
+                  <MapPin className="relative z-10 w-6 h-6 text-black drop-shadow-md transition-transform duration-300 group-hover:scale-110" strokeWidth={2} fill="white" />
                 </div>
                 <span className="mt-1 text-xs font-bold font-sans tracking-widest text-black bg-white/90 px-2 py-0.5 rounded shadow-sm opacity-100">SEOUL</span>
               </div>
@@ -37,7 +40,7 @@ export default function Locations() {
               >
                 <div className="relative">
                   <div className="absolute -inset-2 bg-black/20 rounded-full animate-ping" />
-                  <MapPin className="w-6 h-6 text-black relative z-10 drop-shadow-md transition-transform group-hover:scale-110" strokeWidth={2} fill="white" />
+                  <MapPin className="relative z-10 w-6 h-6 text-black drop-shadow-md transition-transform duration-300 group-hover:scale-110" strokeWidth={2} fill="white" />
                 </div>
                 <span className="mt-1 text-xs font-bold font-sans tracking-widest text-black bg-white/90 px-2 py-0.5 rounded shadow-sm opacity-100">DAEGU</span>
               </div>

@@ -1,0 +1,298 @@
+{
+  "stripes": [
+    {
+      "src": "/stage-fabrics/stripes/01-img-7937.webp",
+      "name": "IMG_7937_블루_스트라이프",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/02-img-7943.webp",
+      "name": "IMG_7943_베이지-브라운_스트라이프",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/03-img-7950.webp",
+      "name": "IMG_7950_차콜-블루_스트라이프",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/04-img-7962.webp",
+      "name": "IMG_7962_아이보리-스카이블루_스트라이프",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/05-img-7969.webp",
+      "name": "IMG_7969_그레이-오렌지_스트라이프",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/06-img-7976.webp",
+      "name": "IMG_7976_스카이블루_스트라이프",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/07-img-8024.webp",
+      "name": "IMG_8024_네이비_스트라이프",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/08-img-8055.webp",
+      "name": "IMG_8055_아이보리-블루_스트라이프",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/09-img-8062.webp",
+      "name": "IMG_8062_네이비_스트라이프",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/10-img-8068.webp",
+      "name": "IMG_8068_아이보리-블루_스트라이프",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/11-img-7940.webp",
+      "name": "IMG_7940",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/12-img-7946.webp",
+      "name": "IMG_7946",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/13-img-7954.webp",
+      "name": "IMG_7954",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/14-img-7965.webp",
+      "name": "IMG_7965",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/15-img-7973.webp",
+      "name": "IMG_7973",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/16-img-7979.webp",
+      "name": "IMG_7979",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/17-img-8027.webp",
+      "name": "IMG_8027",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/18-img-8058.webp",
+      "name": "IMG_8058",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/19-img-8065.webp",
+      "name": "IMG_8065",
+      "category": "stripes"
+    },
+    {
+      "src": "/stage-fabrics/stripes/20-img-8071.webp",
+      "name": "IMG_8071",
+      "category": "stripes"
+    }
+  ],
+  "checks": [
+    {
+      "src": "/stage-fabrics/checks/01-img-7957.webp",
+      "name": "IMG_7957_오프화이트-버건디_체크",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/02-img-7987.webp",
+      "name": "IMG_7987_아이보리-레드_체크",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/03-img-7994.webp",
+      "name": "IMG_7994_블루_체크",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/04-img-8002.webp",
+      "name": "IMG_8002_베이지-레드_체크",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/05-img-8009.webp",
+      "name": "IMG_8009_그레이-블루_체크",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/06-img-8016.webp",
+      "name": "IMG_8016_버건디_체크",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/07-img-8033.webp",
+      "name": "IMG_8033_오프화이트-네이비_체크",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/08-img-8078.webp",
+      "name": "IMG_8078_아이보리-오렌지_체크",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/09-img-8086.webp",
+      "name": "IMG_8086_차콜-블루_체크",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/10-img-8093.webp",
+      "name": "IMG_8093_그레이-레드_체크",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/11-img-7960.webp",
+      "name": "IMG_7960",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/12-img-7990.webp",
+      "name": "IMG_7990",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/13-img-7997.webp",
+      "name": "IMG_7997",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/14-img-8005.webp",
+      "name": "IMG_8005",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/15-img-8012.webp",
+      "name": "IMG_8012",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/16-img-8020.webp",
+      "name": "IMG_8020",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/17-img-8074.webp",
+      "name": "IMG_8074",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/18-img-8082.webp",
+      "name": "IMG_8082",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/19-img-8089.webp",
+      "name": "IMG_8089",
+      "category": "checks"
+    },
+    {
+      "src": "/stage-fabrics/checks/20-img-8096.webp",
+      "name": "IMG_8096",
+      "category": "checks"
+    }
+  ],
+  "others": [
+    {
+      "src": "/stage-fabrics/others/01-img-7980.webp",
+      "name": "IMG_7980_그레이-아이보리_도비",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/02-img-7983.webp",
+      "name": "IMG_7983_그레이-아이보리_도비",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/03-img-8035.webp",
+      "name": "IMG_8035_그레이_옥스포드",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/04-img-8038.webp",
+      "name": "IMG_8038_블루_옥스포드",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/05-img-8041.webp",
+      "name": "IMG_8041_그레이_옥스포드",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/06-img-8044.webp",
+      "name": "IMG_8044_베이지-오렌지_옥스포드",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/07-img-8047.webp",
+      "name": "IMG_8047_그레이_옥스포드",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/08-img-8050.webp",
+      "name": "IMG_8050_레드_옥스포드",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/09-img-8053.webp",
+      "name": "IMG_8053_아이보리-그레이_옥스포드",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/10-img-7981.webp",
+      "name": "IMG_7981",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/11-img-7984.webp",
+      "name": "IMG_7984",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/12-img-8036.webp",
+      "name": "IMG_8036",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/13-img-8039.webp",
+      "name": "IMG_8039",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/14-img-8042.webp",
+      "name": "IMG_8042",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/15-img-8045.webp",
+      "name": "IMG_8045",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/16-img-8048.webp",
+      "name": "IMG_8048",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/17-img-8051.webp",
+      "name": "IMG_8051",
+      "category": "others"
+    },
+    {
+      "src": "/stage-fabrics/others/18-img-8054.webp",
+      "name": "IMG_8054",
+      "category": "others"
+    }
+  ]
+}

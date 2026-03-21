@@ -1,7 +1,7 @@
 <svg class="map" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="200" height="314" viewBox="0 0 130 204" enable-background="new 0 0 130 204" xml:space="preserve">
 <style>
-  path { fill: #FFFFFF; stroke: #333; stroke-width: 0.5px; transition: fill 0.3s; }
-  path:hover { fill: #F5F5F5; }
+  path { fill: #EBE1D5; stroke: #333; stroke-width: 0.5px; transition: fill 0.3s; }
+  path:hover { fill: #DCD0C0; }
   text { display: none; }
 </style>
 <g id="layer_2">

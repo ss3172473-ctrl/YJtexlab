@@ -1,0 +1,17 @@
+.DS_Store
+.git
+.git 2
+.next
+.next*
+.omx
+.omx*
+.vercel
+node_modules
+out
+build
+tsconfig.tsbuildinfo
+notebooklm-textile-brief.md
+public 2
+scripts 2
+원단
+원단 2

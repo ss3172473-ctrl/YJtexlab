@@ -1,0 +1,13 @@
+<svg width="960" height="1280" viewBox="0 0 960 1280" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="1280" fill="#EEE7DB"/>
+  <rect x="84" y="0" width="110" height="1280" fill="#C7B39A"/>
+  <rect x="266" y="0" width="58" height="1280" fill="#7A5A43"/>
+  <rect x="412" y="0" width="128" height="1280" fill="#D7C6AF"/>
+  <rect x="628" y="0" width="72" height="1280" fill="#8C6D57"/>
+  <rect x="784" y="0" width="124" height="1280" fill="#CDB89D"/>
+  <circle cx="770" cy="242" r="146" fill="#F7F1E7" fill-opacity="0.8"/>
+  <circle cx="238" cy="1008" r="194" fill="#F7F1E7" fill-opacity="0.72"/>
+  <path d="M138 1082C244 1010 366 966 504 948C642 930 764 946 870 996" stroke="#5D4333" stroke-width="8" stroke-linecap="round" stroke-dasharray="3 18"/>
+  <text x="104" y="112" fill="#402D22" font-family="Georgia, 'Times New Roman', serif" font-size="66" letter-spacing="12">STRIPES</text>
+  <text x="104" y="1188" fill="#6A5345" font-family="Arial, sans-serif" font-size="24" letter-spacing="8">YJ TEXLAB CATEGORY</text>
+</svg>

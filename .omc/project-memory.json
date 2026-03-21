@@ -1,0 +1,184 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1773996588124,
+  "projectRoot": "/Users/leesungjun/Desktop/新홈페이지",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "next",
+        "version": "15.3.7",
+        "category": "fullstack"
+      },
+      {
+        "name": "react",
+        "version": "18.3.1",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "18.3.1",
+        "category": "frontend"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "node scripts/run-dev.js",
+      "build": "NEXT_DIST_DIR=.next-build next build",
+      "vercel-build": "next build",
+      "start": "NEXT_DIST_DIR=.next-build next start",
+      "lint": "next lint",
+      "process:fabrics": "python3 scripts/process_fabric_images.py --apply --rename-only",
+      "process:fabrics:dry": "python3 scripts/process_fabric_images.py --rename-only"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "public",
+      "scripts",
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 5,
+      "lastAccessed": 1773996588106,
+      "keyFiles": [
+        "category-checks.svg",
+        "category-stripes.svg",
+        "favicon.svg",
+        "korea-map.svg",
+        "world-map.svg"
+      ]
+    },
+    "public 2": {
+      "path": "public 2",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1773996588109,
+      "keyFiles": [
+        "category-checks.svg",
+        "category-stripes.svg",
+        "favicon.svg"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 12,
+      "lastAccessed": 1773996588110,
+      "keyFiles": [
+        "fabric_pilot_retouch.py",
+        "generate_category_masters.py",
+        "generate_gemini_hero_images.mjs",
+        "generate_hero_assets.py",
+        "generate_scroll_stage_assets.py"
+      ]
+    },
+    "scripts 2": {
+      "path": "scripts 2",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1773996588111,
+      "keyFiles": [
+        "fabric_pilot_retouch.py",
+        "process_fabric_images.py"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1773996588111,
+      "keyFiles": []
+    },
+    "원단": {
+      "path": "원단",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1773996588111,
+      "keyFiles": [
+        "_fabric_processing_report_20260319-163406.tsv",
+        "_fabric_processing_report_20260319-164523.tsv"
+      ]
+    },
+    "원단 2": {
+      "path": "원단 2",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1773996588111,
+      "keyFiles": [
+        "_fabric_processing_report_20260319-164523.tsv"
+      ]
+    },
+    "src/app": {
+      "path": "src/app",
+      "purpose": "Application code",
+      "fileCount": 3,
+      "lastAccessed": 1773996588113,
+      "keyFiles": [
+        "globals.css",
+        "layout.tsx",
+        "page.tsx"
+      ]
+    },
+    "src/components": {
+      "path": "src/components",
+      "purpose": "UI components",
+      "fileCount": 14,
+      "lastAccessed": 1773996588113,
+      "keyFiles": [
+        "Categories.tsx",
+        "FabricGallery.tsx",
+        "FeaturedCollection.tsx"
+      ]
+    },
+    "src/lib": {
+      "path": "src/lib",
+      "purpose": "Library code",
+      "fileCount": 1,
+      "lastAccessed": 1773996588113,
+      "keyFiles": [
+        "utils.ts"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}

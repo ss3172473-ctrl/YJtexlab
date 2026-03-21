@@ -1,5 +1,16 @@
 "use client";
 
+import Image from "next/image";
+
+const destinations = [
+  { label: "KOREA (HQ)", top: "36%", left: "83%", align: "center" as const, pulse: true },
+  { label: "JAPAN", top: "37%", left: "86%", align: "left" as const },
+  { label: "CHINA", top: "34%", left: "77%", align: "right" as const },
+  { label: "USA", top: "32%", left: "20%", align: "left" as const },
+  { label: "VIETNAM", top: "48%", left: "78%", align: "left" as const },
+  { label: "THAILAND", top: "49%", left: "75%", align: "right" as const },
+];
+
 export default function GlobalPresence() {
   return (
     <section className="py-24 md:py-32 px-6 md:px-10 bg-white overflow-hidden border-t border-gray-100">
@@ -12,17 +23,23 @@ export default function GlobalPresence() {
             Exporting to the World
           </h3>
         </div>
-        
-        <div className="relative w-full max-w-5xl mx-auto aspect-[2/1]">
+
+        <div className="relative w-full max-w-5xl mx-auto aspect-[2/1] overflow-hidden rounded-[2rem] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(226,232,240,0.75),_rgba(255,255,255,0.94)_56%,_rgba(255,255,255,1)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(15,23,42,0.04),_transparent_26%,_transparent_74%,_rgba(15,23,42,0.06))]" />
+
           {/* Base World Map Image */}
-          <img 
-            src="/world-map.svg" 
-            alt="World Map" 
-            className="w-full h-full object-contain opacity-20 filter grayscale"
+          <Image
+            src="/world-map.svg"
+            alt="World Map"
+            fill
+            unoptimized
+            className="pointer-events-none object-contain opacity-80 mix-blend-multiply"
+            style={{ filter: "grayscale(1) brightness(0.58) contrast(1.55)" }}
           />
 
           {/* SVG for Flight Paths and Animation */}
-          <svg viewBox="0 0 1000 500" className="absolute inset-0 w-full h-full pointer-events-none">
+          <svg viewBox="0 0 1000 500" className="absolute inset-0 z-10 hidden h-full w-full pointer-events-none md:block">
             <defs>
               <linearGradient id="pathGradient" x1="1" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#000" stopOpacity="0.4" />
@@ -70,38 +87,43 @@ export default function GlobalPresence() {
             </g>
           </svg>
 
-          {/* Dots and Labels */}
-          {/* Korea */}
-          <div className="absolute group cursor-pointer" style={{ top: '36%', left: '83%' }}>
-            <div className="absolute -inset-2 w-4 h-4 bg-black/20 rounded-full animate-ping -translate-x-1/2 -translate-y-1/2" />
-            <div className="w-2.5 h-2.5 bg-black rounded-full relative z-10 border border-white -translate-x-1/2 -translate-y-1/2" />
-            <span className="absolute top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold font-sans tracking-widest text-black bg-white/90 px-2 py-0.5 rounded shadow-sm whitespace-nowrap">KOREA (HQ)</span>
-          </div>
+          {destinations.map((destination) => (
+            <div
+              key={destination.label}
+              className="absolute z-20 hidden cursor-pointer group md:block"
+              style={{ top: destination.top, left: destination.left }}
+            >
+              {destination.pulse ? (
+                <div className="absolute -inset-2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full bg-black/20" />
+              ) : null}
+              <div
+                className={`relative z-10 rounded-full bg-black ${
+                  destination.pulse
+                    ? "h-2.5 w-2.5 border border-white"
+                    : "h-1.5 w-1.5"
+                } -translate-x-1/2 -translate-y-1/2`}
+              />
+              <span
+                className={`absolute whitespace-nowrap rounded bg-white/80 px-2 py-0.5 text-[9px] font-bold tracking-widest text-black shadow-sm ${
+                  destination.align === "center"
+                    ? "left-1/2 top-3 -translate-x-1/2"
+                    : destination.align === "right"
+                      ? "right-3 top-1/2 -translate-y-1/2"
+                      : "left-3 top-1/2 -translate-y-1/2"
+                }`}
+              >
+                {destination.label}
+              </span>
+            </div>
+          ))}
+        </div>
 
-          <div className="absolute group cursor-pointer" style={{ top: '37%', left: '86%' }}>
-            <div className="w-1.5 h-1.5 bg-black rounded-full relative z-10 -translate-x-1/2 -translate-y-1/2" />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-bold font-sans tracking-widest text-black bg-white/70 px-1 py-0.5 rounded shadow-sm whitespace-nowrap">JAPAN</span>
-          </div>
-
-          <div className="absolute group cursor-pointer" style={{ top: '34%', left: '77%' }}>
-            <div className="w-1.5 h-1.5 bg-black rounded-full relative z-10 -translate-x-1/2 -translate-y-1/2" />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold font-sans tracking-widest text-black bg-white/70 px-1 py-0.5 rounded shadow-sm whitespace-nowrap">CHINA</span>
-          </div>
-
-          <div className="absolute group cursor-pointer" style={{ top: '32%', left: '20%' }}>
-            <div className="w-1.5 h-1.5 bg-black rounded-full relative z-10 -translate-x-1/2 -translate-y-1/2" />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-bold font-sans tracking-widest text-black bg-white/70 px-1 py-0.5 rounded shadow-sm whitespace-nowrap">USA</span>
-          </div>
-
-          <div className="absolute group cursor-pointer" style={{ top: '48%', left: '78%' }}>
-            <div className="w-1.5 h-1.5 bg-black rounded-full relative z-10 -translate-x-1/2 -translate-y-1/2" />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-bold font-sans tracking-widest text-black bg-white/70 px-1 py-0.5 rounded shadow-sm whitespace-nowrap">VIETNAM</span>
-          </div>
-
-          <div className="absolute group cursor-pointer" style={{ top: '49%', left: '75%' }}>
-            <div className="w-1.5 h-1.5 bg-black rounded-full relative z-10 -translate-x-1/2 -translate-y-1/2" />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold font-sans tracking-widest text-black bg-white/70 px-1 py-0.5 rounded shadow-sm whitespace-nowrap">THAILAND</span>
-          </div>
+        <div className="mt-8 grid grid-cols-2 gap-3 text-center md:hidden">
+          {destinations.map((destination) => (
+            <div key={`${destination.label}-mobile`} className="rounded-full border border-gray-200 bg-white px-3 py-2 text-[11px] font-semibold tracking-[0.18em] text-gray-700">
+              {destination.label}
+            </div>
+          ))}
         </div>
       </div>
     </section>

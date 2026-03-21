@@ -1,0 +1,112 @@
+{
+  "images": [
+    {
+      "id": "IMG_7980",
+      "source": "./원단/44인치/기타/IMG_7980.HEIC",
+      "preview": "/tmp/IMG_7980.HEIC.png",
+      "class": "easy",
+      "patches": [
+        { "mode": "clone", "x": 1180, "y": 1760, "w": 180, "h": 140, "dx": 360, "dy": 0, "feather": 32 }
+      ]
+    },
+    {
+      "id": "IMG_7981",
+      "source": "./원단/44인치/기타/IMG_7981.HEIC",
+      "preview": "/tmp/IMG_7981.HEIC.png",
+      "class": "easy",
+      "patches": [
+        { "mode": "tone", "x": 1040, "y": 1180, "w": 980, "h": 1680, "dx": 520, "dy": 0, "feather": 80, "blur_radius": 90 }
+      ]
+    },
+    {
+      "id": "IMG_7982",
+      "source": "./원단/44인치/기타/IMG_7982.HEIC",
+      "preview": "/tmp/IMG_7982.HEIC.png",
+      "class": "easy",
+      "patches": [
+        { "mode": "clone", "x": 1070, "y": 1220, "w": 250, "h": 230, "dx": 420, "dy": 0, "feather": 40 }
+      ]
+    },
+    {
+      "id": "IMG_7951",
+      "source": "./원단/44인치/스프트라이프/IMG_7951.HEIC",
+      "preview": "/tmp/IMG_7951.HEIC.png",
+      "class": "control",
+      "control": true,
+      "patches": []
+    },
+    {
+      "id": "IMG_7978",
+      "source": "./원단/44인치/스프트라이프/IMG_7978.HEIC",
+      "preview": "/tmp/IMG_7978.HEIC.png",
+      "class": "hard",
+      "patches": [
+        { "mode": "tone", "x": 1120, "y": 900, "w": 760, "h": 2500, "dx": 640, "dy": 0, "feather": 100, "blur_radius": 110 }
+      ]
+    },
+    {
+      "id": "IMG_7997",
+      "source": "./원단/44인치/체크/IMG_7997.HEIC",
+      "preview": "/tmp/IMG_7997.HEIC.png",
+      "class": "medium",
+      "patches": [
+        { "mode": "tone", "x": 840, "y": 760, "w": 760, "h": 2640, "dx": 820, "dy": 0, "feather": 100, "blur_radius": 120 }
+      ]
+    },
+    {
+      "id": "IMG_7998",
+      "source": "./원단/44인치/체크/IMG_7998.HEIC",
+      "preview": "/tmp/IMG_7998.HEIC.png",
+      "class": "hard",
+      "patches": [
+        { "mode": "tone", "x": 1240, "y": 700, "w": 1160, "h": 2820, "dx": -860, "dy": 0, "feather": 120, "blur_radius": 140 }
+      ]
+    },
+    {
+      "id": "IMG_7999",
+      "source": "./원단/44인치/체크/IMG_7999.HEIC",
+      "preview": "/tmp/IMG_7999.HEIC.png",
+      "class": "medium",
+      "patches": [
+        { "mode": "tone", "x": 0, "y": 0, "w": 660, "h": 4032, "dx": 760, "dy": 0, "feather": 140, "blur_radius": 150 },
+        { "mode": "tone", "x": 2360, "y": 0, "w": 664, "h": 4032, "dx": -760, "dy": 0, "feather": 140, "blur_radius": 150 }
+      ]
+    },
+    {
+      "id": "IMG_8021",
+      "source": "./원단/58인치/스트라이프/IMG_8021.HEIC",
+      "preview": "/tmp/IMG_8021.HEIC.png",
+      "class": "medium",
+      "patches": [
+        { "mode": "tone", "x": 1020, "y": 720, "w": 980, "h": 2750, "dx": 672, "dy": 0, "feather": 110, "blur_radius": 120 },
+        { "mode": "clone", "x": 1700, "y": 1730, "w": 220, "h": 220, "dx": -420, "dy": 120, "feather": 40 }
+      ]
+    },
+    {
+      "id": "IMG_8034",
+      "source": "./원단/58인치/옥스포드/IMG_8034.HEIC",
+      "preview": "/tmp/IMG_8034.HEIC.png",
+      "class": "medium",
+      "patches": [
+        { "mode": "clone", "x": 1540, "y": 1840, "w": 300, "h": 230, "dx": -520, "dy": 120, "feather": 44 }
+      ]
+    },
+    {
+      "id": "IMG_8018",
+      "source": "./원단/58인치/체크/IMG_8018.HEIC",
+      "preview": "/tmp/IMG_8018.HEIC.png",
+      "class": "hard",
+      "patches": [
+        { "mode": "tone", "x": 980, "y": 0, "w": 840, "h": 4032, "dx": 864, "dy": 0, "feather": 140, "blur_radius": 150 }
+      ]
+    },
+    {
+      "id": "IMG_8033",
+      "source": "./원단/58인치/체크/IMG_8033.HEIC",
+      "preview": "/tmp/IMG_8033.HEIC.png",
+      "class": "control",
+      "control": true,
+      "patches": []
+    }
+  ]
+}

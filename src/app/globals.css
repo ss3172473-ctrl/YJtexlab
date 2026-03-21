@@ -155,4 +155,158 @@
       transform: translateX(0);
     }
   }
+
+  @keyframes hero-breathe {
+    0% {
+      transform: scale(1) translate3d(0, 0, 0);
+    }
+    50% {
+      transform: scale(1.055) translate3d(-1.2%, 1.4%, 0);
+    }
+    100% {
+      transform: scale(1) translate3d(0, 0, 0);
+    }
+  }
 }
+
+  @keyframes fabric-corridor-drift {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    50% {
+      transform: translate3d(1.5rem, -1rem, 0) rotate(4deg);
+    }
+    100% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+  }
+
+  @keyframes fabric-corridor-pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.08);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes fabric-corridor-trace {
+    0% {
+      transform: scaleX(0.3);
+      transform-origin: left center;
+    }
+    50% {
+      transform: scaleX(1);
+      transform-origin: center;
+    }
+    100% {
+      transform: scaleX(0.3);
+      transform-origin: right center;
+    }
+  }
+
+  @keyframes fabric-corridor-bridge-float {
+    0% {
+      transform: translate3d(0, 0, 0);
+      opacity: 0.8;
+    }
+    50% {
+      transform: translate3d(0, -0.35rem, 0);
+      opacity: 1;
+    }
+    100% {
+      transform: translate3d(0, 0, 0);
+      opacity: 0.8;
+    }
+  }
+
+  @keyframes fabric-corridor-bridge-sheen {
+    0% {
+      transform: translate3d(-10%, 0, 0);
+      opacity: 0.45;
+    }
+    50% {
+      transform: translate3d(10%, 0, 0);
+      opacity: 0.72;
+    }
+    100% {
+      transform: translate3d(-10%, 0, 0);
+      opacity: 0.45;
+    }
+  }
+
+  @keyframes fabric-corridor-ribbon {
+    0% {
+      transform: translate3d(-1.2rem, 0, 0) scaleX(0.84);
+    }
+    50% {
+      transform: translate3d(1.2rem, 0, 0) scaleX(1);
+    }
+    100% {
+      transform: translate3d(-1.2rem, 0, 0) scaleX(0.84);
+    }
+  }
+
+  .fabric-corridor-drift {
+    animation: fabric-corridor-drift 18s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .fabric-corridor-pulse {
+    animation: fabric-corridor-pulse 16s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .fabric-corridor-trace {
+    animation: fabric-corridor-trace 12s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .fabric-corridor-bridge-float {
+    animation: fabric-corridor-bridge-float 16s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+
+  .fabric-corridor-bridge-sheen {
+    animation: fabric-corridor-bridge-sheen 14s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+
+  .fabric-corridor-ribbon {
+    animation: fabric-corridor-ribbon 18s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+
+  [data-review-label] {
+    transition:
+      opacity 220ms ease,
+      transform 220ms ease;
+  }
+
+  html[data-corridor-hide-labels="true"] [data-review-label] {
+    opacity: 0;
+    transform: translate3d(0, -0.4rem, 0);
+    pointer-events: none;
+  }
+
+  [data-fabric-card="true"] {
+    will-change: transform;
+  }
+
+  [data-variant-shell="true"] {
+    isolation: isolate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fabric-corridor-drift,
+    .fabric-corridor-pulse,
+    .fabric-corridor-trace,
+    .fabric-corridor-bridge-float,
+    .fabric-corridor-bridge-sheen,
+    .fabric-corridor-ribbon {
+      animation: none;
+    }
+  }

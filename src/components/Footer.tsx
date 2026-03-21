@@ -29,7 +29,7 @@ export default function Footer() {
           </div>
           <p className="text-gray-500 text-sm max-w-xs mt-4">60년 전통의 최고급 선염 면원단 전문 기업.</p>
         </div>
-        
+
         <div>
           <h4 className="font-serif text-lg mb-6 text-gray-900">Products</h4>
           <ul className="space-y-3 text-sm text-gray-500">
