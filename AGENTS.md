@@ -15,7 +15,8 @@ This file applies to the entire `yjtexlab.com` repository.
 - `/` is a brand homepage, not a product experiment playground.
 - Do not place product-only copy such as `Runway Kinetic` or `Motion becomes framing.` on the homepage.
 - Keep product archive and product-owned preview logic under `src/components/products`.
-- The only allowed home-to-products seam is `src/components/home/Categories.tsx` importing `src/components/products/home-preview/ProductsCorridorPreview.tsx`.
+- Do not import `src/components/products/**` anywhere in the homepage graph unless the user explicitly approves a new home-to-products seam.
+- `src/components/home/Categories.tsx` and `src/components/home/FabricMotionLab.tsx` are protected homepage baseline files. Do not modify, replace, or redesign them unless the user explicitly requests a Categories change.
 - Keep homepage sections under `src/components/home` and shared shell under `src/components/site`.
 - The visible homepage shell must match the March 26, 2026 production baseline.
 

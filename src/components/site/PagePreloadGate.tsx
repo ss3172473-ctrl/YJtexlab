@@ -124,58 +124,36 @@ export default function PagePreloadGate({
           isReady ? "pointer-events-none opacity-0" : "opacity-100",
         ].join(" ")}
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(17,18,22,0.04),transparent_20%),radial-gradient(circle_at_82%_72%,rgba(17,18,22,0.035),transparent_22%)]" />
-        <div className="mx-auto flex min-h-dvh max-w-[1680px] flex-col justify-between px-4 py-8 md:px-8 md:py-10 lg:px-10">
-          <div className="flex items-center justify-between gap-6 text-[10px] uppercase tracking-[0.42em] text-black/35">
-            <span>YJ TEXLAB</span>
-            <span>{String(percentage).padStart(2, "0")}%</span>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-[1.05fr_0.95fr] md:items-end">
-            <div className="space-y-4">
-              <p className="text-[11px] uppercase tracking-[0.42em] text-black/32">Hard Gate Preload</p>
-              <h1 className="max-w-[8ch] font-serif text-[clamp(3.2rem,9vw,8rem)] leading-[0.84] tracking-[-0.08em] text-black">
-                {title}
-              </h1>
+        <div className="mx-auto flex min-h-dvh max-w-[1680px] items-center justify-center px-6 py-10">
+          <div className="w-full max-w-[30rem]">
+            <div className="flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.34em] text-black/36">
+              <span className="font-sans">YJ TEXLAB</span>
+              <span className="font-sans">{String(percentage).padStart(2, "0")}%</span>
             </div>
-
-            <div className="space-y-6">
-              <p className="max-w-[34rem] text-sm leading-7 text-black/56 md:text-base">
+            <div className="mt-5 space-y-3">
+              <p className="font-sans text-[0.82rem] uppercase tracking-[0.24em] text-black/72">
+                {title}
+              </p>
+              <div
+                className="h-px w-full bg-black/10"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={percentage}
+              >
+                <div
+                  className="h-px bg-black transition-[width] duration-300 ease-out"
+                  style={{ width: `${Math.max(percentage, 3)}%` }}
+                />
+              </div>
+              <p className="max-w-[28rem] font-sans text-[11px] leading-5 tracking-[0.08em] text-black/44">
                 {note}
               </p>
-              <div className="space-y-3">
-                <div className="h-px w-full bg-black/10" />
-                <div
-                  className="h-[6px] overflow-hidden rounded-full bg-black/6"
-                  role="progressbar"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={percentage}
-                >
-                  <div
-                    className="h-full rounded-full bg-black transition-[width] duration-300 ease-out"
-                    style={{ width: `${Math.max(percentage, 4)}%` }}
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {Array.from({ length: 10 }, (_, index) => (
-                    <span
-                      className="h-8 flex-1 border border-black/10 bg-[linear-gradient(180deg,#ffffff_0%,#f6f6f6_100%)]"
-                      key={`preload-strip-${index}`}
-                      style={{
-                        opacity: progress > index / 10 ? 1 : 0.18,
-                        transform: `translate3d(0, ${Math.abs(4 - index) * 3}px, 0)`,
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
             </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-6 text-[10px] uppercase tracking-[0.42em] text-black/28">
-            <span>{normalizedAssets.length} critical assets</span>
-            <span>Preparing first view</span>
+            <div className="mt-6 flex items-center justify-between gap-4 font-sans text-[10px] uppercase tracking-[0.28em] text-black/28">
+              <span>{normalizedAssets.length} assets</span>
+              <span>Preparing first view</span>
+            </div>
           </div>
         </div>
       </div>

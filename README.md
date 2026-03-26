@@ -7,13 +7,14 @@ YJ TexLab marketing site and product archive built with Next.js and deployed thr
 - Preserve the production homepage baseline from March 26, 2026 while keeping the repo safe for future work.
 - Keep the homepage focused on brand, export capability, and contact flow.
 - Keep homepage media-art owned by `src/components/home/FabricMotionLab.tsx`.
+- Treat `src/components/home/Categories.tsx` and `src/components/home/FabricMotionLab.tsx` as protected baseline files unless the user explicitly asks to change Categories.
 - Keep product-specific motion isolated from the homepage.
 - Preserve one deployable root so Vercel always builds the intended project.
 
 ## Folder Map
 
 - `src/app`: App Router routes.
-- `src/components/site`: shared site shell like header and footer.
+- `src/components/site`: shared site shell like header, footer, and route preload gate.
 - `src/components/home`: homepage-only sections, including the `FabricMotionLab` categories media-art.
 - `src/components/products`: product archive UI and product-owned motion treatments used only on `/products`.
 - `src/components/about`, `contact`, `milestones`, `stories`: page-specific UI.
@@ -29,6 +30,7 @@ YJ TexLab marketing site and product archive built with Next.js and deployed thr
 
 - Deploy only from this root with Vercel.
 - Do not put product-only copy, archive manifests, or experimental motion systems directly on `/`.
+- Do not modify `Categories.tsx` or `FabricMotionLab.tsx` unless the user explicitly requests a Categories change.
 - Keep the live shell links on `/` aligned with production: `/products`, `/about`, `/contact`, `/milestones`, `/privacy`, `/terms`.
 - Keep `/product` redirecting to `/products`.
 - Run `npm run clean:artifacts`, `npm run build`, `npm run verify`, `npm run verify:seo`, and `npm run verify:deploy` before production deploys.

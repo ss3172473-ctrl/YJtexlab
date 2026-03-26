@@ -12,9 +12,9 @@
 ## Source Layout
 
 - `src/app`: route files only.
-- `src/components/site`: layout shell reused across routes.
+- `src/components/site`: layout shell and shared route preload gate reused across routes.
 - `src/components/home`: components intended for `/` only, including `FabricMotionLab.tsx` for the categories media-art.
-- `src/components/products`: product archive, preload, and product-specific motion for `/products`.
+- `src/components/products`: product archive and product-specific motion for `/products`.
 - `src/components/about`, `contact`, `milestones`, `stories`: page-specific components grouped by route family.
 - `src/content`: static content payloads.
 - `src/lib`: shared helpers that are safe across route families, including hero media constants and `route-matrix.ts`.
@@ -40,3 +40,4 @@
 - No duplicate sibling trees such as `public 2`, `scripts 2`, `.next 2`.
 - Experimental or legacy product work must not remain in the deployable tree unless it is actively used by `/products`.
 - Homepage media-art must remain home-owned and must not be swapped with a product preview component.
+- `src/components/home/Categories.tsx` and `src/components/home/FabricMotionLab.tsx` are protected baseline files unless the user explicitly requests a Categories change.

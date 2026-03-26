@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import MotionHouseShowcase from "@/components/products/MotionHouseShowcase";
-import PagePreloadGate from "@/components/products/PagePreloadGate";
 import Header from "@/components/site/Header";
+import PagePreloadGate from "@/components/site/PagePreloadGate";
 import StructuredData from "@/components/site/StructuredData";
 import { productsPreloadAssets } from "@/lib/preload-assets";
 import {
@@ -22,8 +22,8 @@ export default function ProductsPage() {
   return (
     <PagePreloadGate
       assets={productsPreloadAssets}
-      title="Preparing The Fabric Board"
-      note="We are loading the orbital fabric archive before revealing the products page."
+      title="Preparing Products"
+      note="Loading the product archive before revealing the first view."
     >
       <div className="min-h-screen bg-white">
         <Header />

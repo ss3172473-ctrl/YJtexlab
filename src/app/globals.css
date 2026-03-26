@@ -103,25 +103,25 @@
   body {
     @apply bg-background text-foreground antialiased;
     background: #ffffff;
-    font-family: var(--font-montserrat), "SUIT Hangul", var(--font-suit), sans-serif;
+    font-family: var(--font-suit), "SUIT Hangul", sans-serif;
     font-weight: 400;
     letter-spacing: 0.01em;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-lora), "SUIT Hangul", var(--font-suit), serif;
-    font-weight: 400;
+    font-family: var(--font-suit), "SUIT Hangul", sans-serif;
+    font-weight: 500;
     letter-spacing: -0.01em;
   }
 }
 
 @layer components {
   .font-serif {
-    font-family: var(--font-lora), "SUIT Hangul", var(--font-suit), serif;
+    font-family: var(--font-suit), "SUIT Hangul", sans-serif;
   }
 
   .font-sans {
-    font-family: var(--font-montserrat), "SUIT Hangul", var(--font-suit), sans-serif;
+    font-family: var(--font-suit), "SUIT Hangul", sans-serif;
   }
 
   .text-balance {

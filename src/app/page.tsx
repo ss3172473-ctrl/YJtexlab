@@ -7,6 +7,8 @@ import Partners from "@/components/home/Partners";
 import StructuredData from "@/components/site/StructuredData";
 import Footer from "@/components/site/Footer";
 import Header from "@/components/site/Header";
+import PagePreloadGate from "@/components/site/PagePreloadGate";
+import { homeCategoriesPreloadAssets } from "@/lib/preload-assets";
 import {
   createBreadcrumbJsonLd,
   createHomePageJsonLd,
@@ -35,26 +37,32 @@ export default async function Home({
     resolvedSearchParams.freeze === "1";
 
   return (
-    <div
-      className="min-h-screen bg-white"
-      data-home-shell-version="20260326-production-baseline"
-      data-verify-mode={verifyMode ? "true" : undefined}
+    <PagePreloadGate
+      assets={verifyMode ? [] : homeCategoriesPreloadAssets}
+      title="Preparing Categories"
+      note="Loading the homepage fabric preview before revealing the first view."
     >
-      <Header />
-      <StructuredData
-        data={[
-          createHomePageJsonLd(),
-          createBreadcrumbJsonLd([{ name: "Home", path: "/" }]),
-        ]}
-      />
-      <main className="pt-[calc(env(safe-area-inset-top)+5rem)] md:pt-[calc(env(safe-area-inset-top)+7rem)]">
-        <OriginalLoopVideoHero verifyMode={verifyMode} />
-        <Categories verifyMode={verifyMode} />
-        <Partners />
-        <GlobalPresence verifyMode={verifyMode} />
-        <Locations verifyMode={verifyMode} />
-      </main>
-      <Footer />
-    </div>
+      <div
+        className="min-h-screen bg-white"
+        data-home-shell-version="20260326-production-baseline"
+        data-verify-mode={verifyMode ? "true" : undefined}
+      >
+        <Header />
+        <StructuredData
+          data={[
+            createHomePageJsonLd(),
+            createBreadcrumbJsonLd([{ name: "Home", path: "/" }]),
+          ]}
+        />
+        <main className="pt-[calc(env(safe-area-inset-top)+5rem)] md:pt-[calc(env(safe-area-inset-top)+7rem)]">
+          <OriginalLoopVideoHero verifyMode={verifyMode} />
+          <Categories verifyMode={verifyMode} />
+          <Partners />
+          <GlobalPresence verifyMode={verifyMode} />
+          <Locations verifyMode={verifyMode} />
+        </main>
+        <Footer />
+      </div>
+    </PagePreloadGate>
   );
 }

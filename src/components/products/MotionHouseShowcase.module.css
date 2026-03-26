@@ -2217,9 +2217,11 @@
 
 .productOrbitCtaLane {
   margin-top: 1.4rem;
+  min-height: 6rem;
 }
 
 .productOrbitCtaViewport {
+  width: 100%;
   min-height: 6rem;
   overflow: visible;
 }
@@ -2231,26 +2233,40 @@
 }
 
 .productOrbitCtaLink {
-  display: block;
+  display: flex;
+  align-items: stretch;
   width: 100%;
+  min-height: inherit;
   text-decoration: none;
   cursor: pointer;
+}
+
+.productOrbitCtaLink:focus-visible {
+  outline: 2px solid rgba(17, 18, 22, 0.84);
+  outline-offset: 0.25rem;
 }
 
 .productOrbitCtaTrack {
   gap: 3.4rem;
   width: max-content;
+  min-width: 100%;
   animation-duration: 52s;
 }
 
 .productOrbitCtaText {
-  font-family: var(--font-montserrat), var(--font-suit), sans-serif;
+  font-family: var(--font-suit), "SUIT Hangul", sans-serif;
   font-size: clamp(1.6rem, 3.6vw, 3.2rem);
   line-height: 0.92;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: rgba(17, 18, 22, 0.84);
   white-space: nowrap;
+  transition: color 0.18s ease, opacity 0.18s ease;
+}
+
+.productOrbitCtaLink:hover .productOrbitCtaText,
+.productOrbitCtaLink:focus-visible .productOrbitCtaText {
+  color: rgba(17, 18, 22, 1);
 }
 
 [data-product-variant="orbital-inspection-board"][data-orbital-scene-chrome="stripped"] .productDuplexArchive::before,
