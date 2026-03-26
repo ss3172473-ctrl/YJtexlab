@@ -41,14 +41,13 @@ export default async function Home({
       data-verify-mode={verifyMode ? "true" : undefined}
     >
       <Header />
-      <div className="pt-20 md:pt-28" />
       <StructuredData
         data={[
           createHomePageJsonLd(),
           createBreadcrumbJsonLd([{ name: "Home", path: "/" }]),
         ]}
       />
-      <main>
+      <main className="pt-[calc(env(safe-area-inset-top)+5rem)] md:pt-[calc(env(safe-area-inset-top)+7rem)]">
         <OriginalLoopVideoHero verifyMode={verifyMode} />
         <Categories verifyMode={verifyMode} />
         <Partners />
