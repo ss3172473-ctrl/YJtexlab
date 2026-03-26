@@ -269,7 +269,6 @@ const connectedSalonConfig: VariantConfig = {
   pulseAmplitude: 0.0015,
 };
 
-const RESISTANCE_STORAGE_KEY = "yjtexlab.fabricMotionLab.resistancePreset.v2";
 const DEFAULT_RESISTANCE_PRESET: ResistancePreset = {
   intro: 1.1,
   middle: 2.2,
@@ -283,49 +282,8 @@ function clamp(value: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value));
 }
 
-function clampResistance(value: number) {
-  return clamp(value, 0.35, 3);
-}
-
 function formatResistancePreset(preset: ResistancePreset) {
   return `intro=${preset.intro.toFixed(2)}, middle=${preset.middle.toFixed(2)}, outro=${preset.outro.toFixed(2)}`;
-}
-
-function parseResistancePreset(raw: string | null): ResistancePreset | null {
-  if (!raw) {
-    return null;
-  }
-
-  const values = Object.fromEntries(
-    raw
-      .split(",")
-      .map((entry) => entry.trim())
-      .map((entry) => {
-        const [key, value] = entry.split("=");
-        return [key, Number(value)];
-      }),
-  ) as Partial<Record<keyof ResistancePreset, number>>;
-
-  const intro = values.intro;
-  const middle = values.middle;
-  const outro = values.outro;
-
-  if (
-    typeof intro !== "number" ||
-    typeof middle !== "number" ||
-    typeof outro !== "number" ||
-    !Number.isFinite(intro) ||
-    !Number.isFinite(middle) ||
-    !Number.isFinite(outro)
-  ) {
-    return null;
-  }
-
-  return {
-    intro: clampResistance(intro),
-    middle: clampResistance(middle),
-    outro: clampResistance(outro),
-  };
 }
 
 function getResistanceScale(preset: ResistancePreset) {
@@ -562,6 +520,7 @@ function Tile({
   const imageSrcSet = useFirstFrame
     ? `${firstFrame.mobile.src} ${firstFrame.mobile.width}w, ${firstFrame.desktop.src} ${firstFrame.desktop.width}w`
     : undefined;
+  const displayKey = `${tile.item.name}:${imageSrc}`;
 
   const style: CSSProperties = {
     "--x": `${layout.x * config.spacingScale}%`,
@@ -595,9 +554,10 @@ function Tile({
       data-loading-strategy="decode-smoothed-scrub"
       style={style}
     >
-      <div className={styles.tileAnchor}>
+      <div className={styles.tileAnchor} key={displayKey}>
         <figure className={styles.tileFigure}>
           <img
+            key={displayKey}
             alt={tile.item.name.replaceAll("_", " ")}
             className={styles.tileImage}
             decoding="async"
@@ -644,10 +604,9 @@ export default function FabricMotionLab({
 }) {
   const rootRef = useRef<HTMLElement | null>(null);
   const [reducedMotion, setReducedMotion] = useState(verifyMode);
-  const [resistancePreset, setResistancePreset] = useState<ResistancePreset>(DEFAULT_RESISTANCE_PRESET);
-  const [copiedPreset, setCopiedPreset] = useState(false);
   const [rawProgress, setRawProgress] = useState(verifyMode ? 1 : 0.08);
   const [progress, setProgress] = useState(verifyMode ? 1 : 0.08);
+  const resistancePreset = DEFAULT_RESISTANCE_PRESET;
 
   const renderedLayouts = useMemo(
     () =>
@@ -679,20 +638,6 @@ export default function FabricMotionLab({
 
     query.addListener(update);
     return () => query.removeListener(update);
-  }, [verifyMode]);
-
-  useEffect(() => {
-    if (verifyMode) {
-      setResistancePreset(DEFAULT_RESISTANCE_PRESET);
-      return;
-    }
-
-    try {
-      const parsed = parseResistancePreset(window.localStorage.getItem(RESISTANCE_STORAGE_KEY));
-      if (parsed) {
-        setResistancePreset(parsed);
-      }
-    } catch {}
   }, [verifyMode]);
 
   useEffect(() => {
@@ -787,82 +732,6 @@ export default function FabricMotionLab({
       data-scroll-resistance={formatResistancePreset(resistancePreset)}
       data-verify-mode={verifyMode ? "true" : undefined}
     >
-      {!verifyMode ? (
-        <div className={styles.sensitivityPanel}>
-          <div className={styles.sensitivityHeader}>
-            <span className={styles.sensitivityLabel}>Scroll Resistance</span>
-            <div className={styles.sensitivityActions}>
-              <button
-                type="button"
-                className={styles.sensitivityReset}
-                onClick={async () => {
-                  const resetPreset = DEFAULT_RESISTANCE_PRESET;
-                  setResistancePreset(resetPreset);
-                  setCopiedPreset(false);
-                  try {
-                    window.localStorage.setItem(RESISTANCE_STORAGE_KEY, formatResistancePreset(resetPreset));
-                  } catch {}
-                }}
-              >
-                Reset
-              </button>
-              <button
-                type="button"
-                className={styles.sensitivityReset}
-                onClick={async () => {
-                  const presetText = formatResistancePreset(resistancePreset);
-                  try {
-                    await navigator.clipboard.writeText(presetText);
-                    setCopiedPreset(true);
-                    window.setTimeout(() => setCopiedPreset(false), 1200);
-                  } catch {
-                    setCopiedPreset(false);
-                  }
-                }}
-              >
-                {copiedPreset ? "Copied" : "Copy"}
-              </button>
-            </div>
-          </div>
-          <div className={styles.sensitivityHint}>Low = lighter/faster, High = heavier/slower</div>
-          {([
-            ["intro", "Intro"],
-            ["middle", "Middle"],
-            ["outro", "Outro"],
-          ] as const).map(([key, label]) => (
-            <label className={styles.sensitivityField} key={key}>
-              <span className={styles.sensitivityFieldLabel}>{label}</span>
-              <input
-                className={styles.sensitivitySlider}
-                type="range"
-                min="0.35"
-                max="3"
-                step="0.05"
-                value={resistancePreset[key]}
-                aria-label={`Adjust ${label.toLowerCase()} scroll resistance`}
-                onChange={(event) => {
-                  const nextValue = clampResistance(Number(event.currentTarget.value));
-                  const nextPreset = { ...resistancePreset, [key]: nextValue };
-                  setResistancePreset(nextPreset);
-                  setCopiedPreset(false);
-                  try {
-                    window.localStorage.setItem(
-                      RESISTANCE_STORAGE_KEY,
-                      formatResistancePreset(nextPreset),
-                    );
-                  } catch {}
-                }}
-              />
-              <span className={styles.sensitivityValue}>{resistancePreset[key].toFixed(2)}x</span>
-            </label>
-          ))}
-          <div className={styles.sensitivityPresetCode}>
-            {formatResistancePreset(resistancePreset)}
-            <br />
-            {`track=${resistanceScale.toFixed(2)}x`}
-          </div>
-        </div>
-      ) : null}
       <div className={styles.variantStack}>
         <section
           className={`${styles.variantTrack} ${styles.variantTrackEmbedded}`}
