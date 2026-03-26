@@ -152,11 +152,19 @@ export default function OriginalLoopVideoHero({
       <div className="mx-auto max-w-[1680px] px-4 md:px-6 lg:px-10">
         <div
           className={[
-            "relative overflow-hidden border border-black/10 bg-black shadow-[0_30px_90px_-42px_rgba(15,23,42,0.32)]",
-            HERO_MEDIA.frameAspectClassName,
+            "relative w-full overflow-hidden border border-black/10 bg-black shadow-[0_30px_90px_-42px_rgba(15,23,42,0.32)]",
             HERO_MEDIA.frameBackgroundClassName,
           ].join(" ")}
+          style={{ aspectRatio: "16 / 9" }}
         >
+          <Image
+            src={HERO_MEDIA.posterSrc}
+            alt="YJ TexLab homepage hero poster"
+            fill
+            priority
+            sizes="100vw"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
           {verifyMode ? (
             <Image
               src={HERO_MEDIA.posterSrc}
@@ -174,7 +182,7 @@ export default function OriginalLoopVideoHero({
               loop
               muted
               playsInline
-              preload="metadata"
+              preload="auto"
               poster={HERO_MEDIA.posterSrc}
               src={HERO_MEDIA.videoSrc}
             />
