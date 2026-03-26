@@ -1,6 +1,111 @@
 .pageShell {
+  position: relative;
   background: #fff;
   color: #17181c;
+}
+
+.sensitivityPanel {
+  position: sticky;
+  top: 5.9rem;
+  z-index: 18;
+  display: flex;
+  width: min(18rem, calc(100vw - 1.5rem));
+  margin: 0 0 0 auto;
+  margin-right: 0.75rem;
+  transform: translateY(0.75rem);
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid rgba(23, 24, 28, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.75rem 0.9rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 48px -36px rgba(15, 23, 42, 0.26);
+}
+
+.sensitivityHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.sensitivityActions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.sensitivityLabel,
+.sensitivityValue,
+.sensitivityReset {
+  font-family: var(--font-montserrat), var(--font-suit), sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.sensitivityLabel {
+  color: rgba(23, 24, 28, 0.76);
+}
+
+.sensitivityHint {
+  font-family: var(--font-montserrat), var(--font-suit), sans-serif;
+  font-size: 0.54rem;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: rgba(23, 24, 28, 0.46);
+}
+
+.sensitivityField {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sensitivityFieldLabel {
+  font-family: var(--font-montserrat), var(--font-suit), sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: rgba(23, 24, 28, 0.58);
+}
+
+.sensitivitySlider {
+  width: 100%;
+  accent-color: #17181c;
+}
+
+.sensitivityValue {
+  min-width: 3.5rem;
+  color: rgba(23, 24, 28, 0.92);
+  text-align: right;
+}
+
+.sensitivityReset {
+  border: none;
+  background: transparent;
+  color: rgba(23, 24, 28, 0.52);
+  cursor: pointer;
+  padding: 0;
+}
+
+.sensitivityReset:hover {
+  color: rgba(23, 24, 28, 0.92);
+}
+
+.sensitivityPresetCode {
+  border-top: 1px solid rgba(23, 24, 28, 0.08);
+  padding-top: 0.55rem;
+  font-family: var(--font-montserrat), var(--font-suit), sans-serif;
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: rgba(23, 24, 28, 0.62);
 }
 
 .variantStack {
@@ -147,6 +252,14 @@
 }
 
 @media (max-width: 720px) {
+  .sensitivityPanel {
+    top: 5rem;
+    width: calc(100vw - 1rem);
+    margin-right: 0.5rem;
+    transform: translateY(0.5rem);
+    padding: 0.7rem 0.8rem;
+  }
+
   .variantViewport,
   .variantViewportEmbedded {
     top: 5rem;
