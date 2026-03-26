@@ -10,16 +10,20 @@ If a temporary migration copy exists at `/Users/leesungjun/Desktop/yjtexlab.com-
 1. `npm run clean:artifacts`
 2. `npm run verify`
 3. `npm run build`
-4. `npm run verify:deploy`
-5. Confirm `/product` still redirects to `/products`
-6. Confirm homepage shell still matches the production baseline contract
-7. Confirm `/privacy` and `/terms` resolve with the temporary legal holding pages
+4. `npm run verify:seo`
+5. `npm run verify:deploy`
+6. Confirm `/product` still redirects to `/products`
+7. Confirm homepage shell still matches the production baseline contract
+8. Confirm `/privacy` and `/terms` resolve with the temporary legal holding pages
+9. Confirm `robots.txt`, `sitemap.xml`, canonical tags, and JSON-LD respond correctly
 
 ## Deploy
 
 ```bash
 vercel deploy --prod
 ```
+
+`vercel.json` must keep `"framework": "nextjs"` so production deploys do not fall back to the generic `Other` preset.
 
 ## After Deploy
 

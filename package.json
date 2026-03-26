@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/run-dev.js",
-    "build": "NEXT_DIST_DIR=.next-build next build",
+    "build": "next build",
     "vercel-build": "next build",
-    "start": "NEXT_DIST_DIR=.next-build next start",
+    "start": "next start",
     "clean:artifacts": "node scripts/clean-local-artifacts.mjs",
     "verify": "npm run verify:repo-hygiene && npm run verify:home-boundary && npm run verify:route-contract && npm run verify:docs",
     "verify:corridor": "node scripts/verify-corridor.mjs",
@@ -15,9 +15,10 @@
     "verify:repo-hygiene": "node scripts/verify-repo-hygiene.mjs",
     "verify:route-contract": "node scripts/verify-route-contract.mjs",
     "verify:route-smoke": "node scripts/verify-route-smoke.mjs",
+    "verify:seo": "node scripts/verify-seo.mjs",
     "verify:docs": "node scripts/verify-docs.mjs",
     "verify:deploy-input": "node scripts/verify-deploy-input.mjs",
-    "verify:deploy": "npm run clean:artifacts && npm run build && npm run verify && npm run verify:corridor && npm run verify:deploy-input && npm run verify:route-smoke",
+    "verify:deploy": "npm run clean:artifacts && npm run build && npm run verify && npm run verify:corridor && npm run verify:seo && npm run verify:route-smoke && npm run clean:artifacts && npm run verify:deploy-input",
     "lint": "next lint",
     "process:fabrics": "python3 scripts/process_fabric_images.py --apply --rename-only",
     "process:fabrics:dry": "python3 scripts/process_fabric_images.py --rename-only"

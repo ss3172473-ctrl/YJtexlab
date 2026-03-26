@@ -1,0 +1,16 @@
+{
+  "name": "YJ TexLab",
+  "short_name": "YJ TexLab",
+  "description": "YJ TexLab은 1962년부터 프리미엄 선염 면원단을 공급해 온 텍스타일 기업입니다.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111111",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

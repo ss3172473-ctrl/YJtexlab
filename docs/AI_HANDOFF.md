@@ -5,8 +5,9 @@
 - temporary migration workspace: `/Users/leesungjun/Desktop/yjtexlab.com-clean-20260326`
 - single allowed seam: `src/components/home/Categories.tsx` -> `src/components/products/home-preview/ProductsCorridorPreview.tsx`
 - route authority: `src/lib/route-matrix.ts`
+- seo authority: `src/lib/seo.ts`
 - visible home shell: `/products`, `/about`, `/contact`, `/milestones`, `/privacy`, `/terms`
-- required verify commands: `npm run verify`, `npm run verify:corridor`, `npm run verify:deploy`
+- required verify commands: `npm run verify`, `npm run verify:corridor`, `npm run verify:seo`, `npm run verify:deploy`
 - deployment target: Vercel only
 
 ## Operator Notes
@@ -14,4 +15,5 @@
 - Do not reintroduce flat homepage components under `src/components`.
 - Do not import from `src/components/products/**` anywhere in the homepage graph except the single allowed seam.
 - If shell links change, update `route-matrix.ts`, regenerate `docs/baselines/home/20260326/route-matrix.json`, and update the baseline docs together.
+- If metadata or canonical URLs change, update `src/lib/seo.ts`, `public/robots.txt`, `public/sitemap.xml`, and `public/site.webmanifest` together.
 - If you touch the homepage structure, create a new `.omx/context/*.md` snapshot first.

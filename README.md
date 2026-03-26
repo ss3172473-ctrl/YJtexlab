@@ -17,11 +17,12 @@ YJ TexLab marketing site and product archive built with Next.js and deployed thr
 - `src/components/products`: product archive UI and product-owned motion treatments used only on `/products` or the approved homepage preview seam.
 - `src/components/about`, `contact`, `milestones`, `stories`: page-specific UI.
 - `src/lib`: shared logic, preload utilities, and hero media constants.
-- `public`: fonts, hero assets, homepage preview assets, and product imagery.
+- `public`: fonts, hero assets, homepage preview assets, product imagery, and deploy-safe SEO assets like `robots.txt`, `sitemap.xml`, and `site.webmanifest`.
 - `docs`: repo rules, design intent, deployment and research notes.
 - `docs/baselines/home/20260326`: production baseline screenshots and route snapshot.
 - `docs/AI_HANDOFF.md`: next-agent operator and verification handoff.
 - `.omx/context`: task snapshots for higher-risk changes.
+- `src/lib/seo.ts`: shared SEO contract for metadata, canonical URLs, JSON-LD, and site identity.
 
 ## Core Rules
 
@@ -29,7 +30,7 @@ YJ TexLab marketing site and product archive built with Next.js and deployed thr
 - Do not put product-only copy, archive manifests, or experimental motion systems directly on `/`.
 - Keep the live shell links on `/` aligned with production: `/products`, `/about`, `/contact`, `/milestones`, `/privacy`, `/terms`.
 - Keep `/product` redirecting to `/products`.
-- Run `npm run clean:artifacts`, `npm run build`, `npm run verify`, and `npm run verify:deploy` before production deploys.
+- Run `npm run clean:artifacts`, `npm run build`, `npm run verify`, `npm run verify:seo`, and `npm run verify:deploy` before production deploys.
 
 ## Commands
 
@@ -38,6 +39,7 @@ npm run dev
 npm run clean:artifacts
 npm run verify
 npm run verify:corridor
+npm run verify:seo
 npm run verify:deploy
 npm run build
 vercel deploy --prod

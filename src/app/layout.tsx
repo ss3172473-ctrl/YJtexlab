@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Montserrat, Lora } from "next/font/google";
 import localFont from "next/font/local";
+import StructuredData from "@/components/site/StructuredData";
+import { organizationJsonLd, rootMetadata, websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -42,20 +44,7 @@ const suit = localFont({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://yjtexlab.com"),
-  title: "YJ TexLab",
-  description: "60년 전통의 최고급 선염 면원단 전문 기업 YJ TexLab",
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    title: "YJ TexLab",
-    description: "60년 전통의 최고급 선염 면원단 전문 기업 YJ TexLab",
-    url: "https://yjtexlab.com",
-    siteName: "YJ TexLab",
-  },
-};
+export const metadata: Metadata = rootMetadata;
 
 export default function RootLayout({
   children,
@@ -63,8 +52,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <body className={`${montserrat.variable} ${lora.variable} ${suit.variable} font-sans antialiased`}>
+        <StructuredData data={[organizationJsonLd, websiteJsonLd]} />
         {children}
       </body>
     </html>

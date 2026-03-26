@@ -12,6 +12,7 @@ const patterns = [
   /^public .+/,
   /^scripts .+/,
   /^tsconfig .+\.json$/,
+  /^tsconfig\.tsbuildinfo$/,
   /^원단($|.*)/,
   /^new 원단 사진($|.*)/,
   /^_fabric_processing_report_.+/,

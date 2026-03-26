@@ -1,3 +1,5 @@
+import { siteConfig } from "@/lib/seo";
+
 type LegalHoldingPageProps = {
   title: string;
   slug: string;
@@ -24,8 +26,8 @@ export default function LegalHoldingPage({
             YJ TexLab directly if you need immediate assistance or documentation.
           </p>
           <div className="mt-10 space-y-3 border-t border-black/8 pt-6 text-sm text-black/62">
-            <p>Email: yjtexlab@yjtexlab.com</p>
-            <p>Phone: +82-53-556-4561</p>
+            <p>Email: {siteConfig.email}</p>
+            <p>Phone: {siteConfig.phone}</p>
             <p>Last updated: {TODAY}</p>
           </div>
         </div>
