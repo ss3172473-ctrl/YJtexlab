@@ -1,0 +1,46 @@
+# YJ TexLab Website
+
+YJ TexLab marketing site and product archive built with Next.js and deployed through Vercel.
+
+## Project Purpose
+
+- Keep the homepage focused on brand, export capability, and contact flow.
+- Keep product-specific motion isolated from the homepage.
+- Preserve one deployable root so Vercel always builds the intended project.
+
+## Folder Map
+
+- `src/app`: App Router routes.
+- `src/components/site`: shared site shell like header and footer.
+- `src/components/home`: homepage-only sections.
+- `src/components/products`: product archive UI and motion treatments used only on `/products`.
+- `src/components/about`, `contact`, `milestones`, `stories`: page-specific UI.
+- `src/lib`: shared logic, preload utilities, and hero media constants.
+- `public`: fonts, hero assets, categories, product imagery.
+- `docs`: repo rules, design intent, deployment and research notes.
+- `.omx/context`: task snapshots for higher-risk changes.
+
+## Core Rules
+
+- Deploy only from this root with Vercel.
+- Do not put product-only copy, archive manifests, or experimental motion systems directly on `/`.
+- Keep `/product` redirecting to `/products`.
+- Run `npm run build` and `npm run verify` before production deploys.
+
+## Commands
+
+```bash
+npm run dev
+npm run clean:artifacts
+npm run verify
+npm run build
+vercel deploy --prod
+```
+
+## Documentation
+
+- [`AGENTS.md`](./AGENTS.md)
+- [`DESIGN.md`](./DESIGN.md)
+- [`docs/PROJECT_STRUCTURE.md`](./docs/PROJECT_STRUCTURE.md)
+- [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)
+- [`docs/RESEARCH_NOTES.md`](./docs/RESEARCH_NOTES.md)
