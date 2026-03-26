@@ -124,6 +124,10 @@
     font-family: var(--font-suit), "SUIT Hangul", sans-serif;
   }
 
+  .font-brand-logo {
+    font-family: var(--font-logo), var(--font-suit), "SUIT Hangul", sans-serif;
+  }
+
   .text-balance {
     text-wrap: balance;
   }

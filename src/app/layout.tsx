@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
+import { Montserrat } from "next/font/google";
 import localFont from "next/font/local";
 import StructuredData from "@/components/site/StructuredData";
 import { organizationJsonLd, rootMetadata, websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
+
+const brandLogo = Montserrat({
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+  variable: "--font-logo",
+  display: "swap",
+});
 
 const suitSans = localFont({
   src: [
@@ -94,7 +102,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={`${suitSans.variable} ${suitHeadings.variable} ${suit.variable} font-sans antialiased`}>
+      <body
+        className={`${brandLogo.variable} ${suitSans.variable} ${suitHeadings.variable} ${suit.variable} font-sans antialiased`}
+      >
         <StructuredData data={[organizationJsonLd, websiteJsonLd]} />
         {children}
       </body>

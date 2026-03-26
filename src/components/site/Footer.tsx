@@ -14,7 +14,7 @@ export default function Footer() {
         <div>
           <div className="flex flex-col items-start mb-6">
             <div className="flex flex-col items-stretch">
-              <div className="flex items-center gap-1.5 font-sans">
+              <div className="flex items-center gap-1.5 font-brand-logo">
                 <span className="text-2xl font-black tracking-tight leading-none text-black">
                   YJ
                 </span>
@@ -25,7 +25,7 @@ export default function Footer() {
                   </span>
                 </div>
               </div>
-              <div className="flex justify-between w-full mt-0 text-[7.5px] font-bold text-black font-sans leading-none">
+              <div className="flex justify-between w-full mt-0 text-[7.5px] font-bold text-black font-brand-logo leading-none">
                 <span>S</span><span>I</span><span>N</span><span>C</span><span>E</span>
                 <span className="w-2"></span>
                 <span>1</span><span>9</span><span>6</span><span>2</span>
