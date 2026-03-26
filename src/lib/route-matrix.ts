@@ -1,0 +1,50 @@
+export type HomeRouteRegion = "header" | "footer" | "cta" | "system";
+export type HomeRoutePhase = "baseline" | "deferred";
+export type HomeRouteStatus = 200 | 307;
+
+export type HomeRouteEntry = {
+  id: string;
+  label: string;
+  href: string;
+  region: HomeRouteRegion;
+  visibleOnHome: boolean;
+  expectedStatus: HomeRouteStatus;
+  phase: HomeRoutePhase;
+};
+
+export const routeMatrix = [
+  { id: "home-root", label: "Home", href: "/", region: "system", visibleOnHome: false, expectedStatus: 200, phase: "baseline" },
+  { id: "product-redirect", label: "Product redirect", href: "/product", region: "system", visibleOnHome: false, expectedStatus: 307, phase: "baseline" },
+  { id: "products-header", label: "Products", href: "/products", region: "header", visibleOnHome: true, expectedStatus: 200, phase: "baseline" },
+  { id: "about-header", label: "About Us", href: "/about", region: "header", visibleOnHome: true, expectedStatus: 200, phase: "baseline" },
+  { id: "contact-header", label: "Contact", href: "/contact", region: "header", visibleOnHome: true, expectedStatus: 200, phase: "baseline" },
+  { id: "products-cta", label: "View more products", href: "/products", region: "cta", visibleOnHome: true, expectedStatus: 200, phase: "baseline" },
+  { id: "products-checks", label: "Checks", href: "/products", region: "footer", visibleOnHome: true, expectedStatus: 200, phase: "baseline" },
+  { id: "products-stripes", label: "Stripes", href: "/products", region: "footer", visibleOnHome: true, expectedStatus: 200, phase: "baseline" },
+  { id: "products-etc", label: "ETC", href: "/products", region: "footer", visibleOnHome: true, expectedStatus: 200, phase: "baseline" },
+  { id: "about-footer", label: "About Us", href: "/about", region: "footer", visibleOnHome: true, expectedStatus: 200, phase: "baseline" },
+  { id: "contact-footer", label: "Contact", href: "/contact", region: "footer", visibleOnHome: true, expectedStatus: 200, phase: "baseline" },
+  { id: "milestones-footer", label: "THE MILESTONES", href: "/milestones", region: "footer", visibleOnHome: true, expectedStatus: 200, phase: "baseline" },
+  { id: "privacy-footer", label: "Privacy Policy", href: "/privacy", region: "footer", visibleOnHome: true, expectedStatus: 200, phase: "baseline" },
+  { id: "terms-footer", label: "Terms of Service", href: "/terms", region: "footer", visibleOnHome: true, expectedStatus: 200, phase: "baseline" },
+  { id: "projects-deferred", label: "Projects", href: "/projects", region: "header", visibleOnHome: false, expectedStatus: 200, phase: "deferred" },
+  { id: "stories-deferred", label: "Stories", href: "/stories", region: "header", visibleOnHome: false, expectedStatus: 200, phase: "deferred" },
+  { id: "sustainability-deferred", label: "Sustainability", href: "/sustainability", region: "footer", visibleOnHome: false, expectedStatus: 200, phase: "deferred" },
+  { id: "stores-deferred", label: "Store Locator", href: "/stores", region: "footer", visibleOnHome: false, expectedStatus: 200, phase: "deferred" },
+  { id: "careers-deferred", label: "Careers", href: "/careers", region: "footer", visibleOnHome: false, expectedStatus: 200, phase: "deferred" },
+] as const satisfies readonly HomeRouteEntry[];
+
+export const homeShellRoutes = routeMatrix.filter((entry) => entry.visibleOnHome);
+export const smokeRoutes = routeMatrix.filter((entry) => entry.phase === "baseline");
+export const headerRoutes = routeMatrix.filter(
+  (entry) => entry.region === "header" && entry.visibleOnHome,
+);
+export const footerProductRoutes = routeMatrix.filter((entry) =>
+  ["products-checks", "products-stripes", "products-etc"].includes(entry.id),
+);
+export const footerCompanyRoutes = routeMatrix.filter((entry) =>
+  ["about-footer", "contact-footer", "milestones-footer"].includes(entry.id),
+);
+export const footerLegalRoutes = routeMatrix.filter((entry) =>
+  ["privacy-footer", "terms-footer"].includes(entry.id),
+);

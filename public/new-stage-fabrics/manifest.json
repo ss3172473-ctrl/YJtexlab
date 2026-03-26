@@ -1,0 +1,443 @@
+{
+  "checks": [
+    {
+      "src": "/new-stage-fabrics/checks/01-ck_a01.webp",
+      "name": "CK_A01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/02-ck_aa01.webp",
+      "name": "CK_AA01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/03-ck_ab01.webp",
+      "name": "CK_AB01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/04-ck_ac01.webp",
+      "name": "CK_AC01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/05-ck_ac02.webp",
+      "name": "CK_AC02",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/06-ck_ac03.webp",
+      "name": "CK_AC03",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/07-ck_ac04.webp",
+      "name": "CK_AC04",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/08-ck_ac05.webp",
+      "name": "CK_AC05",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/09-ck_af01.webp",
+      "name": "CK_AF01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/10-ck_af02.webp",
+      "name": "CK_AF02",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/11-ck_af03.webp",
+      "name": "CK_AF03",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/12-ck_af04.webp",
+      "name": "CK_AF04",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/13-ck_af05.webp",
+      "name": "CK_AF05",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/14-ck_ai01.webp",
+      "name": "CK_AI01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/15-ck_ai02.webp",
+      "name": "CK_AI02",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/16-ck_ai03.webp",
+      "name": "CK_AI03",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/17-ck_ai04.webp",
+      "name": "CK_AI04",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/18-ck_am01.webp",
+      "name": "CK_AM01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/19-ck_am02.webp",
+      "name": "CK_AM02",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/20-ck_am03.webp",
+      "name": "CK_AM03",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/21-ck_b01.webp",
+      "name": "CK_B01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/22-ck_b02.webp",
+      "name": "CK_B02",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/23-ck_d01.webp",
+      "name": "CK_D01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/24-ck_d02.webp",
+      "name": "CK_D02",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/25-ck_d03.webp",
+      "name": "CK_D03",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/26-ck_d04.webp",
+      "name": "CK_D04",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/27-ck_d05.webp",
+      "name": "CK_D05",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/28-ck_d06.webp",
+      "name": "CK_D06",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/29-ck_d07.webp",
+      "name": "CK_D07",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/30-ck_k01.webp",
+      "name": "CK_K01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/31-ck_k02.webp",
+      "name": "CK_K02",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/32-ck_m01.webp",
+      "name": "CK_M01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/33-ck_m02.webp",
+      "name": "CK_M02",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/34-ck_o01.webp",
+      "name": "CK_O01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/35-ck_o02.webp",
+      "name": "CK_O02",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/36-ck_o03.webp",
+      "name": "CK_O03",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/37-ck_o04.webp",
+      "name": "CK_O04",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/38-ck_o05.webp",
+      "name": "CK_O05",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/39-ck_o06.webp",
+      "name": "CK_O06",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/40-ck_o07.webp",
+      "name": "CK_O07",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/41-ck_s01.webp",
+      "name": "CK_S01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/42-ck_s02.webp",
+      "name": "CK_S02",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/43-ck_s03.webp",
+      "name": "CK_S03",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/44-ck_s04.webp",
+      "name": "CK_S04",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/45-ck_t01.webp",
+      "name": "CK_T01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/46-ck_t02.webp",
+      "name": "CK_T02",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/47-ck_t03.webp",
+      "name": "CK_T03",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/48-ck_t04.webp",
+      "name": "CK_T04",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/49-ck_t05.webp",
+      "name": "CK_T05",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/50-ck_y01.webp",
+      "name": "CK_Y01",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/51-ck_y02.webp",
+      "name": "CK_Y02",
+      "category": "checks"
+    },
+    {
+      "src": "/new-stage-fabrics/checks/52-ck_z01.webp",
+      "name": "CK_Z01",
+      "category": "checks"
+    }
+  ],
+  "stripes": [
+    {
+      "src": "/new-stage-fabrics/stripes/01-st_a01.webp",
+      "name": "ST_A01",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/02-st_a02.webp",
+      "name": "ST_A02",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/03-st_a03.webp",
+      "name": "ST_A03",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/04-st_a04.webp",
+      "name": "ST_A04",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/05-st_b01.webp",
+      "name": "ST_B01",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/06-st_b02.webp",
+      "name": "ST_B02",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/07-st_b03.webp",
+      "name": "ST_B03",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/08-st_b04.webp",
+      "name": "ST_B04",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/09-st_b05.webp",
+      "name": "ST_B05",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/10-st_e01.webp",
+      "name": "ST_E01",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/11-st_e02.webp",
+      "name": "ST_E02",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/12-st_g01.webp",
+      "name": "ST_G01",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/13-st_g02.webp",
+      "name": "ST_G02",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/14-st_g03.webp",
+      "name": "ST_G03",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/15-st_g04.webp",
+      "name": "ST_G04",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/16-st_g05.webp",
+      "name": "ST_G05",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/17-st_g06.webp",
+      "name": "ST_G06",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/18-st_m01.webp",
+      "name": "ST_M01",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/19-st_m02.webp",
+      "name": "ST_M02",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/20-st_m03.webp",
+      "name": "ST_M03",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/21-st_n01.webp",
+      "name": "ST_N01",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/22-st_n02.webp",
+      "name": "ST_N02",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/23-st_n03.webp",
+      "name": "ST_N03",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/24-st_n04.webp",
+      "name": "ST_N04",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/25-st_n05.webp",
+      "name": "ST_N05",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/26-st_n06.webp",
+      "name": "ST_N06",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/27-st_n07.webp",
+      "name": "ST_N07",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/28-st_n08.webp",
+      "name": "ST_N08",
+      "category": "stripes"
+    },
+    {
+      "src": "/new-stage-fabrics/stripes/29-st_n09.webp",
+      "name": "ST_N09",
+      "category": "stripes"
+    }
+  ],
+  "others": [
+    {
+      "src": "/new-stage-fabrics/others/01-etc_b01.webp",
+      "name": "ETC_B01",
+      "category": "others"
+    },
+    {
+      "src": "/new-stage-fabrics/others/02-etc_b02.webp",
+      "name": "ETC_B02",
+      "category": "others"
+    },
+    {
+      "src": "/new-stage-fabrics/others/03-etc_b03.webp",
+      "name": "ETC_B03",
+      "category": "others"
+    },
+    {
+      "src": "/new-stage-fabrics/others/04-etc_c01.webp",
+      "name": "ETC_C01",
+      "category": "others"
+    },
+    {
+      "src": "/new-stage-fabrics/others/05-etc_c02.webp",
+      "name": "ETC_C02",
+      "category": "others"
+    },
+    {
+      "src": "/new-stage-fabrics/others/06-etc_c03.webp",
+      "name": "ETC_C03",
+      "category": "others"
+    }
+  ]
+}

@@ -4,6 +4,62 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "SUIT Hangul";
+  src: url("/fonts/SUIT-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+1100-11FF,
+    U+3130-318F,
+    U+AC00-D7AF,
+    U+A960-A97F,
+    U+D7B0-D7FF;
+}
+
+@font-face {
+  font-family: "SUIT Hangul";
+  src: url("/fonts/SUIT-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+1100-11FF,
+    U+3130-318F,
+    U+AC00-D7AF,
+    U+A960-A97F,
+    U+D7B0-D7FF;
+}
+
+@font-face {
+  font-family: "SUIT Hangul";
+  src: url("/fonts/SUIT-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+1100-11FF,
+    U+3130-318F,
+    U+AC00-D7AF,
+    U+A960-A97F,
+    U+D7B0-D7FF;
+}
+
+@font-face {
+  font-family: "SUIT Hangul";
+  src: url("/fonts/SUIT-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+1100-11FF,
+    U+3130-318F,
+    U+AC00-D7AF,
+    U+A960-A97F,
+    U+D7B0-D7FF;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -41,17 +97,19 @@
 
   html {
     scroll-behavior: smooth;
+    background: #ffffff;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', sans-serif;
+    background: #ffffff;
+    font-family: var(--font-montserrat), "SUIT Hangul", var(--font-suit), sans-serif;
     font-weight: 400;
     letter-spacing: 0.01em;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-lora), "SUIT Hangul", var(--font-suit), serif;
     font-weight: 400;
     letter-spacing: -0.01em;
   }
@@ -59,11 +117,11 @@
 
 @layer components {
   .font-serif {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-lora), "SUIT Hangul", var(--font-suit), serif;
   }
 
   .font-sans {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-montserrat), "SUIT Hangul", var(--font-suit), sans-serif;
   }
 
   .text-balance {
@@ -169,144 +227,8 @@
   }
 }
 
-  @keyframes fabric-corridor-drift {
-    0% {
-      transform: translate3d(0, 0, 0) rotate(0deg);
-    }
-    50% {
-      transform: translate3d(1.5rem, -1rem, 0) rotate(4deg);
-    }
-    100% {
-      transform: translate3d(0, 0, 0) rotate(0deg);
-    }
-  }
-
-  @keyframes fabric-corridor-pulse {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.08);
-    }
-    100% {
-      transform: scale(1);
-    }
-  }
-
-  @keyframes fabric-corridor-trace {
-    0% {
-      transform: scaleX(0.3);
-      transform-origin: left center;
-    }
-    50% {
-      transform: scaleX(1);
-      transform-origin: center;
-    }
-    100% {
-      transform: scaleX(0.3);
-      transform-origin: right center;
-    }
-  }
-
-  @keyframes fabric-corridor-bridge-float {
-    0% {
-      transform: translate3d(0, 0, 0);
-      opacity: 0.8;
-    }
-    50% {
-      transform: translate3d(0, -0.35rem, 0);
-      opacity: 1;
-    }
-    100% {
-      transform: translate3d(0, 0, 0);
-      opacity: 0.8;
-    }
-  }
-
-  @keyframes fabric-corridor-bridge-sheen {
-    0% {
-      transform: translate3d(-10%, 0, 0);
-      opacity: 0.45;
-    }
-    50% {
-      transform: translate3d(10%, 0, 0);
-      opacity: 0.72;
-    }
-    100% {
-      transform: translate3d(-10%, 0, 0);
-      opacity: 0.45;
-    }
-  }
-
-  @keyframes fabric-corridor-ribbon {
-    0% {
-      transform: translate3d(-1.2rem, 0, 0) scaleX(0.84);
-    }
-    50% {
-      transform: translate3d(1.2rem, 0, 0) scaleX(1);
-    }
-    100% {
-      transform: translate3d(-1.2rem, 0, 0) scaleX(0.84);
-    }
-  }
-
-  .fabric-corridor-drift {
-    animation: fabric-corridor-drift 18s ease-in-out infinite;
-    will-change: transform;
-  }
-
-  .fabric-corridor-pulse {
-    animation: fabric-corridor-pulse 16s ease-in-out infinite;
-    will-change: transform;
-  }
-
-  .fabric-corridor-trace {
-    animation: fabric-corridor-trace 12s ease-in-out infinite;
-    will-change: transform;
-  }
-
-  .fabric-corridor-bridge-float {
-    animation: fabric-corridor-bridge-float 16s ease-in-out infinite;
-    will-change: transform, opacity;
-  }
-
-  .fabric-corridor-bridge-sheen {
-    animation: fabric-corridor-bridge-sheen 14s ease-in-out infinite;
-    will-change: transform, opacity;
-  }
-
-  .fabric-corridor-ribbon {
-    animation: fabric-corridor-ribbon 18s ease-in-out infinite;
-    will-change: transform, opacity;
-  }
-
-  [data-review-label] {
-    transition:
-      opacity 220ms ease,
-      transform 220ms ease;
-  }
-
-  html[data-corridor-hide-labels="true"] [data-review-label] {
-    opacity: 0;
-    transform: translate3d(0, -0.4rem, 0);
-    pointer-events: none;
-  }
-
-  [data-fabric-card="true"] {
-    will-change: transform;
-  }
-
-  [data-variant-shell="true"] {
-    isolation: isolate;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .fabric-corridor-drift,
-    .fabric-corridor-pulse,
-    .fabric-corridor-trace,
-    .fabric-corridor-bridge-float,
-    .fabric-corridor-bridge-sheen,
-    .fabric-corridor-ribbon {
-      animation: none;
-    }
-  }
+[data-verify-mode="true"] *,
+[data-verify-mode="true"] *::before,
+[data-verify-mode="true"] *::after {
+  transition: none !important;
+}

@@ -1,23 +1,23 @@
 # Research Notes
 
-This structure was chosen after cross-checking official guidance from Next.js, Vercel, GitHub, and OpenAI Codex documentation.
+This structure was chosen after cross-validating the production baseline and official platform guidance.
 
 ## Cross-validated Principles
 
-- Next.js App Router encourages project structure by route family and supports colocation and private folders to keep non-route code organized.
-- Vercel recommends keeping one clear project root so builds resolve the intended app instead of an accidental sibling or duplicate folder.
-- GitHub treats `README.md` as the main project entrypoint for usage, setup, and contributor context.
-- OpenAI Codex documents `AGENTS.md` as the place for repository-specific instructions and local operating rules.
+- The production baseline from 2026-03-26 is the authority for homepage shell visibility and section order.
+- Next.js App Router supports grouping non-route code outside `app` and does not require route groups for a clean feature split.
+- W3C landmark guidance supports one top-level `main`, top-level footer/contentinfo, and intentionally labeled navigation regions.
+- Vercel recommends a single intended project root so builds and deploys resolve the correct app.
+- `route-matrix.ts` must be the single route contract for shell visibility, smoke routes, and verification.
 
 ## Why This Repo Was Reorganized
 
-- Homepage, product archive, and page-specific code were previously mixed inside one flat `src/components` layer.
-- That made it too easy for product-only copy and experiments to leak into the homepage.
-- Grouping by route or domain makes the import boundary visible and easier to review before deployment.
+- The earlier clean branch drifted away from the live production homepage shell.
+- Homepage and product logic had multiple competing owners, which made agent handoff and review unreliable.
+- Re-centering the repo on the production baseline reduces future ambiguity and keeps the next AI agent on one clear contract.
 
 ## Source URLs
 
 - https://nextjs.org/docs/app/getting-started/project-structure
+- https://www.w3.org/WAI/ARIA/apg/practices/landmark-regions/
 - https://vercel.com/docs/monorepos
-- https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes
-- https://developers.openai.com/codex/guides/agents-md

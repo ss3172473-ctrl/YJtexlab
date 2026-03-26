@@ -1,0 +1,151 @@
+.pageShell {
+  background: #fff;
+}
+
+.variantStack {
+  background:
+    radial-gradient(circle at 24% 18%, rgba(12, 18, 28, 0.045), transparent 20%),
+    radial-gradient(circle at 78% 74%, rgba(12, 18, 28, 0.04), transparent 22%),
+    linear-gradient(180deg, #fff 0%, #fdfdfd 100%);
+}
+
+.variantTrack {
+  position: relative;
+  min-height: var(--variant-track, 334dvh);
+  overflow: clip;
+}
+
+.variantTrackEmbedded {
+  padding: 0 0 2rem;
+}
+
+.variantViewport {
+  position: relative;
+  width: min(100%, calc(var(--variant-chapter-width, 1840px) + 2 * var(--variant-chapter-inset, 1rem)));
+  margin: 0 auto;
+}
+
+.variantViewportEmbedded {
+  padding: 1rem;
+}
+
+.variantChapter {
+  position: relative;
+  min-height: var(--variant-chapter, 220dvh);
+  width: min(100%, var(--variant-chapter-width, 1840px));
+  margin: 0 auto;
+  transform: translate3d(0, var(--variant-shift, 0rem), 0);
+}
+
+.variantChapterEmbedded {
+  padding-bottom: 0;
+}
+
+.variantPlane {
+  position: absolute;
+  inset: 0;
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(15, 23, 42, 0.04), transparent 18%),
+    radial-gradient(circle at 82% 32%, rgba(15, 23, 42, 0.032), transparent 18%),
+    radial-gradient(circle at 42% 76%, rgba(15, 23, 42, 0.028), transparent 20%);
+  pointer-events: none;
+}
+
+.tile {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: min(var(--zone-width), 24vw);
+  opacity: var(--alpha);
+  transform: translate3d(var(--tx), var(--ty), 0) scale(var(--scale));
+  filter: blur(var(--blur)) saturate(var(--sat));
+  will-change: transform, opacity, filter;
+}
+
+.tileEcho {
+  mix-blend-mode: normal;
+}
+
+.tileAnchor {
+  display: block;
+}
+
+.tileFigure {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(var(--clip-top) var(--clip-right) var(--clip-bottom) var(--clip-left));
+  box-shadow: 0 30px 80px -50px rgba(15, 23, 42, 0.22);
+}
+
+.tileImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  transform: translate3d(var(--img-tx), var(--img-ty), 0) scale(var(--img-scale));
+}
+
+.tileImageOverlay {
+  position: absolute;
+  inset: 0;
+}
+
+.tileCaption {
+  padding-top: 0.7rem;
+}
+
+.tileCaptionTitle {
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(17, 24, 39, 0.46);
+  white-space: nowrap;
+}
+
+.variantCta {
+  position: absolute;
+  left: 50%;
+  bottom: 2rem;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.variantCtaLink {
+  display: inline-block;
+  padding: 0.2rem 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(17, 24, 39, 0.62);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.14);
+}
+
+.variantCtaLink:hover {
+  color: rgba(17, 24, 39, 0.9);
+  border-bottom-color: rgba(17, 24, 39, 0.3);
+}
+
+@media (max-width: 900px) {
+  .variantTrack {
+    min-height: 250dvh;
+  }
+
+  .variantChapter {
+    min-height: 188dvh;
+  }
+
+  .tile {
+    width: min(var(--zone-width), 33vw);
+  }
+
+  .tileCaptionTitle {
+    font-size: 0.56rem;
+    letter-spacing: 0.22em;
+  }
+
+  .variantCtaLink {
+    font-size: 0.64rem;
+  }
+}
