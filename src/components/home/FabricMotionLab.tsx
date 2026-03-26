@@ -5,13 +5,21 @@ import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-import manifest from "../../../../public/new-stage-fabrics/manifest.json";
-import styles from "./ProductsCorridorPreview.module.css";
+import manifest from "../../../public/new-stage-fabrics/manifest.json";
+import styles from "./FabricMotionLab.module.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
 type FabricCategory = "checks" | "stripes" | "others";
-type ZoneMotion = "split-h" | "split-v" | "drift" | "rail-left" | "rail-right" | "band" | "shutter" | "pulse";
+type ZoneMotion =
+  | "split-h"
+  | "split-v"
+  | "drift"
+  | "rail-left"
+  | "rail-right"
+  | "band"
+  | "shutter"
+  | "pulse";
 
 type FabricFrame = {
   src: string;
@@ -72,7 +80,6 @@ type VariantConfig = {
   primaryDrift: number;
   primaryLiftStart: number;
   primaryLiftEnd: number;
-  echoEnabled: boolean;
   echoStart: number;
   echoEnd: number;
   echoSpeed: number;
@@ -89,8 +96,6 @@ type VariantConfig = {
 type TileState = {
   item: FabricFrame;
   visible: boolean;
-  emphasis: number;
-  cyclePhase: number;
   clipTop: number;
   clipRight: number;
   clipBottom: number;
@@ -101,121 +106,6 @@ type TileState = {
   alpha: number;
   blur: number;
   saturation: number;
-};
-
-type EmbeddedSeedSnapshot = {
-  itemName: string;
-  src: string;
-  srcSet?: string | null;
-  styleText: string;
-  style: CSSProperties;
-};
-
-function parseInlineStyle(styleText: string): CSSProperties {
-  return Object.fromEntries(
-    styleText
-      .split(";")
-      .map((declaration) => declaration.trim())
-      .filter(Boolean)
-      .map((declaration) => {
-        const [key, ...rest] = declaration.split(":");
-        return [key.trim(), rest.join(":").trim()];
-      }),
-  ) as CSSProperties;
-}
-
-const embeddedSeedSnapshots: Record<string, EmbeddedSeedSnapshot> = {
-  CK_D: {
-    itemName: "CK_D04",
-    src: "/new-stage-fabrics/checks/26-ck_d04.webp",
-    srcSet: null,
-    styleText: "--x:6.859999999999999%;--y:7.84%;--tx:-2.652rem;--ty:6.790rem;--scale:0.934;--alpha:0.837;--clip-top:4.59%;--clip-right:0.00%;--clip-bottom:4.59%;--clip-left:0.00%;--blur:0.41px;--sat:0.965;--zone-width:10.8rem;--img-tx:0.098rem;--img-ty:0.274rem;--img-scale:1.0193",
-    style: parseInlineStyle("--x:6.859999999999999%;--y:7.84%;--tx:-2.652rem;--ty:6.790rem;--scale:0.934;--alpha:0.837;--clip-top:4.59%;--clip-right:0.00%;--clip-bottom:4.59%;--clip-left:0.00%;--blur:0.41px;--sat:0.965;--zone-width:10.8rem;--img-tx:0.098rem;--img-ty:0.274rem;--img-scale:1.0193"),
-  },
-  CK_O: {
-    itemName: "CK_O04",
-    src: "/new-stage-fabrics/checks/37-ck_o04.webp",
-    srcSet: null,
-    styleText: "--x:18.62%;--y:11.76%;--tx:2.112rem;--ty:6.982rem;--scale:0.934;--alpha:0.837;--clip-top:0.00%;--clip-right:0.00%;--clip-bottom:0.00%;--clip-left:0.00%;--blur:0.41px;--sat:0.965;--zone-width:10.6rem;--img-tx:0.200rem;--img-ty:0.266rem;--img-scale:1.0204",
-    style: parseInlineStyle("--x:18.62%;--y:11.76%;--tx:2.112rem;--ty:6.982rem;--scale:0.934;--alpha:0.837;--clip-top:0.00%;--clip-right:0.00%;--clip-bottom:0.00%;--clip-left:0.00%;--blur:0.41px;--sat:0.965;--zone-width:10.6rem;--img-tx:0.200rem;--img-ty:0.266rem;--img-scale:1.0204"),
-  },
-  ST_N: {
-    itemName: "ST_N08",
-    src: "/new-stage-fabrics/stripes/28-st_n08.webp",
-    srcSet: null,
-    styleText: "--x:64.67999999999999%;--y:8.82%;--tx:6.261rem;--ty:8.120rem;--scale:0.934;--alpha:0.837;--clip-top:0.00%;--clip-right:0.00%;--clip-bottom:0.00%;--clip-left:7.43%;--blur:0.41px;--sat:0.965;--zone-width:12.2rem;--img-tx:-0.009rem;--img-ty:0.277rem;--img-scale:1.0211",
-    style: parseInlineStyle("--x:64.67999999999999%;--y:8.82%;--tx:6.261rem;--ty:8.120rem;--scale:0.934;--alpha:0.837;--clip-top:0.00%;--clip-right:0.00%;--clip-bottom:0.00%;--clip-left:7.43%;--blur:0.41px;--sat:0.965;--zone-width:12.2rem;--img-tx:-0.009rem;--img-ty:0.277rem;--img-scale:1.0211"),
-  },
-  CK_AF: {
-    itemName: "CK_AF03",
-    src: "/homepage-fabrics/slow-field-first-frame/desktop/ck_af-ck_af03.webp",
-    srcSet: "/homepage-fabrics/slow-field-first-frame/mobile/ck_af-ck_af03.webp 256w, /homepage-fabrics/slow-field-first-frame/desktop/ck_af-ck_af03.webp 400w",
-    styleText: "--x:17.64%;--y:30.38%;--tx:1.686rem;--ty:6.690rem;--scale:0.934;--alpha:0.837;--clip-top:0.00%;--clip-right:4.81%;--clip-bottom:0.00%;--clip-left:4.81%;--blur:0.41px;--sat:0.965;--zone-width:10.4rem;--img-tx:0.142rem;--img-ty:0.157rem;--img-scale:1.0228",
-    style: parseInlineStyle("--x:17.64%;--y:30.38%;--tx:1.686rem;--ty:6.690rem;--scale:0.934;--alpha:0.837;--clip-top:0.00%;--clip-right:4.81%;--clip-bottom:0.00%;--clip-left:4.81%;--blur:0.41px;--sat:0.965;--zone-width:10.4rem;--img-tx:0.142rem;--img-ty:0.157rem;--img-scale:1.0228"),
-  },
-  ST_G: {
-    itemName: "ST_G06",
-    src: "/new-stage-fabrics/stripes/17-st_g06.webp",
-    srcSet: null,
-    styleText: "--x:54.879999999999995%;--y:29.4%;--tx:-4.794rem;--ty:7.575rem;--scale:0.934;--alpha:0.837;--clip-top:3.94%;--clip-right:0.00%;--clip-bottom:3.94%;--clip-left:0.00%;--blur:0.41px;--sat:0.965;--zone-width:10.8rem;--img-tx:0.069rem;--img-ty:0.179rem;--img-scale:1.0233",
-    style: parseInlineStyle("--x:54.879999999999995%;--y:29.4%;--tx:-4.794rem;--ty:7.575rem;--scale:0.934;--alpha:0.837;--clip-top:3.94%;--clip-right:0.00%;--clip-bottom:3.94%;--clip-left:0.00%;--blur:0.41px;--sat:0.965;--zone-width:10.8rem;--img-tx:0.069rem;--img-ty:0.179rem;--img-scale:1.0233"),
-  },
-  CK_AC: {
-    itemName: "CK_AC04",
-    src: "/new-stage-fabrics/checks/07-ck_ac04.webp",
-    srcSet: null,
-    styleText: "--x:37.24%;--y:42.14%;--tx:-3.205rem;--ty:7.567rem;--scale:0.925;--alpha:0.827;--clip-top:4.95%;--clip-right:0.00%;--clip-bottom:4.95%;--clip-left:0.00%;--blur:0.44px;--sat:0.961;--zone-width:10.3rem;--img-tx:0.219rem;--img-ty:0.133rem;--img-scale:1.0238",
-    style: parseInlineStyle("--x:37.24%;--y:42.14%;--tx:-3.205rem;--ty:7.567rem;--scale:0.925;--alpha:0.827;--clip-top:4.95%;--clip-right:0.00%;--clip-bottom:4.95%;--clip-left:0.00%;--blur:0.44px;--sat:0.961;--zone-width:10.3rem;--img-tx:0.219rem;--img-ty:0.133rem;--img-scale:1.0238"),
-  },
-  ST_B: {
-    itemName: "ST_B05",
-    src: "/new-stage-fabrics/stripes/09-st_b05.webp",
-    srcSet: null,
-    styleText: "--x:69.58%;--y:48.019999999999996%;--tx:-10.757rem;--ty:8.147rem;--scale:0.925;--alpha:0.827;--clip-top:0.00%;--clip-right:8.02%;--clip-bottom:0.00%;--clip-left:0.00%;--blur:0.44px;--sat:0.961;--zone-width:10.5rem;--img-tx:0.164rem;--img-ty:0.057rem;--img-scale:1.0240",
-    style: parseInlineStyle("--x:69.58%;--y:48.019999999999996%;--tx:-10.757rem;--ty:8.147rem;--scale:0.925;--alpha:0.827;--clip-top:0.00%;--clip-right:8.02%;--clip-bottom:0.00%;--clip-left:0.00%;--blur:0.44px;--sat:0.961;--zone-width:10.5rem;--img-tx:0.164rem;--img-ty:0.057rem;--img-scale:1.0240"),
-  },
-  CK_T: {
-    itemName: "CK_T05",
-    src: "/homepage-fabrics/slow-field-first-frame/desktop/ck_t-ck_t05.webp",
-    srcSet: "/homepage-fabrics/slow-field-first-frame/mobile/ck_t-ck_t05.webp 256w, /homepage-fabrics/slow-field-first-frame/desktop/ck_t-ck_t05.webp 400w",
-    styleText: "--x:9.8%;--y:54.879999999999995%;--tx:0.872rem;--ty:7.470rem;--scale:0.925;--alpha:0.827;--clip-top:0.00%;--clip-right:0.00%;--clip-bottom:0.00%;--clip-left:0.00%;--blur:0.44px;--sat:0.961;--zone-width:10.9rem;--img-tx:-0.077rem;--img-ty:0.048rem;--img-scale:1.0239",
-    style: parseInlineStyle("--x:9.8%;--y:54.879999999999995%;--tx:0.872rem;--ty:7.470rem;--scale:0.925;--alpha:0.827;--clip-top:0.00%;--clip-right:0.00%;--clip-bottom:0.00%;--clip-left:0.00%;--blur:0.44px;--sat:0.961;--zone-width:10.9rem;--img-tx:-0.077rem;--img-ty:0.048rem;--img-scale:1.0239"),
-  },
-  CK_AI: {
-    itemName: "CK_AI03",
-    src: "/new-stage-fabrics/checks/16-ck_ai03.webp",
-    srcSet: null,
-    styleText: "--x:27.439999999999998%;--y:64.67999999999999%;--tx:-2.573rem;--ty:7.077rem;--scale:0.925;--alpha:0.827;--clip-top:0.00%;--clip-right:5.19%;--clip-bottom:0.00%;--clip-left:5.19%;--blur:0.44px;--sat:0.961;--zone-width:10.1rem;--img-tx:0.113rem;--img-ty:-0.103rem;--img-scale:1.0233",
-    style: parseInlineStyle("--x:27.439999999999998%;--y:64.67999999999999%;--tx:-2.573rem;--ty:7.077rem;--scale:0.925;--alpha:0.827;--clip-top:0.00%;--clip-right:5.19%;--clip-bottom:0.00%;--clip-left:5.19%;--blur:0.44px;--sat:0.961;--zone-width:10.1rem;--img-tx:0.113rem;--img-ty:-0.103rem;--img-scale:1.0233"),
-  },
-  CK_S: {
-    itemName: "CK_S03",
-    src: "/homepage-fabrics/slow-field-first-frame/desktop/ck_s-ck_s03.webp",
-    srcSet: "/homepage-fabrics/slow-field-first-frame/mobile/ck_s-ck_s03.webp 256w, /homepage-fabrics/slow-field-first-frame/desktop/ck_s-ck_s03.webp 400w",
-    styleText: "--x:47.04%;--y:61.74%;--tx:0.565rem;--ty:6.800rem;--scale:0.932;--alpha:0.827;--clip-top:0.00%;--clip-right:0.00%;--clip-bottom:0.00%;--clip-left:0.00%;--blur:0.44px;--sat:0.961;--zone-width:9.9rem;--img-tx:0.214rem;--img-ty:-0.152rem;--img-scale:1.0225",
-    style: parseInlineStyle("--x:47.04%;--y:61.74%;--tx:0.565rem;--ty:6.800rem;--scale:0.932;--alpha:0.827;--clip-top:0.00%;--clip-right:0.00%;--clip-bottom:0.00%;--clip-left:0.00%;--blur:0.44px;--sat:0.961;--zone-width:9.9rem;--img-tx:0.214rem;--img-ty:-0.152rem;--img-scale:1.0225"),
-  },
-  ST_A: {
-    itemName: "ST_A01",
-    src: "/new-stage-fabrics/stripes/01-st_a01.webp",
-    srcSet: null,
-    styleText: "--x:72.52%;--y:70.56%;--tx:7.952rem;--ty:7.570rem;--scale:0.915;--alpha:0.817;--clip-top:0.00%;--clip-right:0.00%;--clip-bottom:0.00%;--clip-left:8.62%;--blur:0.48px;--sat:0.957;--zone-width:11.2rem;--img-tx:0.035rem;--img-ty:-0.136rem;--img-scale:1.0218",
-    style: parseInlineStyle("--x:72.52%;--y:70.56%;--tx:7.952rem;--ty:7.570rem;--scale:0.915;--alpha:0.817;--clip-top:0.00%;--clip-right:0.00%;--clip-bottom:0.00%;--clip-left:8.62%;--blur:0.48px;--sat:0.957;--zone-width:11.2rem;--img-tx:0.035rem;--img-ty:-0.136rem;--img-scale:1.0218"),
-  },
-  ETC_B: {
-    itemName: "ETC_B02",
-    src: "/homepage-fabrics/slow-field-first-frame/desktop/etc_b-etc_b02.webp",
-    srcSet: "/homepage-fabrics/slow-field-first-frame/mobile/etc_b-etc_b02.webp 256w, /homepage-fabrics/slow-field-first-frame/desktop/etc_b-etc_b02.webp 400w",
-    styleText: "--x:22.54%;--y:78.4%;--tx:-2.149rem;--ty:6.486rem;--scale:0.915;--alpha:0.817;--clip-top:2.79%;--clip-right:2.79%;--clip-bottom:2.79%;--clip-left:2.79%;--blur:0.48px;--sat:0.957;--zone-width:9.6rem;--img-tx:0.074rem;--img-ty:-0.285rem;--img-scale:1.0195",
-    style: parseInlineStyle("--x:22.54%;--y:78.4%;--tx:-2.149rem;--ty:6.486rem;--scale:0.915;--alpha:0.817;--clip-top:2.79%;--clip-right:2.79%;--clip-bottom:2.79%;--clip-left:2.79%;--blur:0.48px;--sat:0.957;--zone-width:9.6rem;--img-tx:0.074rem;--img-ty:-0.285rem;--img-scale:1.0195"),
-  },
-  CK_AM: {
-    itemName: "CK_AM02",
-    src: "/new-stage-fabrics/checks/19-ck_am02.webp",
-    srcSet: null,
-    styleText: "--x:67.62%;--y:81.34%;--tx:0.986rem;--ty:6.940rem;--scale:0.920;--alpha:0.817;--clip-top:0.00%;--clip-right:0.00%;--clip-bottom:0.00%;--clip-left:0.00%;--blur:0.48px;--sat:0.957;--zone-width:10.2rem;--img-tx:-0.052rem;--img-ty:-0.290rem;--img-scale:1.0184",
-    style: parseInlineStyle("--x:67.62%;--y:81.34%;--tx:0.986rem;--ty:6.940rem;--scale:0.920;--alpha:0.817;--clip-top:0.00%;--clip-right:0.00%;--clip-bottom:0.00%;--clip-left:0.00%;--blur:0.48px;--sat:0.957;--zone-width:10.2rem;--img-tx:-0.052rem;--img-ty:-0.290rem;--img-scale:1.0184"),
-  },
 };
 
 const firstFrameEntries: Record<string, FirstFrameEntry> = {
@@ -328,43 +218,25 @@ const zones: ZoneDefinition[] = [
   { key: "CK_AM", x: 79, y: 90, motion: "pulse", focusStart: 0.3, focusEnd: 0.68, cadence: 3.8, drift: 1, depth: 0.9, direction: 1 },
 ];
 
-const baseLayouts: LayoutDefinition[] = [
-  { key: "CK_D", x: 5, y: 6, widthRem: 11.8, band: 0 },
-  { key: "CK_O", x: 23, y: 11, widthRem: 11.1, band: 0 },
-  { key: "ST_N", x: 70, y: 8, widthRem: 12.4, band: 0 },
-  { key: "CK_AF", x: 11, y: 27, widthRem: 10.3, band: 0 },
-  { key: "ST_G", x: 58, y: 32, widthRem: 11.2, band: 0 },
-  { key: "CK_AC", x: 36, y: 47, widthRem: 10.5, band: 1 },
-  { key: "ST_B", x: 79, y: 47, widthRem: 10.7, band: 1 },
-  { key: "CK_T", x: 7, y: 58, widthRem: 11.5, band: 1 },
-  { key: "CK_AI", x: 28, y: 68, widthRem: 10.4, band: 1 },
-  { key: "CK_S", x: 58, y: 65, widthRem: 10.2, band: 1 },
-  { key: "ST_A", x: 73, y: 76, widthRem: 11.5, band: 2 },
-  { key: "ETC_B", x: 15, y: 88, widthRem: 10.1, band: 2 },
-  { key: "CK_AM", x: 76, y: 92, widthRem: 10.4, band: 2 },
+const layouts: LayoutDefinition[] = [
+  { key: "CK_D", x: 7, y: 8, widthRem: 10.8, band: 0 },
+  { key: "CK_O", x: 19, y: 12, widthRem: 10.6, band: 0 },
+  { key: "ST_N", x: 66, y: 9, widthRem: 12.2, band: 0 },
+  { key: "CK_AF", x: 18, y: 31, widthRem: 10.4, band: 0 },
+  { key: "ST_G", x: 56, y: 30, widthRem: 10.8, band: 0 },
+  { key: "CK_AC", x: 38, y: 43, widthRem: 10.3, band: 1 },
+  { key: "ST_B", x: 71, y: 49, widthRem: 10.5, band: 1 },
+  { key: "CK_T", x: 10, y: 56, widthRem: 10.9, band: 1 },
+  { key: "CK_AI", x: 28, y: 66, widthRem: 10.1, band: 1 },
+  { key: "CK_S", x: 48, y: 63, widthRem: 9.9, band: 1 },
+  { key: "ST_A", x: 74, y: 72, widthRem: 11.2, band: 2 },
+  { key: "ETC_B", x: 23, y: 80, widthRem: 9.6, band: 2 },
+  { key: "CK_AM", x: 69, y: 83, widthRem: 10.2, band: 2 },
 ];
-
-function mergeLayouts(overrides: Partial<Record<string, Partial<LayoutDefinition>>>) {
-  return baseLayouts.map((layout) => ({ ...layout, ...overrides[layout.key] }));
-}
 
 const connectedSalonConfig: VariantConfig = {
   slug: "connected-salon",
-  layouts: mergeLayouts({
-    CK_D: { x: 7, y: 8, widthRem: 10.8 },
-    CK_O: { x: 19, y: 12, widthRem: 10.6 },
-    ST_N: { x: 66, y: 9, widthRem: 12.2 },
-    CK_AF: { x: 18, y: 31, widthRem: 10.4 },
-    ST_G: { x: 56, y: 30, widthRem: 10.8 },
-    CK_AC: { x: 38, y: 43, widthRem: 10.3 },
-    ST_B: { x: 71, y: 49, widthRem: 10.5 },
-    CK_T: { x: 10, y: 56, widthRem: 10.9 },
-    CK_AI: { x: 28, y: 66, widthRem: 10.1 },
-    CK_S: { x: 48, y: 63, widthRem: 9.9 },
-    ST_A: { x: 74, y: 72, widthRem: 11.2 },
-    ETC_B: { x: 23, y: 80, widthRem: 9.6 },
-    CK_AM: { x: 69, y: 83, widthRem: 10.2 },
-  }),
+  layouts,
   trackVh: 334,
   chapterVh: 220,
   chapterShift: -8.6,
@@ -378,7 +250,6 @@ const connectedSalonConfig: VariantConfig = {
   primaryDrift: 0.88,
   primaryLiftStart: 5.2,
   primaryLiftEnd: 0.62,
-  echoEnabled: true,
   echoStart: 0.56,
   echoEnd: 0.9,
   echoSpeed: 0.36,
@@ -403,6 +274,7 @@ function smoothstep(value: number, start: number, end: number) {
   if (end <= start) {
     return 0;
   }
+
   const normalized = clamp((value - start) / (end - start));
   return normalized * normalized * (3 - 2 * normalized);
 }
@@ -426,6 +298,7 @@ function normalizeGroup(items: unknown, category: FabricCategory): FabricFrame[]
     if (!item || typeof item !== "object") {
       return false;
     }
+
     const frame = item as Partial<FabricFrame>;
     return typeof frame.src === "string" && typeof frame.name === "string" && frame.category === category;
   });
@@ -452,8 +325,9 @@ for (const frame of allFrames) {
     families.set(key, [frame]);
   }
 }
-for (const frames of Array.from(families.values())) {
-  frames.sort((left, right) => serialNumber(left.name) - serialNumber(right.name));
+
+for (const familyFrames of Array.from(families.values())) {
+  familyFrames.sort((left, right) => serialNumber(left.name) - serialNumber(right.name));
 }
 
 const zoneMap = new Map(zones.map((zone) => [zone.key, zone]));
@@ -476,8 +350,6 @@ function computeTileState(
     return {
       item: items[0],
       visible: true,
-      emphasis,
-      cyclePhase: 0.2,
       clipTop: 0,
       clipRight: 0,
       clipBottom: 0,
@@ -528,32 +400,27 @@ function computeTileState(
   }
 
   const lateralBase =
-    (zone.motion === "rail-left" || zone.motion === "rail-right")
+    zone.motion === "rail-left" || zone.motion === "rail-right"
       ? (1 - visibilityDrive) * zone.direction * 12
       : zone.direction * (1 - emphasis) * zone.drift * 2.6;
+
   const xShift = lateralBase + (progress - 0.5) * zone.depth * 2.8;
   const yShift = (1 - emphasis) * zone.depth * 3.6 - waveProgress * zone.depth * 1.4;
   const pulse = zone.motion === "pulse" ? Math.sin(progress * Math.PI * 10 + 0.04 * zone.x) * pulseAmplitude : 0;
-  const scale = 0.88 + 0.17 * visibilityDrive + (zone.motion === "pulse" ? 0.03 * waveProgress : 0) + pulse;
-  const alpha = canShow ? clamp((isEcho ? 0.78 : 0.24) + visibilityDrive * (isEcho ? 0.18 : 0.82)) : 0;
-  const blur = canShow ? (1 - visibilityDrive) * 5 : 10;
-  const saturation = isEcho ? 0.94 + 0.08 * visibilityDrive : 0.84 + 0.34 * visibilityDrive;
 
   return {
     item,
     visible: canShow,
-    emphasis,
-    cyclePhase: wrapped - frameIndex,
     clipTop,
     clipRight,
     clipBottom,
     clipLeft,
     xShift,
     yShift,
-    scale,
-    alpha,
-    blur,
-    saturation,
+    scale: 0.88 + 0.17 * visibilityDrive + (zone.motion === "pulse" ? 0.03 * waveProgress : 0) + pulse,
+    alpha: canShow ? clamp((isEcho ? 0.78 : 0.24) + visibilityDrive * (isEcho ? 0.18 : 0.82)) : 0,
+    blur: canShow ? (1 - visibilityDrive) * 5 : 10,
+    saturation: isEcho ? 0.94 + 0.08 * visibilityDrive : 0.84 + 0.34 * visibilityDrive,
   };
 }
 
@@ -563,16 +430,14 @@ function Tile({
   progress,
   reducedMotion,
   index,
-  seeded = false,
-  seedSnapshot,
+  config,
 }: {
   layout: LayoutDefinition;
   zone: ZoneDefinition;
   progress: number;
   reducedMotion: boolean;
   index: number;
-  seeded?: boolean;
-  seedSnapshot?: EmbeddedSeedSnapshot;
+  config: VariantConfig;
 }) {
   const items = families.get(zone.key) ?? [];
   if (items.length === 0) {
@@ -581,31 +446,18 @@ function Tile({
 
   const isEcho = layout.band === 3;
   const emphasisProgress = isEcho
-    ? clamp(1 - (progress * connectedSalonConfig.echoSpeed - connectedSalonConfig.echoBias))
-    : clamp(progress * connectedSalonConfig.primarySpeed - layout.band * connectedSalonConfig.primaryBandLag + connectedSalonConfig.primaryBoost);
+    ? clamp(1 - (progress * config.echoSpeed - config.echoBias))
+    : clamp(progress * config.primarySpeed - layout.band * config.primaryBandLag + config.primaryBoost);
 
   const emphasisIn = smoothstep(
     progress,
-    isEcho ? connectedSalonConfig.echoStart : 0.16 * layout.band,
-    isEcho ? connectedSalonConfig.echoEnd : 0.44 + 0.16 * layout.band,
+    isEcho ? config.echoStart : 0.16 * layout.band,
+    isEcho ? config.echoEnd : 0.44 + 0.16 * layout.band,
   );
-  const exitProgress = 1 - smoothstep(
-    progress,
-    isEcho ? connectedSalonConfig.exitStart + 0.01 : connectedSalonConfig.exitStart + 0.02 * layout.band,
-    1,
-  );
+  const exitProgress = 1 - smoothstep(progress, isEcho ? config.exitStart + 0.01 : config.exitStart + 0.02 * layout.band, 1);
 
-  const tile = computeTileState(
-    zone,
-    items,
-    emphasisProgress,
-    reducedMotion,
-    connectedSalonConfig.transitionGain,
-    connectedSalonConfig.pulseAmplitude,
-    isEcho,
-  );
-
-  const wave = Math.sin(progress * Math.PI * connectedSalonConfig.waveFrequency + 0.74 * index);
+  const tile = computeTileState(zone, items, emphasisProgress, reducedMotion, config.transitionGain, config.pulseAmplitude, isEcho);
+  const wave = Math.sin(progress * Math.PI * config.waveFrequency + 0.74 * index);
   const embeddedXDrift = 0.48 * Math.sin(progress * Math.PI * 1.02 + 0.05 * zone.x + 0.21 * index);
   const embeddedYDrift = 0.34 * Math.cos(progress * Math.PI * 0.82 + 0.03 * zone.y);
   const embeddedImageX = 0.22 * Math.sin(progress * Math.PI * 0.88 + 0.04 * zone.x);
@@ -613,95 +465,98 @@ function Tile({
   const imageScale = 1.018 + 0.006 * Math.sin(progress * Math.PI * 0.54 + 0.17 * index + 0.01 * zone.y);
   const driftX =
     wave *
-      (isEcho ? connectedSalonConfig.echoDrift : connectedSalonConfig.primaryDrift) *
+      (isEcho ? config.echoDrift : config.primaryDrift) *
       emphasisIn *
       Math.max(exitProgress, isEcho ? 0.36 : 0.5) *
       (layout.reverse ? -1 : 1) +
     embeddedXDrift;
   const liftRange = isEcho
-    ? connectedSalonConfig.echoLiftStart + (connectedSalonConfig.echoLiftEnd - connectedSalonConfig.echoLiftStart) * clamp(emphasisIn)
-    : connectedSalonConfig.primaryLiftStart + (connectedSalonConfig.primaryLiftEnd - connectedSalonConfig.primaryLiftStart) * clamp(emphasisIn);
+    ? config.echoLiftStart + (config.echoLiftEnd - config.echoLiftStart) * clamp(emphasisIn)
+    : config.primaryLiftStart + (config.primaryLiftEnd - config.primaryLiftStart) * clamp(emphasisIn);
   const driftY = liftRange * Math.max(exitProgress, isEcho ? 0.42 : 0.58) + (isEcho ? 0 : embeddedYDrift);
+
   const firstFrame = firstFrameEntries[zone.key];
   const useFirstFrame = firstFrame?.itemName === tile.item.name;
   const imageSrc = useFirstFrame ? firstFrame.desktop.src : tile.item.src;
   const imageSrcSet = useFirstFrame
     ? `${firstFrame.mobile.src} ${firstFrame.mobile.width}w, ${firstFrame.desktop.src} ${firstFrame.desktop.width}w`
     : undefined;
-  const width = useFirstFrame ? firstFrame.desktop.width : 900;
-  const height = useFirstFrame ? firstFrame.desktop.height : 1200;
-  const loading = index < 4 ? "eager" : "lazy";
-  const fetchPriority = index < 2 ? "high" : "auto";
-  const renderedItemName = seeded ? seedSnapshot?.itemName ?? tile.item.name : tile.item.name;
-  const renderedImageSrc = seeded ? seedSnapshot?.src ?? imageSrc : imageSrc;
-  const renderedImageSrcSet = seeded ? seedSnapshot?.srcSet ?? undefined : imageSrcSet;
-  const renderedWidth = seeded ? (renderedImageSrcSet ? 400 : 900) : width;
-  const renderedHeight = seeded ? (renderedImageSrcSet ? 533 : 1200) : height;
-  const renderedSizes = seeded
-    ? renderedImageSrcSet
-      ? "(max-width: 720px) 118px, (max-width: 1200px) 148px, 198px"
-      : undefined
-    : useFirstFrame
-      ? "(max-width: 720px) 118px, (max-width: 1200px) 148px, 198px"
-      : undefined;
-  const renderedStyle = seeded && seedSnapshot
-    ? seedSnapshot.style
-    : ({
-        "--x": `${layout.x * connectedSalonConfig.spacingScale}%`,
-        "--y": `${layout.y * connectedSalonConfig.spacingScale}%`,
-        "--tx": `${(tile.xShift + driftX).toFixed(3)}rem`,
-        "--ty": `${(tile.yShift + driftY).toFixed(3)}rem`,
-        "--scale": tile.scale.toFixed(3),
-        "--alpha": tile.alpha.toFixed(3),
-        "--clip-top": `${tile.clipTop.toFixed(2)}%`,
-        "--clip-right": `${tile.clipRight.toFixed(2)}%`,
-        "--clip-bottom": `${tile.clipBottom.toFixed(2)}%`,
-        "--clip-left": `${tile.clipLeft.toFixed(2)}%`,
-        "--blur": `${(0.12 * tile.blur).toFixed(2)}px`,
-        "--sat": tile.saturation.toFixed(3),
-        "--zone-width": `${layout.widthRem}rem`,
-        "--img-tx": `${embeddedImageX.toFixed(3)}rem`,
-        "--img-ty": `${embeddedImageY.toFixed(3)}rem`,
-        "--img-scale": imageScale.toFixed(4),
-      } as CSSProperties);
+
+  const style: CSSProperties = {
+    "--x": `${layout.x * config.spacingScale}%`,
+    "--y": `${layout.y * config.spacingScale}%`,
+    "--tx": `${(tile.xShift + driftX).toFixed(3)}rem`,
+    "--ty": `${(tile.yShift + driftY).toFixed(3)}rem`,
+    "--scale": tile.scale.toFixed(3),
+    "--alpha": tile.alpha.toFixed(3),
+    "--clip-top": `${tile.clipTop.toFixed(2)}%`,
+    "--clip-right": `${tile.clipRight.toFixed(2)}%`,
+    "--clip-bottom": `${tile.clipBottom.toFixed(2)}%`,
+    "--clip-left": `${tile.clipLeft.toFixed(2)}%`,
+    "--blur": `${(0.12 * tile.blur).toFixed(2)}px`,
+    "--sat": tile.saturation.toFixed(3),
+    "--zone-width": `${layout.widthRem}rem`,
+    "--img-tx": `${embeddedImageX.toFixed(3)}rem`,
+    "--img-ty": `${embeddedImageY.toFixed(3)}rem`,
+    "--img-scale": imageScale.toFixed(4),
+  } as CSSProperties;
 
   return (
     <section
       className={`${styles.tile} ${isEcho ? styles.tileEcho : ""}`}
       data-embedded-zone="true"
       data-zone-key={zone.key}
-      data-current-item={renderedItemName}
+      data-current-item={tile.item.name}
       data-first-frame-desktop-src={firstFrame?.desktop.src}
       data-first-frame-mobile-src={firstFrame?.mobile.src}
-      data-loading={loading}
-      data-fetch-priority={fetchPriority}
+      data-loading={index < 4 ? "eager" : "lazy"}
+      data-fetch-priority={index < 2 ? "high" : "auto"}
       data-loading-strategy="decode-smoothed-scrub"
-      style={renderedStyle}
+      style={style}
     >
       <div className={styles.tileAnchor}>
         <figure className={styles.tileFigure}>
           <img
-            alt={renderedItemName.replaceAll("_", " ")}
+            alt={tile.item.name.replaceAll("_", " ")}
             className={styles.tileImage}
             decoding="async"
-            fetchPriority={fetchPriority as "high" | "auto"}
-            height={renderedHeight}
-            loading={loading}
-            sizes={renderedSizes}
-            src={renderedImageSrc}
-            srcSet={renderedImageSrcSet ?? undefined}
-            width={renderedWidth}
+            fetchPriority={index < 2 ? "high" : "auto"}
+            height={useFirstFrame ? firstFrame.desktop.height : 1200}
+            loading={index < 4 ? "eager" : "lazy"}
+            sizes={useFirstFrame ? "(max-width: 720px) 118px, (max-width: 1200px) 148px, 198px" : undefined}
+            src={imageSrc}
+            srcSet={imageSrcSet}
+            width={useFirstFrame ? firstFrame.desktop.width : 900}
           />
         </figure>
         <div className={styles.tileCaption}>
-          <span className={styles.tileCaptionTitle}>{renderedItemName.replaceAll("_", " ")}</span>
+          <span className={styles.tileCaptionTitle}>{tile.item.name.replaceAll("_", " ")}</span>
         </div>
       </div>
     </section>
   );
 }
 
-export default function ProductsCorridorPreview({
+function createDebugSignature(config: VariantConfig, effectiveCycles: number | null) {
+  if (effectiveCycles == null) {
+    return undefined;
+  }
+
+  return [
+    "embedded-slow-field-20260324-v8",
+    `tvh${config.trackVh}`,
+    `ch${config.chapterVh}`,
+    `shift${config.chapterShift}`,
+    `gain${config.transitionGain}`,
+    `speed${config.primarySpeed}`,
+    `drift${config.primaryDrift}`,
+    `wave${config.waveFrequency}`,
+    `pulse${config.pulseAmplitude}`,
+    `cko${effectiveCycles.toFixed(2)}`,
+  ].join("|");
+}
+
+export default function FabricMotionLab({
   verifyMode = false,
 }: {
   verifyMode?: boolean;
@@ -710,7 +565,8 @@ export default function ProductsCorridorPreview({
   const [reducedMotion, setReducedMotion] = useState(verifyMode);
   const [rawProgress, setRawProgress] = useState(verifyMode ? 1 : 0.08);
   const [progress, setProgress] = useState(verifyMode ? 1 : 0.08);
-  const layouts = useMemo(
+
+  const renderedLayouts = useMemo(
     () =>
       connectedSalonConfig.layouts
         .map((layout) => {
@@ -804,22 +660,38 @@ export default function ProductsCorridorPreview({
       }
       context.revert();
     };
-  }, [reducedMotion, verifyMode]);
+  }, [reducedMotion]);
 
-  const seeded = !reducedMotion && progress < 0.16;
+  const ckOLayout = connectedSalonConfig.layouts.find((layout) => layout.key === "CK_O");
+  const ckOZone = zoneMap.get("CK_O");
+  const ckOEffectiveCycles =
+    ckOLayout && ckOZone
+      ? Math.max(
+          0,
+          clamp(
+            connectedSalonConfig.primaryBoost +
+              connectedSalonConfig.primarySpeed * Math.max(1, connectedSalonConfig.loopCycles) -
+              ckOLayout.band * connectedSalonConfig.primaryBandLag,
+          ) - clamp(connectedSalonConfig.primaryBoost - ckOLayout.band * connectedSalonConfig.primaryBandLag),
+        ) *
+        ckOZone.cadence *
+        connectedSalonConfig.transitionGain
+      : null;
 
   return (
     <section
       className={styles.pageShell}
       ref={rootRef}
-      aria-label="View more products and contact us"
-      data-products-preview="true"
+      data-home-media-art="fabric-motion-lab"
+      data-home-media-art-version="20260325-production"
       data-verify-mode={verifyMode ? "true" : undefined}
     >
       <div className={styles.variantStack}>
         <section
           className={`${styles.variantTrack} ${styles.variantTrackEmbedded}`}
           data-lab-variant="true"
+          data-debug-signature={createDebugSignature(connectedSalonConfig, ckOEffectiveCycles)}
+          data-ck-o-effective-cycles={ckOEffectiveCycles?.toFixed(3)}
           style={
             {
               "--variant-progress": progress.toFixed(4),
@@ -828,21 +700,20 @@ export default function ProductsCorridorPreview({
               "--variant-chapter": `${connectedSalonConfig.chapterVh}dvh`,
               "--variant-chapter-width": `${connectedSalonConfig.chapterWidthPx}px`,
               "--variant-chapter-inset": `${connectedSalonConfig.chapterInsetRem}rem`,
-            } as React.CSSProperties
+            } as CSSProperties
           }
         >
           <div className={`${styles.variantViewport} ${styles.variantViewportEmbedded}`}>
             <div className={`${styles.variantChapter} ${styles.variantChapterEmbedded}`}>
               <div className={styles.variantPlane} />
-              {layouts.map(({ layout, zone }, index) => (
+              {renderedLayouts.map(({ layout, zone }, index) => (
                 <Tile
+                  config={connectedSalonConfig}
                   index={index}
                   key={`${connectedSalonConfig.slug}-${layout.key}-${index}`}
                   layout={layout}
                   progress={progress}
                   reducedMotion={reducedMotion}
-                  seedSnapshot={seeded ? embeddedSeedSnapshots[layout.key] : undefined}
-                  seeded={seeded}
                   zone={zone}
                 />
               ))}

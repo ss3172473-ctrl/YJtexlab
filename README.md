@@ -6,15 +6,16 @@ YJ TexLab marketing site and product archive built with Next.js and deployed thr
 
 - Preserve the production homepage baseline from March 26, 2026 while keeping the repo safe for future work.
 - Keep the homepage focused on brand, export capability, and contact flow.
-- Keep product-specific motion isolated from the homepage except for the single allowed preview seam.
+- Keep homepage media-art owned by `src/components/home/FabricMotionLab.tsx`.
+- Keep product-specific motion isolated from the homepage.
 - Preserve one deployable root so Vercel always builds the intended project.
 
 ## Folder Map
 
 - `src/app`: App Router routes.
 - `src/components/site`: shared site shell like header and footer.
-- `src/components/home`: homepage-only sections and the single `Categories` seam.
-- `src/components/products`: product archive UI and product-owned motion treatments used only on `/products` or the approved homepage preview seam.
+- `src/components/home`: homepage-only sections, including the `FabricMotionLab` categories media-art.
+- `src/components/products`: product archive UI and product-owned motion treatments used only on `/products`.
 - `src/components/about`, `contact`, `milestones`, `stories`: page-specific UI.
 - `src/lib`: shared logic, preload utilities, and hero media constants.
 - `public`: fonts, hero assets, homepage preview assets, product imagery, and deploy-safe SEO assets like `robots.txt`, `sitemap.xml`, and `site.webmanifest`.

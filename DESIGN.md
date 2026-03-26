@@ -21,7 +21,8 @@
 
 - Product archive treatments can be richer and more experimental.
 - Homepage sections must stay restrained and must not inherit product-only hero copy or stray route shells.
-- The only allowed homepage preview seam is `src/components/home/Categories.tsx -> src/components/products/home-preview/ProductsCorridorPreview.tsx`.
+- Homepage categories media-art is owned by `src/components/home/FabricMotionLab.tsx`.
+- Do not import homepage media-art from `src/components/products/**`.
 
 ## Map Section
 

@@ -8,11 +8,6 @@ const forbiddenTokens = [
   "Motion becomes framing.",
   "Runway Kinetic",
 ];
-const allowedProductEntry = path.join(
-  projectRoot,
-  "src/components/products/home-preview/ProductsCorridorPreview.tsx",
-);
-const allowedBridge = path.join(projectRoot, "src/components/home/Categories.tsx");
 const visited = new Set();
 const offenders = [];
 
@@ -69,8 +64,7 @@ function walk(filePath) {
 
       if (
         isHomeOwnedFile &&
-        isProductImport &&
-        !(filePath === allowedBridge && resolved === allowedProductEntry)
+        isProductImport
       ) {
         offenders.push({
           filePath,

@@ -1,0 +1,182 @@
+.pageShell {
+  background: #fff;
+  color: #17181c;
+}
+
+.variantStack {
+  display: grid;
+}
+
+.variantTrack {
+  min-height: var(--variant-track, 320dvh);
+  background: #fff;
+}
+
+.variantTrackEmbedded {
+  min-height: var(--variant-track, 372dvh);
+}
+
+.variantViewport {
+  position: sticky;
+  top: 5.9rem;
+  min-height: calc(100dvh - 5.9rem);
+}
+
+.variantViewportEmbedded {
+  top: 5.8rem;
+  min-height: calc(100dvh - 5.8rem);
+}
+
+.variantChapter {
+  position: relative;
+  width: min(var(--variant-chapter-width, 1880px), calc(100vw - var(--variant-chapter-inset, 1.5rem)));
+  height: var(--variant-chapter, 220dvh);
+  margin: 0 auto;
+  transform: translate3d(0, var(--variant-shift, 0), 0);
+}
+
+.variantChapterEmbedded {
+  width: min(1980px, calc(100vw - 0.45rem));
+}
+
+.variantPlane {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(17, 18, 22, 0.003), transparent 18%),
+    radial-gradient(circle at 82% 38%, rgba(17, 18, 22, 0.002), transparent 20%),
+    radial-gradient(circle at 42% 74%, rgba(17, 18, 22, 0.0015), transparent 24%);
+  opacity: calc(0.018 + var(--variant-progress, 0) * 0.006);
+}
+
+.variantCta {
+  position: absolute;
+  left: 72%;
+  top: 103%;
+  z-index: 8;
+  transform: translate3d(0, calc(var(--variant-progress, 0) * 0.4rem), 0);
+}
+
+.variantCtaLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-montserrat), var(--font-suit), sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: rgba(23, 24, 28, 0.82);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.variantCtaLink::after {
+  content: "";
+  width: 2.8rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.52;
+}
+
+.variantCtaLink:hover {
+  color: rgba(23, 24, 28, 1);
+  transform: translate3d(0.12rem, 0, 0);
+}
+
+.tile {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  transform: translate3d(var(--tx), var(--ty), 0);
+  opacity: var(--alpha);
+}
+
+.tileEcho {
+  z-index: 1;
+}
+
+.tileAnchor {
+  width: var(--zone-width, 10rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.34rem;
+}
+
+.tileFigure {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  transform: scale(var(--scale));
+  clip-path: inset(var(--clip-top) var(--clip-right) var(--clip-bottom) var(--clip-left));
+  border: none;
+  background: #fff;
+  box-shadow: none;
+  filter: saturate(calc(0.998 + var(--sat) * 0.0014));
+  will-change: transform, clip-path, opacity;
+}
+
+.tileImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #fff;
+  transform: translate3d(var(--img-tx, 0), var(--img-ty, 0), 0) scale(var(--img-scale, 1));
+  will-change: transform;
+  transition: opacity 0.18s linear, transform 0.28s ease;
+}
+
+.tileCaption {
+  position: relative;
+  z-index: 5;
+  font-family: var(--font-montserrat), var(--font-suit), sans-serif;
+  font-size: 0.54rem;
+  letter-spacing: 0.16em;
+  line-height: 1.12;
+  text-transform: uppercase;
+  color: rgba(23, 24, 28, 0.92);
+}
+
+.tileCaptionTitle {
+  display: block;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .variantViewport,
+  .variantViewportEmbedded {
+    top: 5rem;
+    min-height: calc(100dvh - 5rem);
+  }
+
+  .variantChapter {
+    width: calc(100vw - 1rem);
+  }
+
+  .variantChapterEmbedded {
+    width: calc(100vw - 0.35rem);
+  }
+
+  .variantCta {
+    left: 58%;
+    top: 101%;
+  }
+
+  .variantCtaLink {
+    font-size: 0.64rem;
+    letter-spacing: 0.16em;
+  }
+
+  .tileAnchor {
+    width: min(var(--zone-width, 10rem), 7.4rem);
+  }
+
+  .tileCaption {
+    font-size: 0.5rem;
+    letter-spacing: 0.14em;
+  }
+}

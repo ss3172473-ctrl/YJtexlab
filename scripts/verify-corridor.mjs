@@ -16,6 +16,13 @@ const requiredBaselines = [
   path.join(baseDir, "route-matrix.json"),
 ];
 
+if (!fs.existsSync(path.join(root, ".next", "BUILD_ID"))) {
+  execFileSync("npm", ["run", "build"], {
+    cwd: root,
+    stdio: "inherit",
+  });
+}
+
 for (const filePath of requiredBaselines) {
   if (!fs.existsSync(filePath)) {
     console.error(`Missing baseline artifact: ${path.relative(root, filePath)}`);
@@ -41,6 +48,10 @@ try {
 
   assert(html.includes('data-home-shell-version="20260326-production-baseline"'), "Missing homepage shell version marker.");
   assert(html.includes('data-verify-mode="true"'), "Verify mode query flag is not reaching the page.");
+  assert(html.includes('data-home-media-art="fabric-motion-lab"'), "Homepage media-art marker is missing.");
+  assert(html.includes('data-home-media-art-version="20260325-production"'), "Homepage media-art version drifted.");
+  assert(html.includes('data-debug-signature="embedded-slow-field-20260324-v8|tvh334|ch220|shift-8.6|gain0.92|speed0.72|drift0.88|wave1.52|pulse0.0015|cko2.78"'), "FabricMotionLab debug signature drifted.");
+  assert(!html.includes('data-products-preview="true"'), "Homepage is still rendering the product preview implementation.");
 
   let lastIndex = -1;
   for (const section of orderedSections) {

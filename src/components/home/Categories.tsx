@@ -1,4 +1,4 @@
-import ProductsCorridorPreview from "@/components/products/home-preview/ProductsCorridorPreview";
+import FabricMotionLab from "@/components/home/FabricMotionLab";
 
 export default function Categories({
   verifyMode = false,
@@ -7,7 +7,7 @@ export default function Categories({
 }) {
   return (
     <div data-home-section="categories">
-      <ProductsCorridorPreview verifyMode={verifyMode} />
+      <FabricMotionLab verifyMode={verifyMode} />
     </div>
   );
 }

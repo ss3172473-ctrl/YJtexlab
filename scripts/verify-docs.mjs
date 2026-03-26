@@ -28,7 +28,7 @@ const checks = [
   },
   {
     file: "docs/AI_HANDOFF.md",
-    required: ["single allowed seam", "src/components/home/Categories.tsx", "verify:corridor", "verify:deploy", "production baseline: 2026-03-26"],
+    required: ["homepage media-art owner", "src/components/home/FabricMotionLab.tsx", "verify:corridor", "verify:deploy", "production baseline: 2026-03-26"],
   },
 ];
 
