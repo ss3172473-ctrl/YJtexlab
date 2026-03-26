@@ -8,7 +8,7 @@ const root = process.cwd();
 const checks = [
   {
     file: "README.md",
-    required: ["npm run clean:artifacts", "npm run verify:deploy", "src/components/home", "src/components/site", "src/components/products"],
+    required: ["npm run clean:artifacts", "npm run verify:deploy", "npm run verify:parallel", "docs/THREAD_START.md", "docs/PARALLEL_WORKFLOW.md"],
   },
   {
     file: "DESIGN.md",
@@ -16,11 +16,11 @@ const checks = [
   },
   {
     file: "docs/PROJECT_STRUCTURE.md",
-    required: ["src/components/home", "src/components/site", "src/components/products", "docs/baselines/home/20260326", "docs/AI_HANDOFF.md"],
+    required: ["src/components/home", "src/components/site", "src/components/products", "docs/THREAD_START.md", "docs/PARALLEL_WORKFLOW.md", ".omx/workstreams"],
   },
   {
     file: "docs/DEPLOYMENT.md",
-    required: ["/Users/leesungjun/Desktop/yjtexlab.com", "npm run verify:deploy", "/privacy", "/terms"],
+    required: ["/Users/leesungjun/Desktop/yjtexlab.com", "npm run verify:deploy", "npm run verify:parallel", "integration worktree", "/privacy", "/terms"],
   },
   {
     file: "docs/RESEARCH_NOTES.md",
@@ -28,7 +28,15 @@ const checks = [
   },
   {
     file: "docs/AI_HANDOFF.md",
-    required: ["homepage media-art owner", "src/components/home/FabricMotionLab.tsx", "verify:corridor", "verify:deploy", "production baseline: 2026-03-26"],
+    required: ["homepage media-art owner", "src/components/home/FabricMotionLab.tsx", "verify:parallel", "docs/THREAD_START.md", "docs/PARALLEL_WORKFLOW.md", "production baseline: 2026-03-26"],
+  },
+  {
+    file: "docs/THREAD_START.md",
+    required: ["1분 체크리스트", "`/products` UI 수정 쓰레드", "`/about` 폰트/텍스트 수정 쓰레드", "통합/배포 전담 쓰레드"],
+  },
+  {
+    file: "docs/PARALLEL_WORKFLOW.md",
+    required: ["1 쓰레드 = 1 worktree = 1 담당 범위", "integration thread", "verify:parallel", "guarded shared files"],
   },
 ];
 

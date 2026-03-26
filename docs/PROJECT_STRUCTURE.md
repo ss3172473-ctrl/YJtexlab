@@ -7,6 +7,8 @@
 - `README.md`: project overview and operator entrypoint.
 - `AGENTS.md`: repository rules for humans and coding agents.
 - `DESIGN.md`: visual and content guardrails.
+- `docs/THREAD_START.md`: new-thread startup checklist.
+- `docs/PARALLEL_WORKFLOW.md`: parallel workstream operating guide.
 - `.vercelignore`: allowlist that limits Vercel uploads to the real app inputs.
 
 ## Source Layout
@@ -32,11 +34,13 @@
 - `docs/baselines/home/20260326`: committed production baseline screenshots and route snapshot.
 - `docs/AI_HANDOFF.md`: agent/operator handoff contract.
 - `.omx/context`: task snapshots for risky changes.
+- `.omx/workstreams`: local registry for active workstreams and startup templates.
 - `.omx/state`: OMX runtime state.
 
 ## Folder Rules
 
 - One responsibility per top-level component folder.
+- One Codex thread must not share the same physical worktree with another thread.
 - No duplicate sibling trees such as `public 2`, `scripts 2`, `.next 2`.
 - Experimental or legacy product work must not remain in the deployable tree unless it is actively used by `/products`.
 - Homepage media-art must remain home-owned and must not be swapped with a product preview component.
