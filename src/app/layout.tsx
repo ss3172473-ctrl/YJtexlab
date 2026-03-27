@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import localFont from "next/font/local";
+import { Suspense } from "react";
+import SiteSoundLayer from "@/components/site/SiteSoundLayer";
 import StructuredData from "@/components/site/StructuredData";
 import { organizationJsonLd, rootMetadata, websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
@@ -106,6 +108,9 @@ export default function RootLayout({
         className={`${brandLogo.variable} ${suitSans.variable} ${suitHeadings.variable} ${suit.variable} font-sans antialiased`}
       >
         <StructuredData data={[organizationJsonLd, websiteJsonLd]} />
+        <Suspense fallback={null}>
+          <SiteSoundLayer />
+        </Suspense>
         {children}
       </body>
     </html>
