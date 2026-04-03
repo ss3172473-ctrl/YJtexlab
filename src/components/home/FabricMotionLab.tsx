@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -763,11 +762,6 @@ export default function FabricMotionLab({
                   zone={zone}
                 />
               ))}
-              <div className={styles.variantCta}>
-                <Link className={styles.variantCtaLink} href="/products">
-                  View more products
-                </Link>
-              </div>
             </div>
           </div>
         </section>

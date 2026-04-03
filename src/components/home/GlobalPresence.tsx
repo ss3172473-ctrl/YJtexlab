@@ -35,27 +35,40 @@ function FlightMarker({
 }
 
 export default function GlobalPresence({
+  variant = "section",
   verifyMode = false,
 }: {
+  variant?: "section" | "panel";
   verifyMode?: boolean;
 }) {
+  const isPanel = variant === "panel";
+
   return (
     <section
-      className="py-24 md:py-32 px-6 md:px-10 bg-white overflow-hidden border-t border-gray-100"
+      className={
+        isPanel
+          ? "overflow-hidden bg-transparent px-4 py-8 md:px-6 md:py-10"
+          : "overflow-hidden border-t border-gray-100 bg-white px-6 py-24 md:px-10 md:py-32"
+      }
+      data-home-panel-variant={variant}
       data-home-section="global-presence"
     >
-      <div className="max-w-7xl mx-auto relative">
-        <h2 className="text-xs tracking-[0.2em] font-sans uppercase text-gray-400 mb-16 text-center">
+      <div className={isPanel ? "relative mx-auto max-w-6xl" : "relative mx-auto max-w-7xl"}>
+        <h2 className={isPanel ? "mb-10 text-center text-[11px] font-sans uppercase tracking-[0.22em] text-gray-400" : "mb-16 text-center text-xs font-sans uppercase tracking-[0.2em] text-gray-400"}>
           Global Presence
         </h2>
-        <div className="text-center mb-16">
-          <h3 className="text-3xl md:text-5xl lg:text-6xl font-serif text-gray-900">
+        <div className={isPanel ? "mb-10 text-center" : "mb-16 text-center"}>
+          <h3 className={isPanel ? "font-serif text-[2rem] text-gray-900 md:text-[3rem] lg:text-[4rem]" : "text-3xl font-serif text-gray-900 md:text-5xl lg:text-6xl"}>
             Exporting to the World
           </h3>
         </div>
 
         <div
-          className="relative w-full max-w-5xl mx-auto aspect-[4378.13/2434.94] overflow-hidden rounded-[2rem] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_28px_90px_-54px_rgba(15,23,42,0.18)]"
+          className={
+            isPanel
+              ? "relative mx-auto aspect-[4378.13/2434.94] w-full max-w-5xl overflow-hidden rounded-[1.65rem] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_24px_70px_-48px_rgba(15,23,42,0.16)]"
+              : "relative mx-auto aspect-[4378.13/2434.94] w-full max-w-5xl overflow-hidden rounded-[2rem] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_28px_90px_-54px_rgba(15,23,42,0.18)]"
+          }
           style={{
             ...routeVars,
             transform:

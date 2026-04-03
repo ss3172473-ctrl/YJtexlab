@@ -2,19 +2,26 @@ import Image from "next/image";
 import { MapPin } from "lucide-react";
 
 export default function Locations({
+  variant = "section",
   verifyMode = false,
 }: {
+  variant?: "section" | "panel";
   verifyMode?: boolean;
 }) {
+  const isPanel = variant === "panel";
+
   return (
-    <section className="py-20 md:py-32 bg-white px-6 md:px-10" data-home-section="locations">
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl md:text-4xl lg:text-5xl font-sans font-medium tracking-[0.01em] mb-16 text-center">
+    <section
+      className={isPanel ? "bg-transparent px-4 py-8 md:px-6 md:py-10" : "bg-white px-6 py-20 md:px-10 md:py-32"}
+      data-home-panel-variant={variant}
+      data-home-section="locations"
+    >
+      <div className={isPanel ? "mx-auto max-w-6xl" : "mx-auto max-w-7xl"}>
+        <h2 className={isPanel ? "mb-10 text-center font-sans text-[2rem] font-medium tracking-[0.01em] md:text-[2.6rem] lg:text-[3.2rem]" : "mb-16 text-center text-3xl font-sans font-medium tracking-[0.01em] md:text-4xl lg:text-5xl"}>
           Our Facilities
         </h2>
 
-        <div className="flex flex-col lg:flex-row bg-white shadow-sm border border-gray-200 overflow-hidden">
-          {/* Map Image Section */}
+        <div className="flex flex-col overflow-hidden border border-gray-200 bg-white shadow-sm lg:flex-row">
           <div className="w-full lg:w-1/2 h-[400px] lg:h-auto min-h-[500px] relative bg-white flex items-center justify-center p-8">
             <div className="relative w-full max-w-sm aspect-[4/5] mx-auto">
               <Image
@@ -25,7 +32,6 @@ export default function Locations({
                 className="object-contain opacity-80 filter grayscale contrast-125"
               />
               
-              {/* Seoul Pin */}
               <div 
                 className="absolute flex flex-col items-center group cursor-pointer"
                 style={{ top: '21%', left: '31.5%' }}
@@ -39,7 +45,6 @@ export default function Locations({
                 <span className="mt-1 text-xs font-bold font-sans tracking-widest text-black bg-white/90 px-2 py-0.5 rounded shadow-sm opacity-100">SEOUL</span>
               </div>
 
-              {/* Daegu Pin */}
               <div 
                 className="absolute flex flex-col items-center group cursor-pointer"
                 style={{ top: '55.4%', left: '68.2%' }}
@@ -55,10 +60,7 @@ export default function Locations({
             </div>
           </div>
 
-          {/* Locations Info */}
           <div className="w-full lg:w-1/2 p-10 md:p-16 flex flex-col justify-center gap-12">
-            
-            {/* Seoul */}
             <div className="flex gap-6 items-start">
               <div className="bg-white border border-gray-100 p-3 rounded-full shrink-0">
                 <MapPin className="w-6 h-6 text-gray-800" strokeWidth={1.5} />
@@ -74,7 +76,6 @@ export default function Locations({
 
             <div className="border-t border-gray-100" />
 
-            {/* Daegu */}
             <div className="flex gap-6 items-start">
               <div className="bg-white border border-gray-100 p-3 rounded-full shrink-0">
                 <MapPin className="w-6 h-6 text-gray-800" strokeWidth={1.5} />

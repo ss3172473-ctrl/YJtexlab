@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
   footerCompanyRoutes,
   footerLegalRoutes,
@@ -8,9 +9,37 @@ import {
 } from "@/lib/route-matrix";
 
 export default function Footer() {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
-    <footer className="bg-white border-t border-gray-100 pt-24 pb-12 px-6 md:px-10 lg:px-16">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+    <footer className="bg-white border-t border-gray-100 px-6 pt-5 pb-8 md:px-10 lg:px-16">
+      <div aria-hidden="true" className="sr-only">
+        {footerCompanyRoutes.map((item) => (
+          <Link href={item.href} key={`hidden-company-${item.id}`}>
+            {item.label}
+          </Link>
+        ))}
+        {footerLegalRoutes.map((item) => (
+          <Link href={item.href} key={`hidden-legal-${item.id}`}>
+            {item.label}
+          </Link>
+        ))}
+      </div>
+
+      <div className="flex items-start justify-end">
+        <button
+          aria-expanded={isExpanded}
+          className="text-[11px] font-medium uppercase tracking-[0.26em] text-gray-500 transition-colors hover:text-black"
+          onClick={() => setIsExpanded((current) => !current)}
+          type="button"
+        >
+          [{isExpanded ? "Close Footer" : "Open Footer"}]
+        </button>
+      </div>
+
+      {isExpanded ? (
+        <>
+      <div className="mt-10 mb-16 grid grid-cols-1 gap-12 md:grid-cols-4">
         <div>
           <div className="flex flex-col items-start mb-6">
             <div className="flex flex-col items-stretch">
@@ -70,7 +99,7 @@ export default function Footer() {
         </div>
       </div>
       
-      <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
+      <div className="border-t border-gray-200 pt-8 pb-20 flex flex-col justify-between gap-4 text-xs text-gray-500 md:flex-row md:items-center">
         <p>© {new Date().getFullYear()} YJ TexLab. All rights reserved.</p>
         <div className="flex gap-6">
           {footerLegalRoutes.map((item) => (
@@ -80,6 +109,8 @@ export default function Footer() {
           ))}
         </div>
       </div>
+        </>
+      ) : null}
     </footer>
   );
 }

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import MotionHouseShowcase from "@/components/products/MotionHouseShowcase";
+import PagePreloadGate from "@/components/products/PagePreloadGate";
 import Header from "@/components/site/Header";
-import PagePreloadGate from "@/components/site/PagePreloadGate";
 import StructuredData from "@/components/site/StructuredData";
-import { productsPreloadAssets } from "@/lib/preload-assets";
+import { productsCriticalPreloadAssets, productsPreloadAssets } from "@/lib/preload-assets";
 import {
   createBreadcrumbJsonLd,
   createPageMetadata,
@@ -21,7 +21,8 @@ export const metadata: Metadata = createPageMetadata({
 export default function ProductsPage() {
   return (
     <PagePreloadGate
-      assets={productsPreloadAssets}
+      assets={productsCriticalPreloadAssets}
+      backgroundAssets={productsPreloadAssets}
       title="Preparing Products"
       note="Loading the product archive before revealing the first view."
     >

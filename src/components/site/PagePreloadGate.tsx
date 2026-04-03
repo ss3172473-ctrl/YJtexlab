@@ -1,55 +1,181 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { PreloadAssetSource } from "@/lib/preload-assets";
+
+type PreloadResult = "success" | "error" | "timeout";
+type CompletionStrategy = "all-settled" | "all-successful";
+type DomImageProbe = {
+  selector: string;
+  expectedCount: number;
+};
 
 type PagePreloadGateProps = {
-  assets: string[];
+  assets: PreloadAssetSource[];
+  backgroundAssets?: PreloadAssetSource[];
+  domImageProbe?: DomImageProbe;
   title: string;
   note: string;
   children: React.ReactNode;
   cacheStrategy?: "session" | "none";
+  completionStrategy?: CompletionStrategy;
 };
 
-function preloadImage(src: string) {
-  return new Promise<void>((resolve) => {
+const HARD_TIMEOUT_MS = 12_000;
+const MIN_REVEAL_MS = 420;
+const DOM_PROGRESS_SHARE = 0.04;
+const DOM_POLL_INTERVAL_MS = 80;
+
+type WindowWithIdleCallback = Window & {
+  requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+};
+
+function resolvePreloadAsset(asset: PreloadAssetSource) {
+  if (typeof asset === "string") {
+    return asset;
+  }
+
+  if (typeof window === "undefined") {
+    return asset.desktopSrc;
+  }
+
+  const breakpointPx = asset.breakpointPx ?? 720;
+  return window.matchMedia(`(max-width: ${breakpointPx}px)`).matches
+    ? asset.mobileSrc
+    : asset.desktopSrc;
+}
+
+function preloadImage(src: string, timeoutMs = HARD_TIMEOUT_MS) {
+  return new Promise<PreloadResult>((resolve) => {
     const image = new Image();
     let settled = false;
 
-    const finish = () => {
+    const finish = (result: PreloadResult) => {
       if (settled) {
         return;
       }
 
       settled = true;
-      resolve();
+      resolve(result);
     };
 
-    image.onload = finish;
-    image.onerror = finish;
+    const decodeAndFinish = () => {
+      const decodePromise = image.decode?.();
+      if (decodePromise) {
+        void decodePromise
+          .then(() => finish(image.naturalWidth > 0 ? "success" : "error"))
+          .catch(() => finish(image.naturalWidth > 0 ? "success" : "error"));
+        return;
+      }
+
+      finish(image.naturalWidth > 0 ? "success" : "error");
+    };
+
+    image.onload = decodeAndFinish;
+    image.onerror = () => finish("error");
     image.src = src;
 
     if (image.complete) {
-      finish();
+      if (image.naturalWidth > 0) {
+        decodeAndFinish();
+      } else {
+        finish("error");
+      }
       return;
     }
 
-    const decodePromise = image.decode?.();
-    if (decodePromise) {
-      void decodePromise.then(finish).catch(finish);
+    window.setTimeout(() => finish("timeout"), timeoutMs);
+  });
+}
+
+async function getImageElementStatus(image: HTMLImageElement): Promise<"success" | "error" | "pending"> {
+  if (!image.complete) {
+    return "pending";
+  }
+
+  if (image.naturalWidth === 0) {
+    return "error";
+  }
+
+  try {
+    await image.decode?.();
+  } catch {
+    return image.naturalWidth > 0 ? "success" : "error";
+  }
+
+  return image.naturalWidth > 0 ? "success" : "error";
+}
+
+async function waitForDomImages(
+  probe: DomImageProbe,
+  timeoutMs = HARD_TIMEOUT_MS,
+): Promise<PreloadResult> {
+  const deadline = window.performance.now() + timeoutMs;
+
+  while (window.performance.now() < deadline) {
+    const images = Array.from(document.querySelectorAll<HTMLImageElement>(probe.selector));
+
+    if (images.length >= probe.expectedCount) {
+      const statuses = await Promise.all(images.map((image) => getImageElementStatus(image)));
+
+      if (statuses.every((status) => status === "success")) {
+        return "success";
+      }
+
+      if (statuses.some((status) => status === "error")) {
+        return "error";
+      }
     }
 
-    window.setTimeout(finish, 12000);
-  });
+    await new Promise((resolve) => window.setTimeout(resolve, DOM_POLL_INTERVAL_MS));
+  }
+
+  return "timeout";
+}
+
+function warmAssets(assets: string[]) {
+  if (assets.length === 0) {
+    return;
+  }
+
+  const start = () => {
+    assets.forEach((asset) => {
+      void preloadImage(asset);
+    });
+  };
+
+  const windowWithIdleCallback = window as WindowWithIdleCallback;
+  if (typeof windowWithIdleCallback.requestIdleCallback === "function") {
+    windowWithIdleCallback.requestIdleCallback(start, { timeout: 1_500 });
+    return;
+  }
+
+  window.setTimeout(start, 0);
 }
 
 export default function PagePreloadGate({
   assets,
+  backgroundAssets = [],
+  domImageProbe,
   title,
   note,
   children,
   cacheStrategy = "session",
+  completionStrategy = "all-settled",
 }: PagePreloadGateProps) {
-  const normalizedAssets = useMemo(() => Array.from(new Set(assets.filter(Boolean))), [assets]);
+  const normalizedAssets = useMemo(
+    () => Array.from(new Set(assets.map(resolvePreloadAsset).filter(Boolean))),
+    [assets],
+  );
+  const normalizedBackgroundAssets = useMemo(
+    () =>
+      Array.from(new Set(backgroundAssets.map(resolvePreloadAsset).filter(Boolean))).filter(
+        (asset) => !normalizedAssets.includes(asset),
+      ),
+    [backgroundAssets, normalizedAssets],
+  );
+  const domProbeProgressShare = domImageProbe ? DOM_PROGRESS_SHARE : 0;
+  const assetProgressShare = 1 - domProbeProgressShare;
   const cacheKey = useMemo(
     () => `yjtex-preload:${title}:${normalizedAssets.length}:${normalizedAssets.join("|")}`,
     [normalizedAssets, title],
@@ -61,6 +187,7 @@ export default function PagePreloadGate({
     if (normalizedAssets.length === 0) {
       setProgress(1);
       setIsReady(true);
+      warmAssets(normalizedBackgroundAssets);
       return;
     }
 
@@ -68,50 +195,135 @@ export default function PagePreloadGate({
     if (cached === "done") {
       setProgress(1);
       setIsReady(true);
+      warmAssets(normalizedBackgroundAssets);
       return;
     }
 
     let cancelled = false;
+    let finished = false;
     let loadedCount = 0;
-    const minimumRevealAt = window.performance.now() + 420;
+    let settledCount = 0;
+    let errorCount = 0;
+    let timeoutCount = 0;
+    let domReady = domImageProbe == null;
+    let revealTimeoutId: number | null = null;
+    const minimumRevealAt = window.performance.now() + MIN_REVEAL_MS;
 
     setProgress(0);
     setIsReady(false);
     document.body.style.overflow = "hidden";
 
     const updateProgress = () => {
-      loadedCount += 1;
       if (cancelled) {
         return;
       }
 
-      setProgress(loadedCount / normalizedAssets.length);
+      const completedCount = completionStrategy === "all-successful" ? loadedCount : settledCount;
+      const assetProgress = completedCount / normalizedAssets.length;
+      setProgress(assetProgress * assetProgressShare + (domReady ? domProbeProgressShare : 0));
     };
 
-    void Promise.all(normalizedAssets.map(async (asset) => {
-      await preloadImage(asset);
-      updateProgress();
-    })).then(() => {
+    const finalize = (reason: "success" | "timeout") => {
+      if (cancelled || finished) {
+        return;
+      }
+
+      finished = true;
+      window.clearTimeout(hardTimeoutId);
       const wait = Math.max(0, minimumRevealAt - window.performance.now());
-      window.setTimeout(() => {
+      revealTimeoutId = window.setTimeout(() => {
         if (cancelled) {
           return;
         }
 
-        if (cacheStrategy === "session") {
+        if (reason === "success" && cacheStrategy === "session") {
           window.sessionStorage.setItem(cacheKey, "done");
         }
-        setProgress(1);
+
+        if (reason === "success") {
+          setProgress(1);
+        } else {
+          const assetProgress = completionStrategy === "all-successful"
+            ? loadedCount / normalizedAssets.length
+            : settledCount / normalizedAssets.length;
+          setProgress(assetProgress * assetProgressShare + (domReady ? domProbeProgressShare : 0));
+        }
         setIsReady(true);
         document.body.style.overflow = "";
+        warmAssets(normalizedBackgroundAssets);
       }, wait);
+    };
+
+    const hardTimeoutId = window.setTimeout(() => finalize("timeout"), HARD_TIMEOUT_MS);
+    const tryFinalizeSuccess = () => {
+      const hasBlockingFailures = completionStrategy === "all-successful" && (errorCount > 0 || timeoutCount > 0);
+      const assetsReady = completionStrategy === "all-successful"
+        ? loadedCount === normalizedAssets.length && !hasBlockingFailures
+        : settledCount === normalizedAssets.length;
+
+      if (assetsReady && domReady) {
+        finalize("success");
+      }
+    };
+
+    if (domImageProbe) {
+      void waitForDomImages(domImageProbe).then((result) => {
+        if (cancelled || finished) {
+          return;
+        }
+
+        if (result === "success") {
+          domReady = true;
+          updateProgress();
+          tryFinalizeSuccess();
+        }
+      });
+    }
+
+    void Promise.all(normalizedAssets.map(async (asset) => {
+      const result = await preloadImage(asset);
+      if (cancelled || finished) {
+        return;
+      }
+
+      settledCount += 1;
+      if (result === "success") {
+        loadedCount += 1;
+      } else if (result === "error") {
+        errorCount += 1;
+      } else {
+        timeoutCount += 1;
+      }
+
+      updateProgress();
+      tryFinalizeSuccess();
+    })).then(() => {
+      if (cancelled || finished || completionStrategy !== "all-settled") {
+        return;
+      }
+
+      tryFinalizeSuccess();
     });
 
     return () => {
       cancelled = true;
+      finished = true;
+      window.clearTimeout(hardTimeoutId);
+      if (revealTimeoutId !== null) {
+        window.clearTimeout(revealTimeoutId);
+      }
       document.body.style.overflow = "";
     };
-  }, [cacheKey, cacheStrategy, normalizedAssets]);
+  }, [
+    assetProgressShare,
+    cacheKey,
+    cacheStrategy,
+    completionStrategy,
+    domImageProbe,
+    domProbeProgressShare,
+    normalizedAssets,
+    normalizedBackgroundAssets,
+  ]);
 
   const percentage = Math.round(progress * 100);
 
