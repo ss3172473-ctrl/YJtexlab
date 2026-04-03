@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  PRELOAD_HARD_TIMEOUT_MS,
+  PRELOAD_INITIAL_PROGRESS_FLOOR,
+  PRELOAD_MAX_BLOCKING_REVEAL_MS,
+  PRELOAD_MIN_COLD_REVEAL_MS,
+  PRELOAD_READY_EVENT_NAME,
+} from "@/lib/page-preload-timing";
 
 type PagePreloadGateProps = {
   assets: string[];
@@ -15,15 +22,10 @@ type WindowWithIdleCallback = Window & {
   requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
 };
 
-const HARD_TIMEOUT_MS = 12_000;
-const MIN_REVEAL_MS = 420;
-const MAX_BLOCKING_REVEAL_MS = 2_400;
-const INITIAL_PROGRESS_FLOOR = 0.08;
 const DESKTOP_BACKGROUND_BATCH_SIZE = 6;
 const MOBILE_BACKGROUND_BATCH_SIZE = 4;
 const BACKGROUND_BATCH_DELAY_MS = 180;
 const MOBILE_BREAKPOINT_PX = 767;
-const PRELOAD_READY_EVENT_NAME = "yjtex:page-preload-ready";
 
 function markPreloadReady(title: string, blockingAssetCount: number, backgroundAssetCount: number) {
   document.documentElement.dataset.pagePreloadReady = "true";
@@ -39,7 +41,7 @@ function markPreloadReady(title: string, blockingAssetCount: number, backgroundA
   );
 }
 
-function preloadImage(src: string, timeoutMs = HARD_TIMEOUT_MS) {
+function preloadImage(src: string, timeoutMs = PRELOAD_HARD_TIMEOUT_MS) {
   return new Promise<void>((resolve) => {
     const image = new Image();
     let settled = false;
@@ -129,16 +131,51 @@ export default function PagePreloadGate({
 
   useEffect(() => {
     document.documentElement.dataset.pagePreloadReady = "false";
-
-    if (normalizedAssets.length === 0) {
-      setProgress(1);
-      setIsReady(true);
-      markPreloadReady(title, normalizedAssets.length, normalizedBackgroundAssets.length);
-      warmAssets(normalizedBackgroundAssets);
-      return;
-    }
+    document.documentElement.dataset.pagePreloadAssetCount = String(normalizedAssets.length);
+    document.documentElement.dataset.pagePreloadBackgroundCount = String(
+      normalizedBackgroundAssets.length,
+    );
 
     const cached = cacheStrategy === "session" ? window.sessionStorage.getItem(cacheKey) : null;
+
+    if (normalizedAssets.length === 0) {
+      if (cached === "done") {
+        setProgress(1);
+        setIsReady(true);
+        markPreloadReady(title, normalizedAssets.length, normalizedBackgroundAssets.length);
+        warmAssets(normalizedBackgroundAssets);
+        return;
+      }
+
+      let cancelled = false;
+      const revealTimer = window.setTimeout(() => {
+        if (cancelled) {
+          return;
+        }
+
+        if (cacheStrategy === "session") {
+          window.sessionStorage.setItem(cacheKey, "done");
+        }
+
+        setProgress(1);
+        setIsReady(true);
+        document.body.style.overflow = "";
+        markPreloadReady(title, normalizedAssets.length, normalizedBackgroundAssets.length);
+        warmAssets(normalizedBackgroundAssets);
+      }, PRELOAD_MIN_COLD_REVEAL_MS);
+
+      setProgress(PRELOAD_INITIAL_PROGRESS_FLOOR);
+      setIsReady(false);
+      document.body.style.overflow = "hidden";
+
+      return () => {
+        cancelled = true;
+        window.clearTimeout(revealTimer);
+        document.body.style.overflow = "";
+        document.documentElement.dataset.pagePreloadReady = "false";
+      };
+    }
+
     if (cached === "done") {
       setProgress(1);
       setIsReady(true);
@@ -150,15 +187,11 @@ export default function PagePreloadGate({
     let cancelled = false;
     let loadedCount = 0;
     let hasRevealed = false;
-    const minimumRevealAt = window.performance.now() + MIN_REVEAL_MS;
+    const minimumRevealAt = window.performance.now() + PRELOAD_MIN_COLD_REVEAL_MS;
 
-    setProgress(Math.min(INITIAL_PROGRESS_FLOOR, 1 / normalizedAssets.length));
+    setProgress(Math.min(PRELOAD_INITIAL_PROGRESS_FLOOR, 1 / normalizedAssets.length));
     setIsReady(false);
     document.body.style.overflow = "hidden";
-    document.documentElement.dataset.pagePreloadAssetCount = String(normalizedAssets.length);
-    document.documentElement.dataset.pagePreloadBackgroundCount = String(
-      normalizedBackgroundAssets.length,
-    );
 
     const updateProgress = () => {
       loadedCount += 1;
@@ -185,7 +218,7 @@ export default function PagePreloadGate({
       warmAssets(normalizedBackgroundAssets);
     };
 
-    const forcedRevealTimer = window.setTimeout(reveal, MAX_BLOCKING_REVEAL_MS);
+    const forcedRevealTimer = window.setTimeout(reveal, PRELOAD_MAX_BLOCKING_REVEAL_MS);
 
     void Promise.all(
       normalizedAssets.map(async (asset) => {

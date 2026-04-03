@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { PreloadAssetSource } from "@/lib/preload-assets";
+import {
+  PRELOAD_HARD_TIMEOUT_MS,
+  PRELOAD_MAX_BLOCKING_REVEAL_MS,
+  PRELOAD_MIN_COLD_REVEAL_MS,
+  PRELOAD_READY_EVENT_NAME,
+} from "@/lib/page-preload-timing";
 
 type PreloadResult = "success" | "error" | "timeout";
 type CompletionStrategy = "all-settled" | "all-successful";
@@ -21,8 +27,6 @@ type PagePreloadGateProps = {
   completionStrategy?: CompletionStrategy;
 };
 
-const HARD_TIMEOUT_MS = 12_000;
-const MIN_REVEAL_MS = 420;
 const DOM_PROGRESS_SHARE = 0.04;
 const DOM_POLL_INTERVAL_MS = 80;
 
@@ -45,7 +49,7 @@ function resolvePreloadAsset(asset: PreloadAssetSource) {
     : asset.desktopSrc;
 }
 
-function preloadImage(src: string, timeoutMs = HARD_TIMEOUT_MS) {
+function preloadImage(src: string, timeoutMs = PRELOAD_HARD_TIMEOUT_MS) {
   return new Promise<PreloadResult>((resolve) => {
     const image = new Image();
     let settled = false;
@@ -88,6 +92,20 @@ function preloadImage(src: string, timeoutMs = HARD_TIMEOUT_MS) {
   });
 }
 
+function markPreloadReady(title: string, blockingAssetCount: number, backgroundAssetCount: number) {
+  document.documentElement.dataset.pagePreloadReady = "true";
+  window.performance.mark(`page-preload-ready:${title}`);
+  window.dispatchEvent(
+    new CustomEvent(PRELOAD_READY_EVENT_NAME, {
+      detail: {
+        title,
+        blockingAssetCount,
+        backgroundAssetCount,
+      },
+    }),
+  );
+}
+
 async function getImageElementStatus(image: HTMLImageElement): Promise<"success" | "error" | "pending"> {
   if (!image.complete) {
     return "pending";
@@ -108,7 +126,7 @@ async function getImageElementStatus(image: HTMLImageElement): Promise<"success"
 
 async function waitForDomImages(
   probe: DomImageProbe,
-  timeoutMs = HARD_TIMEOUT_MS,
+  timeoutMs = PRELOAD_HARD_TIMEOUT_MS,
 ): Promise<PreloadResult> {
   const deadline = window.performance.now() + timeoutMs;
 
@@ -184,9 +202,12 @@ export default function PagePreloadGate({
   const [isReady, setIsReady] = useState(normalizedAssets.length === 0);
 
   useEffect(() => {
+    document.documentElement.dataset.pagePreloadReady = "false";
+
     if (normalizedAssets.length === 0) {
       setProgress(1);
       setIsReady(true);
+      markPreloadReady(title, normalizedAssets.length, normalizedBackgroundAssets.length);
       warmAssets(normalizedBackgroundAssets);
       return;
     }
@@ -195,6 +216,7 @@ export default function PagePreloadGate({
     if (cached === "done") {
       setProgress(1);
       setIsReady(true);
+      markPreloadReady(title, normalizedAssets.length, normalizedBackgroundAssets.length);
       warmAssets(normalizedBackgroundAssets);
       return;
     }
@@ -207,11 +229,15 @@ export default function PagePreloadGate({
     let timeoutCount = 0;
     let domReady = domImageProbe == null;
     let revealTimeoutId: number | null = null;
-    const minimumRevealAt = window.performance.now() + MIN_REVEAL_MS;
+    const minimumRevealAt = window.performance.now() + PRELOAD_MIN_COLD_REVEAL_MS;
 
     setProgress(0);
     setIsReady(false);
     document.body.style.overflow = "hidden";
+    document.documentElement.dataset.pagePreloadAssetCount = String(normalizedAssets.length);
+    document.documentElement.dataset.pagePreloadBackgroundCount = String(
+      normalizedBackgroundAssets.length,
+    );
 
     const updateProgress = () => {
       if (cancelled) {
@@ -250,11 +276,16 @@ export default function PagePreloadGate({
         }
         setIsReady(true);
         document.body.style.overflow = "";
+        markPreloadReady(title, normalizedAssets.length, normalizedBackgroundAssets.length);
         warmAssets(normalizedBackgroundAssets);
       }, wait);
     };
 
-    const hardTimeoutId = window.setTimeout(() => finalize("timeout"), HARD_TIMEOUT_MS);
+    const hardTimeoutId = window.setTimeout(() => finalize("timeout"), PRELOAD_HARD_TIMEOUT_MS);
+    const forcedRevealTimer = window.setTimeout(
+      () => finalize("timeout"),
+      PRELOAD_MAX_BLOCKING_REVEAL_MS,
+    );
     const tryFinalizeSuccess = () => {
       const hasBlockingFailures = completionStrategy === "all-successful" && (errorCount > 0 || timeoutCount > 0);
       const assetsReady = completionStrategy === "all-successful"
@@ -309,10 +340,12 @@ export default function PagePreloadGate({
       cancelled = true;
       finished = true;
       window.clearTimeout(hardTimeoutId);
+      window.clearTimeout(forcedRevealTimer);
       if (revealTimeoutId !== null) {
         window.clearTimeout(revealTimeoutId);
       }
       document.body.style.overflow = "";
+      document.documentElement.dataset.pagePreloadReady = "false";
     };
   }, [
     assetProgressShare,
@@ -323,6 +356,7 @@ export default function PagePreloadGate({
     domProbeProgressShare,
     normalizedAssets,
     normalizedBackgroundAssets,
+    title,
   ]);
 
   const percentage = Math.round(progress * 100);
