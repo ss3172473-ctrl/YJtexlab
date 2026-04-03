@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
 import MotionHouseShowcase from "@/components/products/MotionHouseShowcase";
 import PagePreloadGate from "@/components/products/PagePreloadGate";
+import { getFabricDesktopPreloadSrc } from "@/components/products/fabricImageVariants";
 import Header from "@/components/site/Header";
 import StructuredData from "@/components/site/StructuredData";
-import { productsCriticalPreloadAssets, productsPreloadAssets } from "@/lib/preload-assets";
+import { productsCriticalPreloadAssets } from "@/lib/preload-assets";
 import {
   createBreadcrumbJsonLd,
   createPageMetadata,
   createProductsPageJsonLd,
 } from "@/lib/seo";
+
+const PRODUCT_OPENING_PRELOAD_COUNT = 0;
+const productOpeningPreloadAssets = productsCriticalPreloadAssets
+  .slice(0, PRODUCT_OPENING_PRELOAD_COUNT)
+  .map(getFabricDesktopPreloadSrc);
 
 export const metadata: Metadata = createPageMetadata({
   title: "Products",
@@ -21,10 +27,9 @@ export const metadata: Metadata = createPageMetadata({
 export default function ProductsPage() {
   return (
     <PagePreloadGate
-      assets={productsCriticalPreloadAssets}
-      backgroundAssets={productsPreloadAssets}
+      assets={productOpeningPreloadAssets}
       title="Preparing Products"
-      note="Loading the product archive before revealing the first view."
+      note="Loading only the opening fabrics first so the archive can stream in as you explore."
     >
       <div className="min-h-screen bg-white">
         <Header />

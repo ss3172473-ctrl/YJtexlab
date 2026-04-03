@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import manifest from "../../../public/new-stage-fabrics/manifest.json";
+import { getFabricImageVariantSet } from "./fabricImageVariants";
 import {
   createOrbitalResolvedConfig,
   orbitalFamilyDescription,
@@ -27,6 +28,42 @@ import {
 import styles from "./MotionHouseShowcase.module.css";
 
 gsap.registerPlugin(ScrollTrigger);
+
+type FabricCardImageProps = {
+  src: string;
+  alt: string;
+  className: string;
+  priority?: boolean;
+} & {
+  [key: `data-${string}`]: string | boolean | undefined;
+};
+
+function FabricCardImage({
+  src,
+  alt,
+  className,
+  priority = false,
+  ...dataAttributes
+}: FabricCardImageProps) {
+  const { mobileSrc, desktopSrc } = getFabricImageVariantSet(src);
+
+  return (
+    <picture>
+      <source media="(max-width: 767px)" srcSet={mobileSrc} />
+      <img
+        src={desktopSrc}
+        alt={alt}
+        width={900}
+        height={1200}
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "low"}
+        decoding="async"
+        className={className}
+        {...dataAttributes}
+      />
+    </picture>
+  );
+}
 
 type FabricCategory = "checks" | "stripes" | "others";
 
@@ -2009,13 +2046,9 @@ function renderProductRailTrack(
                 className={`${styles.railStudyTile} ${styles.productRailRowTile}`}
                 key={`${study.slug}-${laneIndex}-${item.repeatKey}`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <FabricCardImage
                   src={item.src}
                   alt={item.name.replaceAll("_", " ")}
-                  width={900}
-                  height={1200}
-                  loading="lazy"
                   className={styles.railStudyImage}
                   data-product-fabric-image
                 />
@@ -2125,13 +2158,9 @@ function renderThreeDimensionalLabBoard(
               data-runway-card
               style={{ "--perspective-order": String(itemIndex) } as CSSProperties}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <FabricCardImage
                 src={item.src}
                 alt={item.name.replaceAll("_", " ")}
-                width={900}
-                height={1200}
-                loading="lazy"
                 className={`${styles.railStudyImage} ${styles.productRunwayPerspectiveImage}`}
               />
               <figcaption className={`${styles.productRailCaption} ${styles.productRunwayPerspectiveCaption}`}>
@@ -2193,13 +2222,9 @@ function renderResearchLabBoard(study: RailStudyDefinition) {
               data-research-card
               data-research-order={String(itemIndex)}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <FabricCardImage
                 src={item.src}
                 alt={item.name.replaceAll("_", " ")}
-                width={900}
-                height={1200}
-                loading="lazy"
                 className={`${styles.railStudyImage} ${styles.researchCardImage}`}
               />
               <figcaption className={`${styles.productRailCaption} ${styles.researchCardCaption}`}>
@@ -2234,13 +2259,9 @@ function renderResearchLabBoard(study: RailStudyDefinition) {
                   } as CSSProperties
                 }
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <FabricCardImage
                   src={item.src}
                   alt={item.name.replaceAll("_", " ")}
-                  width={900}
-                  height={1200}
-                  loading="lazy"
                   className={`${styles.railStudyImage} ${styles.researchCardImage}`}
                 />
                 <figcaption className={`${styles.productRailCaption} ${styles.researchCardCaption}`}>
@@ -2277,13 +2298,9 @@ function renderResearchLabBoard(study: RailStudyDefinition) {
                   data-research-card
                   data-page-side={pageIndex === 0 ? "left" : "right"}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <FabricCardImage
                     src={item.src}
                     alt={item.name.replaceAll("_", " ")}
-                    width={900}
-                    height={1200}
-                    loading="lazy"
                     className={`${styles.railStudyImage} ${styles.researchCardImage}`}
                   />
                   <figcaption className={`${styles.productRailCaption} ${styles.researchCardCaption}`}>
@@ -2309,13 +2326,9 @@ function renderResearchLabBoard(study: RailStudyDefinition) {
               data-research-card
               data-research-order={String(itemIndex)}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <FabricCardImage
                 src={item.src}
                 alt={item.name.replaceAll("_", " ")}
-                width={900}
-                height={1200}
-                loading="lazy"
                 className={`${styles.railStudyImage} ${styles.researchCardImage}`}
               />
               <figcaption className={`${styles.productRailCaption} ${styles.researchCardCaption}`}>
@@ -2350,13 +2363,9 @@ function renderResearchLabBoard(study: RailStudyDefinition) {
                 data-research-card
                 data-research-card-order={String(itemIndex)}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <FabricCardImage
                   src={item.src}
                   alt={item.name.replaceAll("_", " ")}
-                  width={900}
-                  height={1200}
-                  loading="lazy"
                   className={`${styles.railStudyImage} ${styles.researchCardImage}`}
                 />
                 <figcaption className={`${styles.productRailCaption} ${styles.researchCardCaption}`}>
@@ -2423,13 +2432,9 @@ function renderProductVer7Layout(study: RailStudyDefinition, immersive = false) 
                           key={`${study.slug}-${row.role}-${item.cellKey}`}
                           data-ver7-series={item.seriesKey}
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                          <FabricCardImage
                             src={item.src}
                             alt={item.name.replaceAll("_", " ")}
-                            width={900}
-                            height={1200}
-                            loading="lazy"
                             className={`${styles.railStudyImage} ${styles.productVer7Image}`}
                           />
                           <figcaption className={styles.productVer7Caption}>
@@ -2786,14 +2791,11 @@ function FamilyZone({
         <figure className={styles.zoneFigure}>
           <span className={styles.zoneFrameGlow} />
           <span className={styles.zoneSweep} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <FabricCardImage
             src={state.item.src}
             alt={labelFromGroup(zone.key)}
-            width={900}
-            height={1200}
-            loading={priority ? "eager" : "lazy"}
             className={styles.zoneImage}
+            priority={priority}
           />
           {!detachedCaption ? (
             <figcaption className={styles.zoneCaption}>
@@ -2863,14 +2865,11 @@ function FamilyZoneThree({
         <figure className={`${styles.zoneFigure} ${styles.familyZoneThreeFigure}`}>
           <span className={styles.zoneFrameGlow} />
           <span className={styles.zoneSweep} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <FabricCardImage
             src={state.item.src}
             alt={state.item.name.replaceAll("_", " ")}
-            width={900}
-            height={1200}
-            loading={priority ? "eager" : "lazy"}
             className={styles.zoneImage}
+            priority={priority}
           />
           <figcaption className={`${styles.zoneCaption} ${styles.familyZoneThreeCaption}`}>
             <span className={styles.zoneCaptionTitle}>{state.item.name.replaceAll("_", " ")}</span>
@@ -2984,13 +2983,9 @@ function FamilyZonesThreeFinale({
                             data-fz3-series={item.seriesKey}
                             data-fz3-serial={String(item.serial)}
                           >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
+                            <FabricCardImage
                               src={item.src}
                               alt={item.name.replaceAll("_", " ")}
-                              width={900}
-                              height={1200}
-                              loading="lazy"
                               className={styles.familyZonesThreeFinaleImage}
                             />
                             <figcaption className={styles.familyZonesThreeFinaleCaption}>
@@ -3417,14 +3412,11 @@ function StudyTile({
 }) {
   return (
     <figure className={`${styles.studyTile} ${className ?? ""}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <FabricCardImage
         src={item.src}
         alt={caption ?? item.name}
-        width={900}
-        height={1200}
-        loading={priority ? "eager" : "lazy"}
         className={styles.studyTileImage}
+        priority={priority}
       />
       {caption ? <figcaption className={styles.studyTileCaption}>{caption}</figcaption> : null}
     </figure>
@@ -3451,24 +3443,17 @@ function StudySwitchTile({
 
   return (
     <figure className={`${styles.studyTile} ${styles.studySwitchTile} ${className ?? ""}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <FabricCardImage
         src={primary.src}
         alt={caption ?? primary.name}
-        width={900}
-        height={1200}
-        loading={priority ? "eager" : "lazy"}
         className={`${styles.studyTileImage} ${styles.switchImagePrimary}`}
+        priority={priority}
       />
       {secondary ? (
         <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <FabricCardImage
             src={secondary.src}
             alt={caption ?? secondary.name}
-            width={900}
-            height={1200}
-            loading="lazy"
             className={`${styles.studyTileImage} ${styles.switchImageSecondary}`}
           />
         </>

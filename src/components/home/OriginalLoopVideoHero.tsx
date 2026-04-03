@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HERO_MEDIA } from "@/lib/hero-media";
+
+const HERO_VIDEO_ATTACH_DELAY_MS = 1800;
 
 function sendVideoDebugEvent(video: HTMLVideoElement, event: string) {
   if (process.env.NODE_ENV !== "development") {
@@ -32,9 +34,23 @@ export default function OriginalLoopVideoHero({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hasForcedLoadRef = useRef(false);
+  const [shouldAttachVideo, setShouldAttachVideo] = useState(verifyMode);
 
   useEffect(() => {
     if (verifyMode) {
+      setShouldAttachVideo(true);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShouldAttachVideo(true);
+    }, HERO_VIDEO_ATTACH_DELAY_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [verifyMode]);
+
+  useEffect(() => {
+    if (verifyMode || !shouldAttachVideo) {
       return;
     }
 
@@ -141,7 +157,7 @@ export default function OriginalLoopVideoHero({
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("focus", handleFocus);
     };
-  }, [verifyMode]);
+  }, [shouldAttachVideo, verifyMode]);
 
   return (
     <section
@@ -182,9 +198,9 @@ export default function OriginalLoopVideoHero({
               loop
               muted
               playsInline
-              preload="auto"
+              preload="none"
               poster={HERO_MEDIA.posterSrc}
-              src={HERO_MEDIA.videoSrc}
+              src={shouldAttachVideo ? HERO_MEDIA.videoSrc : undefined}
             />
           )}
         </div>

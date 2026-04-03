@@ -6,10 +6,7 @@ import StructuredData from "@/components/site/StructuredData";
 import Footer from "@/components/site/Footer";
 import Header from "@/components/site/Header";
 import PagePreloadGate from "@/components/site/PagePreloadGate";
-import {
-  homeCategoriesBlockingPreloadAssets,
-  homeCategoriesPreloadAssets,
-} from "@/lib/preload-assets";
+import { homeCategoriesBlockingPreloadAssets } from "@/lib/preload-assets";
 import {
   createBreadcrumbJsonLd,
   createHomePageJsonLd,
@@ -51,10 +48,10 @@ export default async function Home({
   return (
     <PagePreloadGate
       assets={verifyMode ? [] : homeCategoriesBlockingPreloadAssets}
-      backgroundAssets={verifyMode ? [] : homeCategoriesPreloadAssets}
+      backgroundAssets={[]}
       completionStrategy="all-settled"
       title="Preparing Categories"
-      note="Loading the homepage fabric preview before revealing the first view."
+      note="Loading only the opening category preview first so the homepage can appear without warming the full archive."
     >
       <div
         className="min-h-screen bg-white"
