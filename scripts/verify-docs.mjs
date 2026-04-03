@@ -20,7 +20,7 @@ const checks = [
   },
   {
     file: "docs/DEPLOYMENT.md",
-    required: ["/Users/leesungjun/Desktop/yjtexlab.com", "npm run verify:deploy", "npm run verify:parallel", "integration worktree", "/privacy", "/terms"],
+    required: ["/Users/leesungjun/Desktop/yjtexlab.com", "npm run verify:deploy", "npm run verify:parallel", "main", "/privacy", "/terms"],
   },
   {
     file: "docs/RESEARCH_NOTES.md",
@@ -36,7 +36,7 @@ const checks = [
   },
   {
     file: "docs/PARALLEL_WORKFLOW.md",
-    required: ["1 쓰레드 = 1 worktree = 1 담당 범위", "integration thread", "verify:parallel", "guarded shared files"],
+    required: ["1 쓰레드 = 1 worktree = 1 담당 범위", "integration thread", "main", "verify:parallel", "guarded shared files"],
   },
 ];
 

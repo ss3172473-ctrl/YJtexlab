@@ -10,7 +10,8 @@
 4. 수정 가능한 소유 경로와 수정 금지 공유 경로를 확인한다.
 5. `.omx/workstreams/active.json`에 현재 쓰레드가 등록되어 있는지 확인한다.
 6. production 배포 권한이 있는 통합 쓰레드인지 확인한다.
-7. 작업 전 `AGENTS.md`와 `docs/PARALLEL_WORKFLOW.md`를 읽는다.
+7. production candidate 는 최종적으로 `main`에 올려야 한다는 점을 확인한다.
+8. 작업 전 `AGENTS.md`와 `docs/PARALLEL_WORKFLOW.md`를 읽는다.
 
 ## 기본 원칙
 
@@ -18,7 +19,7 @@
 - 기본 모델은 `1 쓰레드 = 1 worktree = 1 담당 범위` 입니다.
 - feature 쓰레드는 자기 담당 경로 안에서만 수정합니다.
 - 공유 shell, 배포, route, SEO 파일은 기본적으로 통합 쓰레드만 수정합니다.
-- production 배포는 통합/배포 전담 쓰레드만 할 수 있습니다.
+- production 배포는 통합/배포 전담 쓰레드만 준비할 수 있고, 최종 배포 branch 는 `main` 입니다.
 
 ## 공유 가드 파일
 
@@ -63,5 +64,5 @@ production 배포는 하지 않고 build/verify/verify:parallel까지만 수행�
 이번 쓰레드는 통합과 production 배포 전담이다.
 다른 workstream에서 완료된 변경만 모아서 검증한다.
 필요한 경우에만 공유 가드 파일을 수정한다.
-production 배포 전 npm run verify:deploy 를 반드시 실행한다.
+production 배포 전 npm run verify:deploy 를 반드시 실행하고, 승인된 후보를 main 으로 승격한다.
 ```

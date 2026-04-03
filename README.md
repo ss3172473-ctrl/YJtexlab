@@ -10,7 +10,7 @@ YJ TexLab marketing site and product archive built with Next.js and deployed thr
 - Treat `src/components/home/Categories.tsx` and `src/components/home/FabricMotionLab.tsx` as protected baseline files unless the user explicitly asks to change Categories.
 - Keep product-specific motion isolated from the homepage.
 - Preserve one deployable root so Vercel always builds the intended project.
-- Use one worktree per Codex thread when parallel work is active, and reserve production deploys for the integration thread only.
+- Use one worktree per Codex thread when parallel work is active, let the integration thread assemble approved changes, and promote the final deploy candidate to `main` before production deploys.
 
 ## Folder Map
 
@@ -39,6 +39,7 @@ YJ TexLab marketing site and product archive built with Next.js and deployed thr
 - Keep `/product` redirecting to `/products`.
 - Do not run multiple Codex threads in the same physical working tree.
 - Run `npm run clean:artifacts`, `npm run build`, `npm run verify`, `npm run verify:parallel`, `npm run verify:seo`, and `npm run verify:deploy` before production deploys.
+- Push `main` to GitHub only after the integration thread has promoted the approved deploy candidate and the root worktree is clean.
 - Use `docs/THREAD_START.md` and `docs/PARALLEL_WORKFLOW.md` whenever parallel workstreams are active.
 
 ## Commands
@@ -52,7 +53,7 @@ npm run verify:corridor
 npm run verify:seo
 npm run verify:deploy
 npm run build
-vercel deploy --prod
+npm run deploy:production
 ```
 
 ## Documentation

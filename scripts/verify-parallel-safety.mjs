@@ -7,6 +7,8 @@ import { execSync } from "node:child_process";
 const root = process.cwd();
 const registryPath = path.join(root, ".omx", "workstreams", "active.json");
 const requireIntegration = process.argv.includes("--require-integration");
+const requireMain = process.argv.includes("--require-main");
+const requireClean = process.argv.includes("--require-clean");
 
 function run(command) {
   try {
@@ -24,6 +26,14 @@ function toArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function getChangedFiles(command) {
+  return run(command)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map(normalize);
+}
+
 function matchesPath(filePath, pattern) {
   const file = normalize(filePath);
   const target = normalize(pattern);
@@ -35,19 +45,48 @@ function matchesAny(filePath, patterns) {
   return patterns.some((pattern) => matchesPath(filePath, pattern));
 }
 
-if (!fs.existsSync(registryPath)) {
-  console.log("No parallel workstream registry found. Skipping parallel safety checks.");
-  process.exit(0);
+const currentBranch = run("git branch --show-current");
+const changedTracked = getChangedFiles("git diff --name-only --diff-filter=ACMRTUXB HEAD --");
+const changedStaged = getChangedFiles("git diff --cached --name-only --diff-filter=ACMRTUXB --");
+const changedUntracked = getChangedFiles("git ls-files --others --exclude-standard");
+const changedFiles = [...new Set([...changedTracked, ...changedStaged, ...changedUntracked])];
+
+if (requireMain && currentBranch !== "main") {
+  console.error(`Production verification requires the main branch. Current branch: "${currentBranch}".`);
+  process.exit(1);
 }
 
-const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+if (requireClean && changedFiles.length > 0) {
+  console.error("Production verification requires a clean worktree. Dirty files:");
+  changedFiles.forEach((filePath) => console.error(`- ${filePath}`));
+  process.exit(1);
+}
+
+let registry = null;
+if (fs.existsSync(registryPath)) {
+  registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
+}
+
+if (!registry) {
+  if (requireIntegration) {
+    console.error("Integration verification requires .omx/workstreams/active.json.");
+    process.exit(1);
+  }
+
+  console.log("No parallel workstream registry found. Clean-tree and branch checks passed.");
+  process.exit(0);
+}
 
 if (!registry.enabled) {
-  console.log("Parallel workstream registry is disabled. Skipping parallel safety checks.");
+  if (requireIntegration) {
+    console.error("Integration verification requires an enabled parallel workstream registry.");
+    process.exit(1);
+  }
+
+  console.log("Parallel workstream registry is disabled. Clean-tree and branch checks passed.");
   process.exit(0);
 }
 
-const currentBranch = run("git branch --show-current");
 const currentFolder = normalize(fs.realpathSync(root));
 const workstreams = toArray(registry.workstreams);
 
@@ -70,17 +109,6 @@ if (currentStream.branch && currentStream.branch !== currentBranch) {
   process.exit(1);
 }
 
-const changedTracked = run("git diff --name-only --diff-filter=ACMRTUXB HEAD --")
-  .split("\n")
-  .map((line) => line.trim())
-  .filter(Boolean);
-
-const changedUntracked = run("git ls-files --others --exclude-standard")
-  .split("\n")
-  .map((line) => line.trim())
-  .filter(Boolean);
-
-const changedFiles = [...new Set([...changedTracked, ...changedUntracked])].map(normalize);
 const ownedPaths = toArray(currentStream.ownedPaths);
 const allowedSharedPaths = toArray(currentStream.allowedSharedPaths);
 const guardedSharedPaths = toArray(registry.guardedSharedPaths);
@@ -128,6 +156,11 @@ if (requireIntegration) {
     console.error(`Current branch "${currentBranch}" does not match the integration branch pattern.`);
     process.exit(1);
   }
+}
+
+if (requireMain && currentStream.role !== "integration" && currentBranch !== "main") {
+  console.error("Production verification must run from main after integration promotion.");
+  process.exit(1);
 }
 
 console.log(

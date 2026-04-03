@@ -34,6 +34,11 @@ const forbiddenTrackedPatterns = [
   /^new 원단 사진($|\/)/,
   /^_backup_original_heic_/,
   /^_fabric_processing_report_.+/,
+  /(?:^|\/)[^/]+ [23]\.(?:css|html|js|jsx|json|md|mjs|png|svg|ts|tsx)$/,
+];
+
+const duplicateFilePatterns = [
+  /(?:^|\/)[^/]+ [23]\.(?:css|html|js|jsx|json|md|mjs|png|svg|ts|tsx)$/,
 ];
 
 const rootOffenders = fs
@@ -49,7 +54,16 @@ const trackedOffenders = trackedFiles.filter((entry) =>
   forbiddenTrackedPatterns.some((pattern) => pattern.test(entry)),
 );
 
-if (rootOffenders.length > 0 || trackedOffenders.length > 0) {
+const untrackedFiles = execFileSync("git", ["ls-files", "--others", "--exclude-standard", "-z"], {
+  cwd: root,
+  encoding: "utf8",
+}).split("\0").filter(Boolean);
+
+const duplicateNameOffenders = [...trackedFiles, ...untrackedFiles].filter((entry) =>
+  duplicateFilePatterns.some((pattern) => pattern.test(entry)),
+);
+
+if (rootOffenders.length > 0 || trackedOffenders.length > 0 || duplicateNameOffenders.length > 0) {
   console.error("Deploy input is polluted by forbidden local artifacts or tracked duplicates.");
 
   if (rootOffenders.length > 0) {
@@ -67,6 +81,17 @@ if (rootOffenders.length > 0 || trackedOffenders.length > 0) {
 
     if (trackedOffenders.length > 200) {
       console.error(`- ... ${trackedOffenders.length - 200} more`);
+    }
+  }
+
+  if (duplicateNameOffenders.length > 0) {
+    console.error("\nDuplicate-style file offenders:");
+    for (const offender of duplicateNameOffenders.slice(0, 200)) {
+      console.error(`- ${offender}`);
+    }
+
+    if (duplicateNameOffenders.length > 200) {
+      console.error(`- ... ${duplicateNameOffenders.length - 200} more`);
     }
   }
 

@@ -8,7 +8,7 @@
 - 같은 실제 폴더를 두 쓰레드가 동시에 사용하면 안 됩니다.
 - feature 쓰레드는 자기 담당 경로 안에서만 수정합니다.
 - 공유 가드 파일은 기본적으로 통합 쓰레드만 수정합니다.
-- production 배포는 integration thread 만 수행합니다.
+- production 배포 후보는 integration thread 가 조립하고, 최종 production branch 는 `main` 입니다.
 
 ## 역할 구분
 
@@ -39,7 +39,7 @@
 - 여러 route workstream 변경을 모으는 쓰레드
 - 필요한 경우 공유 가드 파일 수정 가능
 - 최종 `npm run verify:deploy` 실행
-- production 배포 수행
+- 승인된 후보를 `main`으로 승격한 뒤 production 배포 수행
 
 ## 권장 흐름
 
@@ -52,7 +52,8 @@
 7. `npm run verify:parallel`
 8. 통합 쓰레드에 결과를 넘긴다.
 9. 통합 쓰레드가 병합 후 `npm run verify:deploy`
-10. 통합 쓰레드만 production 배포
+10. 통합 쓰레드가 승인된 후보를 `main`으로 승격한다
+11. `main` push 로 production 배포를 발생시킨다
 
 ## worktree 생성 예시
 
@@ -67,7 +68,7 @@
 - feature 쓰레드가 자기 범위 밖 파일을 수정하면 `verify:parallel` 실패
 - feature 쓰레드가 guarded shared files 를 수정하면 `verify:parallel` 실패
 - parallel mode 가 활성화된 상태에서 workstream 등록 없이 작업하면 `verify:parallel` 실패
-- production 배포는 integration thread 기준으로만 허용
+- production 배포는 integration thread 가 조립한 `main` 후보 기준으로만 허용
 
 ## 운영 메모
 

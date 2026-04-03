@@ -19,7 +19,8 @@
     "verify:seo": "node scripts/verify-seo.mjs",
     "verify:docs": "node scripts/verify-docs.mjs",
     "verify:deploy-input": "node scripts/verify-deploy-input.mjs",
-    "verify:deploy": "npm run clean:artifacts && npm run build && npm run verify && npm run verify:corridor && npm run verify:seo && npm run verify:route-smoke && npm run clean:artifacts && npm run verify:deploy-input",
+    "verify:deploy": "node scripts/verify-parallel-safety.mjs --require-main --require-clean && npm run clean:artifacts && npm run build && npm run verify && npm run verify:corridor && npm run verify:seo && npm run verify:route-smoke && npm run clean:artifacts && node scripts/verify-parallel-safety.mjs --require-main --require-clean && npm run verify:deploy-input",
+    "deploy:production": "./scripts/deploy-production.sh",
     "lint": "next lint",
     "process:fabrics": "python3 scripts/process_fabric_images.py --apply --rename-only",
     "process:fabrics:dry": "python3 scripts/process_fabric_images.py --rename-only"

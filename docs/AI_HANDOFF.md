@@ -16,7 +16,7 @@
 - parallel verify command: `npm run verify:parallel`
 - required verify commands: `npm run verify`, `npm run verify:corridor`, `npm run verify:seo`, `npm run verify:deploy`
 - deployment target: Vercel only
-- production deploy authority: integration thread only
+- production deploy authority: integration thread prepares the candidate, then `main` is pushed for the final Vercel production deployment
 - restored production deployment reference: `dpl_HM33mRdpChYmjXejeVtfvxkVDqMS`
 
 ## Operator Notes
