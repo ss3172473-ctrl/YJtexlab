@@ -12,7 +12,7 @@ export async function findOpenPort(startPort = 4110) {
       const server = net.createServer();
       server.once("error", () => resolve(false));
       server.once("listening", () => server.close(() => resolve(true)));
-      server.listen(port, "127.0.0.1");
+      server.listen(port);
     });
 
     if (available) {
@@ -44,6 +44,17 @@ export async function waitForHttp(url, timeoutMs = 120000) {
 
 export function launchBuiltServer(cwd, port) {
   return spawn("npm", ["run", "start", "--", "--port", String(port)], {
+    cwd,
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      PORT: String(port),
+    },
+  });
+}
+
+export function launchDevServer(cwd, port) {
+  return spawn("npm", ["run", "dev", "--", "--port", String(port)], {
     cwd,
     stdio: "inherit",
     env: {

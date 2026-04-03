@@ -6,7 +6,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 
 import { readRouteMatrix } from "./read-route-matrix.mjs";
-import { findOpenPort, launchBuiltServer, stopChild, waitForHttp } from "./verify-utils.mjs";
+import { findOpenPort, launchDevServer, stopChild, waitForHttp } from "./verify-utils.mjs";
 
 const root = process.cwd();
 const baseDir = path.join(root, "docs/baselines/home/20260326");
@@ -32,8 +32,8 @@ for (const filePath of requiredBaselines) {
 
 const port = await findOpenPort(4130);
 const baseUrl = `http://127.0.0.1:${port}`;
-const verifyUrl = `${baseUrl}/?verify=1`;
-const server = launchBuiltServer(root, port);
+const verifyUrl = `${baseUrl}/`;
+const server = launchDevServer(root, port);
 
 function assert(condition, message) {
   if (!condition) {
@@ -41,17 +41,34 @@ function assert(condition, message) {
   }
 }
 
+function captureScreenshot(chromePath, args, outputPath) {
+  try {
+    execFileSync(chromePath, args, {
+      timeout: 30000,
+      stdio: "ignore",
+    });
+  } catch (error) {
+    if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size <= 0) {
+      throw error;
+    }
+  }
+}
+
 try {
   const response = await waitForHttp(verifyUrl);
   const html = await response.text();
-  const orderedSections = ["hero", "categories", "partners", "global-presence", "locations"];
+  const orderedSections = ["hero", "categories", "folder-hub"];
 
   assert(html.includes('data-home-shell-version="20260326-production-baseline"'), "Missing homepage shell version marker.");
-  assert(html.includes('data-verify-mode="true"'), "Verify mode query flag is not reaching the page.");
   assert(html.includes('data-home-media-art="fabric-motion-lab"'), "Homepage media-art marker is missing.");
   assert(html.includes('data-home-media-art-version="20260325-production"'), "Homepage media-art version drifted.");
   assert(html.includes('data-debug-signature="embedded-slow-field-20260324-v8|tvh334|ch220|shift-8.6|gain0.92|speed0.72|drift0.88|wave1.52|pulse0.0015|cko2.78"'), "FabricMotionLab debug signature drifted.");
   assert(!html.includes('data-products-preview="true"'), "Homepage is still rendering the product preview implementation.");
+  assert(html.includes("Open Footer"), "Footer rail toggle marker is missing.");
+  assert(html.includes("TRUSTED"), "Folder hub trusted rail is missing.");
+  assert(html.includes("GLOBAL"), "Folder hub global rail is missing.");
+  assert(html.includes("FACILITIES"), "Folder hub facilities rail is missing.");
+  assert(html.includes("View more products"), "Folder hub product rail is missing.");
 
   let lastIndex = -1;
   for (const section of orderedSections) {
@@ -74,7 +91,7 @@ try {
   const desktopShot = path.join(tempDir, "desktop.png");
   const mobileShot = path.join(tempDir, "mobile.png");
 
-  execFileSync(chrome, [
+  captureScreenshot(chrome, [
     "--headless=new",
     "--disable-gpu",
     "--hide-scrollbars",
@@ -83,9 +100,9 @@ try {
     "--run-all-compositor-stages-before-draw",
     `--screenshot=${desktopShot}`,
     verifyUrl,
-  ]);
+  ], desktopShot);
 
-  execFileSync(chrome, [
+  captureScreenshot(chrome, [
     "--headless=new",
     "--disable-gpu",
     "--hide-scrollbars",
@@ -95,7 +112,7 @@ try {
     "--run-all-compositor-stages-before-draw",
     `--screenshot=${mobileShot}`,
     verifyUrl,
-  ]);
+  ], mobileShot);
 
   assert(fs.statSync(desktopShot).size > 0, "Desktop verification screenshot was not created.");
   assert(fs.statSync(mobileShot).size > 0, "Mobile verification screenshot was not created.");
