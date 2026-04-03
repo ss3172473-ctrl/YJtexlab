@@ -1516,10 +1516,6 @@
   transform-origin: center center;
 }
 
-.productRailRowTrack[data-lane-direction="1"] {
-  animation-direction: reverse;
-}
-
 .productDuplexPauseMarker {
   position: absolute;
   right: 0.4rem;
@@ -2172,7 +2168,7 @@
   gap: 0;
   min-height: calc(100dvh - 2rem);
   padding-top: 0;
-  padding-bottom: 10rem;
+  padding-bottom: 16rem;
 }
 
 .railStudy[data-product-variant="orbital-inspection-board"] .productDuplexArchive::before,
@@ -2193,14 +2189,17 @@
 
 .railStudy[data-product-variant="orbital-inspection-board"] .productRailCaption {
   color: rgba(17, 18, 22, 0.88);
+  filter: blur(calc(var(--orbital-cta-focus, 0) * 0.18rem));
+  opacity: calc(0.92 - var(--orbital-cta-focus, 0) * 0.58);
+  transition: filter 180ms linear, opacity 180ms linear;
 }
 
 .railStudy[data-product-variant="orbital-inspection-board"] [data-product-fabric-image] {
   filter:
-    blur(calc(var(--orbital-cta-focus, 0) * 0.62rem))
-    saturate(calc(1 - var(--orbital-cta-focus, 0) * 0.22));
-  opacity: calc(1 - var(--orbital-cta-focus, 0) * 0.4);
-  transform: translate3d(0, 0, 0) scale(calc(1 - var(--orbital-cta-focus, 0) * 0.038));
+    blur(calc(var(--orbital-cta-focus, 0) * 0.82rem))
+    saturate(calc(1 - var(--orbital-cta-focus, 0) * 0.28));
+  opacity: calc(1 - var(--orbital-cta-focus, 0) * 0.52);
+  transform: translate3d(0, 0, 0) scale(calc(1 - var(--orbital-cta-focus, 0) * 0.05));
   transform-origin: center center;
   transition: filter 180ms linear, opacity 180ms linear, transform 180ms linear;
   will-change: filter, opacity, transform;
@@ -2211,8 +2210,15 @@
   min-height: calc(var(--variant-viewport-height) + 0.9rem);
 }
 
+.railStudy[data-product-variant="orbital-inspection-board"] {
+  /* Mobile orbital spacing knobs. Increase overlap magnitude to tighten rows. */
+  --orbital-mobile-viewport-height-tablet: 8.85rem;
+  --orbital-mobile-tile-width-tablet: 4.72rem;
+  --orbital-mobile-row-overlap-tablet: 0.12rem;
+}
+
 .railStudy[data-product-variant="orbital-inspection-board"] .productOrbitBoard {
-  gap: 0.22rem;
+  gap: 0.06rem;
 }
 
 .productOrbitCtaLane {
@@ -2956,11 +2962,19 @@
 
 @keyframes productRailLoop {
   from {
-    transform: translate3d(0, var(--track-y, 0), 0) scale(var(--track-scale, 1));
+    transform:
+      translate3d(var(--rail-loop-start, 0px), var(--track-y, 0), 0)
+      scale(var(--track-scale, 1));
   }
 
   to {
-    transform: translate3d(calc(-50% - (var(--rail-gap, 0.85rem) / 2)), var(--track-y, 0), 0) scale(var(--track-scale, 1));
+    transform:
+      translate3d(
+        var(--rail-loop-end, calc(-50% - (var(--rail-gap, 0.85rem) / 2))),
+        var(--track-y, 0),
+        0
+      )
+      scale(var(--track-scale, 1));
   }
 }
 
@@ -4223,6 +4237,31 @@
     letter-spacing: 0.09em;
   }
 
+  .railStudy[data-product-variant="orbital-inspection-board"] .productRailRowViewport {
+    min-height: var(--orbital-mobile-viewport-height-tablet);
+  }
+
+  .railStudy[data-product-variant="orbital-inspection-board"] .productDuplexArchive {
+    padding-bottom: 22rem;
+  }
+
+  .railStudy[data-product-variant="orbital-inspection-board"] .productDuplexBoard {
+    margin-top: -6rem;
+  }
+
+  .railStudy[data-product-variant="orbital-inspection-board"] .productRailRowTile {
+    width: var(--orbital-mobile-tile-width-tablet);
+    min-width: var(--orbital-mobile-tile-width-tablet);
+  }
+
+  .railStudy[data-product-variant="orbital-inspection-board"] .productOrbitBoard {
+    gap: 0;
+  }
+
+  .railStudy[data-product-variant="orbital-inspection-board"] .productDuplexLane:not(.productOrbitCtaLane) + .productDuplexLane:not(.productOrbitCtaLane) {
+    margin-top: var(--orbital-mobile-row-overlap-tablet);
+  }
+
   .zoneRail {
     display: none;
   }
@@ -4469,6 +4508,31 @@
   .productRailCaption {
     font-size: 0.48rem;
     letter-spacing: 0.12em;
+  }
+
+  .railStudy[data-product-variant="orbital-inspection-board"] .productRailRowViewport {
+    min-height: var(--orbital-mobile-viewport-height-tablet);
+  }
+
+  .railStudy[data-product-variant="orbital-inspection-board"] .productDuplexArchive {
+    padding-bottom: 22rem;
+  }
+
+  .railStudy[data-product-variant="orbital-inspection-board"] .productDuplexBoard {
+    margin-top: -4rem;
+  }
+
+  .railStudy[data-product-variant="orbital-inspection-board"] .productRailRowTile {
+    width: var(--orbital-mobile-tile-width-tablet);
+    min-width: var(--orbital-mobile-tile-width-tablet);
+  }
+
+  .railStudy[data-product-variant="orbital-inspection-board"] .productOrbitBoard {
+    gap: 0;
+  }
+
+  .railStudy[data-product-variant="orbital-inspection-board"] .productDuplexLane:not(.productOrbitCtaLane) + .productDuplexLane:not(.productOrbitCtaLane) {
+    margin-top: var(--orbital-mobile-row-overlap-tablet);
   }
 
   .productVariantHeader {

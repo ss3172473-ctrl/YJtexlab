@@ -1144,7 +1144,7 @@ const railStudyDefinitions: RailStudyDefinition[] = [
     title: "Orbital Inspection Board",
     note: "한 장의 보드가 좌우 orbit를 그리며 접근했다가, 중간 inspection pose에서 원단을 가장 또렷하게 읽히게 한다.",
     layout: "duplexSlow",
-    span: "268dvh",
+    span: "340dvh",
     reference: "Spline scroll object orbit / KOJI inspection product motion",
     cue: "Orbit, inspect, release",
     focusSeries: canonicalRailSeriesOrder,
@@ -1379,6 +1379,14 @@ function rotateItems<T>(items: T[], offset: number) {
 
 const productRailItems = [...canonicalRailItems].sort((left, right) => left.name.localeCompare(right.name));
 const productRailLaneCount = 8;
+const ORBITAL_MOBILE_LANE_TUNING = {
+  tablet: {
+    maxWidth: 900,
+    verticalScale: 0.66,
+    lateralScale: 0.82,
+    scaleBoost: 0.01,
+  },
+} as const;
 const productVer7StartOffset = 7;
 const productVer7VisibleColumnCount = 11;
 const productVer7RowRoles: ProductVer7RowRole[] = [
@@ -1949,6 +1957,14 @@ function renderProductRailTrack(
   const trackClassName = options?.trackClassName
     ? `${styles.productRailRowTrack} ${options.trackClassName}`
     : styles.productRailRowTrack;
+  const loopCopies = study.repeatCopies;
+  const trackGap = isThreeDimensionalLab ? "0.72rem" : "0.85rem";
+  const loopStep = `calc((-100% / ${loopCopies}) - (${trackGap} / ${loopCopies}))`;
+  const reverseLane = laneIndex % 2 === 1;
+  const loopStartMultiplier = study.variantKey === "orbital-inspection-board" ? 1 : reverseLane ? 1 : 0;
+  const loopEndMultiplier = reverseLane ? loopStartMultiplier - 1 : loopStartMultiplier + 1;
+  const loopStart = loopStartMultiplier === 0 ? "0px" : `calc(${loopStep} * ${loopStartMultiplier})`;
+  const loopEnd = loopEndMultiplier === 0 ? "0px" : `calc(${loopStep} * ${loopEndMultiplier})`;
 
   return (
     <section
@@ -1971,7 +1987,7 @@ function renderProductRailTrack(
             className={trackClassName}
             data-rail-study-track
             data-lane-index={String(laneIndex)}
-            data-lane-direction={laneIndex % 2 === 0 ? "-1" : "1"}
+            data-lane-direction={reverseLane ? "reverse" : "forward"}
             data-lane-pause={immersive ? "false" : laneIndex === Math.floor(productRailLaneCount / 2) ? "true" : "false"}
             data-caption-mode={study.captionMode}
             data-variant={study.variantKey}
@@ -1979,7 +1995,10 @@ function renderProductRailTrack(
             style={
               {
                 "--rail-duration": `${study.baseDuration + laneIndex * study.durationStep}s`,
-                "--rail-gap": isThreeDimensionalLab ? "0.72rem" : "0.85rem",
+                "--rail-gap": trackGap,
+                "--rail-loop-copies": String(loopCopies),
+                "--rail-loop-start": loopStart,
+                "--rail-loop-end": loopEnd,
                 "--lane-order": String(laneIndex),
                 "--lane-depth": laneIndex < 4 ? "1" : "1.08",
               } as CSSProperties
@@ -2021,6 +2040,10 @@ function renderProductRailTrack(
 }
 
 function renderOrbitalContactRail() {
+  const ctaLabels = ["VIEW MORE", "CONTACT US", "VIEW MORE", "CONTACT US"];
+  const loopCopies = 2;
+  const loopStep = `calc((-100% / ${loopCopies}) - (3.4rem / ${loopCopies}))`;
+
   return (
     <section className={`${styles.productDuplexLane} ${styles.productOrbitCtaLane}`} data-product-lane="cta">
       <a
@@ -2029,13 +2052,26 @@ function renderOrbitalContactRail() {
         aria-label="View more products and contact us"
       >
         <div className={`${styles.productRailRowViewport} ${styles.productOrbitCtaViewport}`}>
-          <div className={`${styles.productRailLaneRig} ${styles.productOrbitCtaRig}`} data-product-lane-rig>
-            <div className={`${styles.productRailRowTrack} ${styles.productOrbitCtaTrack}`} data-rail-study-track>
-              {Array.from({ length: 8 }, (_, itemIndex) => (
-                <span className={styles.productOrbitCtaText} key={`orbital-cta-${itemIndex}`}>
-                  {itemIndex % 2 === 0 ? "VIEW MORE" : "CONTACT US"}
-                </span>
-              ))}
+            <div className={`${styles.productRailLaneRig} ${styles.productOrbitCtaRig}`} data-product-lane-rig>
+            <div
+              className={`${styles.productRailRowTrack} ${styles.productOrbitCtaTrack}`}
+              data-rail-study-track
+              style={
+                {
+                  "--rail-gap": "3.4rem",
+                  "--rail-loop-copies": String(loopCopies),
+                  "--rail-loop-start": "0px",
+                  "--rail-loop-end": loopStep,
+                } as CSSProperties
+              }
+            >
+              {Array.from({ length: loopCopies }, (_, copyIndex) =>
+                ctaLabels.map((label, itemIndex) => (
+                  <span className={styles.productOrbitCtaText} key={`orbital-cta-${copyIndex}-${itemIndex}`}>
+                    {label}
+                  </span>
+                )),
+              )}
             </div>
           </div>
         </div>
@@ -2434,7 +2470,15 @@ function renderProductStudyLayout(
     return renderProductVer7Layout(study, immersive);
   }
 
-  const productRailLanes = productRailLanesByCopies.get(study.repeatCopies) ?? productRailLanesByCopies.get(2) ?? [];
+  const productRailLanes = isOrbitalInspectionVariant(study.variantKey)
+    ? productRailBaseLanes.map((lane, laneIndex) => {
+        const rotatedLane = rotateItems(
+          lane,
+          laneIndex % 2 === 0 ? Math.floor(lane.length * 0.35) : Math.floor(lane.length * 0.6),
+        );
+        return repeatFrames(rotatedLane, study.repeatCopies);
+      })
+    : productRailLanesByCopies.get(study.repeatCopies) ?? productRailLanesByCopies.get(2) ?? [];
   const isThreeDimensionalLab = isThreeDimensionalLabVariant(study.variantKey);
   const isResearchLab = isResearchLabVariant(study.variantKey);
   const isOrbitalInspection = isOrbitalInspectionVariant(study.variantKey);
@@ -4265,10 +4309,11 @@ function applyRailStudyRuntimeState(studyNode: HTMLElement, progress: number) {
         const viewportCenter = window.innerHeight * 0.5;
         const ctaCenter = ctaRect.top + ctaRect.height * 0.5;
         const ctaDistance = Math.abs(ctaCenter - viewportCenter);
-        const centerWindow = Math.max(window.innerHeight * 0.9, 1);
+        const centerWindow = Math.max(window.innerHeight * 0.56, 1);
         const proximity = clamp(1 - ctaDistance / centerWindow);
-        const lateStage = smoothStep(windowProgress(progress, 0.62, 1));
-        orbitalCtaFocus = Math.pow(proximity, 0.72) * lateStage;
+        const lateStage = smoothStep(windowProgress(progress, 0.78, 1));
+        const bottomStage = smoothStep(windowProgress(progress, 0.88, 1));
+        orbitalCtaFocus = Math.max(Math.pow(proximity, 0.72) * lateStage, bottomStage);
       }
 
       studyNode.style.setProperty("--orbital-cta-focus", orbitalCtaFocus.toFixed(4));
@@ -4383,6 +4428,7 @@ function applyRailStudyRuntimeState(studyNode: HTMLElement, progress: number) {
         let laneVertical = profile.laneLift * signed;
         let laneLateral = profile.laneSpread * signed;
         let laneScale = 0.986 + depthWeight * 0.02;
+        const viewportWidth = window.innerWidth;
 
         if (orbitalConfig && isOrbitalInspectionVariant(productVariant)) {
           const family = orbitalConfig.familyKey;
@@ -4424,6 +4470,12 @@ function applyRailStudyRuntimeState(studyNode: HTMLElement, progress: number) {
             laneTiltX += signed * 2.4;
             laneVertical += signed * 0.24;
             laneLateral += signed * 0.4;
+          }
+
+          if (viewportWidth <= ORBITAL_MOBILE_LANE_TUNING.tablet.maxWidth) {
+            laneVertical *= ORBITAL_MOBILE_LANE_TUNING.tablet.verticalScale;
+            laneLateral *= ORBITAL_MOBILE_LANE_TUNING.tablet.lateralScale;
+            laneScale += ORBITAL_MOBILE_LANE_TUNING.tablet.scaleBoost;
           }
         }
 
@@ -4516,7 +4568,7 @@ function applyRailStudyRuntimeState(studyNode: HTMLElement, progress: number) {
     if (track.classList.contains(styles.productRailRowTrack)) {
       const reveal = productVariant === "ver7"
         ? smoothStep(clamp(progress / 0.18))
-        : smoothStep(clamp((progress - 0.12 - laneIndex * 0.055) / 0.24));
+        : smoothStep(clamp((progress - 0.08 - laneIndex * 0.045) / 0.28));
       const baseDuration = Number(track.dataset.baseDuration ?? 40);
       let duration = baseDuration;
 
@@ -5390,12 +5442,12 @@ export default function MotionHouseShowcase({
 
   if (previewRailStudies.length > 0) {
     const isOrbitalPreview = previewRailStudies.some((study) => isOrbitalInspectionVariant(study.variantKey));
-    const orbitalExportUrl = effectiveOrbitalConfig
-      ? `${typeof window !== "undefined" ? window.location.pathname : `/fabric-duplex-rails/${previewRailStudies[0]?.slug ?? ""}`}?${serializeOrbitalInspectionConfig(effectiveOrbitalConfig)}`
-      : "";
 
     return (
-      <main className={`${styles.pageShell} ${isOrbitalPreview ? styles.pageShellWhite : ""}`} ref={shellRef}>
+      <main
+        className={`${styles.pageShell} ${isOrbitalPreview ? styles.pageShellWhite : ""}`}
+        ref={shellRef}
+      >
         <section className={`${styles.railStudies} ${isOrbitalPreview ? styles.railStudiesOrbital : ""}`}>
           <div className={styles.railStudiesStack}>
             {previewRailStudies.map((study, index) => (
