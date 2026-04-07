@@ -68,41 +68,43 @@ export default function ContactInquiryForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <label
-          htmlFor="contact-company-name"
-          className="font-sans text-[11px] uppercase tracking-[0.28em] text-black/45"
-        >
-          Company / Name
-        </label>
-        <input
-          id="contact-company-name"
-          type="text"
-          value={companyName}
-          onChange={(event) => setCompanyName(event.target.value)}
-          placeholder="기업명과 성함(직함)을 입력해주세요."
-          required
-          className="w-full border-b border-black/15 bg-transparent px-0 pb-3 pt-1 font-sans text-base text-black outline-none transition-colors placeholder:text-black/28 focus:border-black"
-        />
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="grid gap-5 md:grid-cols-2">
+        <div className="space-y-2">
+          <label
+            htmlFor="contact-company-name"
+            className="font-sans text-[11px] uppercase tracking-[0.28em] text-black/45"
+          >
+            Company / Name
+          </label>
+          <input
+            id="contact-company-name"
+            type="text"
+            value={companyName}
+            onChange={(event) => setCompanyName(event.target.value)}
+            placeholder="기업명과 성함(직함)을 입력해주세요."
+            required
+            className="w-full border-b border-black/15 bg-transparent px-0 pb-2 pt-1 font-sans text-[15px] text-black outline-none transition-colors placeholder:text-black/28 focus:border-black"
+          />
+        </div>
 
-      <div className="space-y-2">
-        <label
-          htmlFor="contact-email"
-          className="font-sans text-[11px] uppercase tracking-[0.28em] text-black/45"
-        >
-          Email
-        </label>
-        <input
-          id="contact-email"
-          type="email"
-          value={replyTo}
-          onChange={(event) => setReplyTo(event.target.value)}
-          placeholder="회신 받을 이메일을 입력해주세요."
-          required
-          className="w-full border-b border-black/15 bg-transparent px-0 pb-3 pt-1 font-sans text-base text-black outline-none transition-colors placeholder:text-black/28 focus:border-black"
-        />
+        <div className="space-y-2">
+          <label
+            htmlFor="contact-email"
+            className="font-sans text-[11px] uppercase tracking-[0.28em] text-black/45"
+          >
+            Email
+          </label>
+          <input
+            id="contact-email"
+            type="email"
+            value={replyTo}
+            onChange={(event) => setReplyTo(event.target.value)}
+            placeholder="회신 받을 이메일을 입력해주세요."
+            required
+            className="w-full border-b border-black/15 bg-transparent px-0 pb-2 pt-1 font-sans text-[15px] text-black outline-none transition-colors placeholder:text-black/28 focus:border-black"
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -119,7 +121,7 @@ export default function ContactInquiryForm({
           onChange={(event) => setSubject(event.target.value)}
           placeholder="문의 사유를 입력해주세요."
           required
-          className="w-full border-b border-black/15 bg-transparent px-0 pb-3 pt-1 font-sans text-base text-black outline-none transition-colors placeholder:text-black/28 focus:border-black"
+          className="w-full border-b border-black/15 bg-transparent px-0 pb-2 pt-1 font-sans text-[15px] text-black outline-none transition-colors placeholder:text-black/28 focus:border-black"
         />
       </div>
 
@@ -136,12 +138,12 @@ export default function ContactInquiryForm({
           onChange={(event) => setMessage(event.target.value)}
           placeholder="문의 내용을 입력해주세요."
           required
-          rows={6}
-          className="min-h-40 w-full resize-y border border-black/10 bg-white/80 px-4 py-4 font-sans text-base leading-7 text-black outline-none transition-colors placeholder:text-black/28 focus:border-black"
+          rows={5}
+          className="min-h-32 w-full resize-none border border-black/10 bg-white/80 px-4 py-3 font-sans text-[15px] leading-6 text-black outline-none transition-colors placeholder:text-black/28 focus:border-black md:min-h-36"
         />
       </div>
 
-      <div className="flex flex-col gap-4 border-t border-black/10 pt-5">
+      <div className="flex flex-col gap-4 border-t border-black/10 pt-4">
         <button
           type="submit"
           disabled={isSubmitting}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import ContactPage from "@/components/contact/ContactPage";
-import Footer from "@/components/site/Footer";
+import ContactScrollLock from "@/components/contact/ContactScrollLock";
 import Header from "@/components/site/Header";
 import StructuredData from "@/components/site/StructuredData";
 import {
@@ -20,7 +20,9 @@ export const metadata: Metadata = createPageMetadata({
 export default function Contact() {
   return (
     <>
+      <ContactScrollLock />
       <Header />
+      <div aria-hidden="true" className="h-[72px] md:h-[84px]" />
       <StructuredData
         data={[
           createContactPageJsonLd(),
@@ -31,7 +33,6 @@ export default function Contact() {
         ]}
       />
       <ContactPage />
-      <Footer />
     </>
   );
 }
