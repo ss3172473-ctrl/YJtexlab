@@ -26,10 +26,36 @@ export default function Footer() {
         ))}
       </div>
 
-      <div className="flex items-start justify-end">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-gray-400 md:text-[11px] md:tracking-[0.22em]">
+          <a
+            href="mailto:yjtexlab@gmail.com"
+            className="transition-colors hover:text-black"
+          >
+            Email
+          </a>
+          <span aria-hidden="true">|</span>
+          <a
+            href="https://wa.me/821053172473"
+            target="_blank"
+            rel="noreferrer"
+            className="transition-colors hover:text-black"
+          >
+            WhatsApp
+          </a>
+          <span aria-hidden="true">|</span>
+          <a
+            href="https://line.me/ti/p/MnRGKgjLnt"
+            target="_blank"
+            rel="noreferrer"
+            className="transition-colors hover:text-black"
+          >
+            LINE
+          </a>
+        </div>
         <button
           aria-expanded={isExpanded}
-          className="text-[11px] font-medium uppercase tracking-[0.26em] text-gray-500 transition-colors hover:text-black"
+          className="shrink-0 text-[11px] font-medium uppercase tracking-[0.26em] text-gray-500 transition-colors hover:text-black"
           onClick={() => setIsExpanded((current) => !current)}
           type="button"
         >
