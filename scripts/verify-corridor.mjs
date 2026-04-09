@@ -75,7 +75,7 @@ try {
   assert(html.includes('data-debug-signature="embedded-slow-field-20260324-v8|tvh334|ch220|shift-8.6|gain0.92|speed0.72|drift0.88|wave1.52|pulse0.0015|cko2.78"'), "FabricMotionLab debug signature drifted.");
   assert(!html.includes('data-products-preview="true"'), "Homepage is still rendering the product preview implementation.");
   assert(html.includes("Open Footer"), "Footer rail toggle marker is missing.");
-  assert(html.includes("TRUSTED"), "Folder hub trusted rail is missing.");
+  assert(html.includes("CLIENTS"), "Folder hub clients rail is missing.");
   assert(html.includes("GLOBAL"), "Folder hub global rail is missing.");
   assert(html.includes("FACILITIES"), "Folder hub facilities rail is missing.");
   assert(html.includes("View more products"), "Folder hub product rail is missing.");
