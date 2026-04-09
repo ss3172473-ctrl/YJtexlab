@@ -12,12 +12,16 @@
 - new-thread startup guide: `docs/THREAD_START.md`
 - parallel workflow guide: `docs/PARALLEL_WORKFLOW.md`
 - parallel workstream registry: `.omx/workstreams/active.json`
+- preferred feature start helper: `./scripts/start-workstream.sh`
+- preferred handoff helper: `./scripts/handoff-workstream.sh`
+- preferred cleanup/audit helper: `npm run workstream:audit`
 - visible home shell: `/products`, `/about`, `/contact`, `/milestones`, `/privacy`, `/terms`
 - parallel verify command: `npm run verify:parallel`
 - required verify commands: `npm run verify`, `npm run verify:corridor`, `npm run verify:seo`, `npm run verify:deploy`
 - deployment target: Vercel only
 - production deploy authority: integration thread prepares the candidate, then `main` is pushed for the final Vercel production deployment
 - restored production deployment reference: `dpl_HM33mRdpChYmjXejeVtfvxkVDqMS`
+- default operator model: canonical integration/deploy root plus one feature worktree per mutating thread
 
 ## Operator Notes
 

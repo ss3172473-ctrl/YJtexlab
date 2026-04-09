@@ -4,4 +4,4 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-node scripts/guard-pre-push.mjs
+node scripts/workstream-next-step.mjs --hook || true

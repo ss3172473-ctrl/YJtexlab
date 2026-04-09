@@ -12,5 +12,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .omx
+.omc/sessions
+.omc/state
+.omc/project-memory.json
+.tmp-playwright
 tsconfig.tsbuildinfo
 .vercel

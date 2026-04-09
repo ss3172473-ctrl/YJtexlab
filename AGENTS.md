@@ -6,6 +6,7 @@ This file applies to the entire `yjtexlab.com` repository.
 
 - Production deployment is Vercel only.
 - Always deploy from the repository root: `/Users/leesungjun/Desktop/yjtexlab.com`.
+- Treat `/Users/leesungjun/Desktop/yjtexlab.com` as the canonical integration/deploy root, not as the default feature-editing folder.
 - Temporary migration work may happen in `/Users/leesungjun/Desktop/yjtexlab.com-clean-20260326`, but the canonical long-term local root is `/Users/leesungjun/Desktop/yjtexlab.com`.
 - Feature work must be implemented in an isolated worktree first, then promoted into the canonical integration branch before production deploys.
 - Record the feature worktree `BASE_SHA` at isolation time and define promotable scope against that `BASE_SHA`, not against the current canonical dirty state.
@@ -18,8 +19,10 @@ This file applies to the entire `yjtexlab.com` repository.
 ## Parallel Workstreams
 
 - New Codex threads started in this repo must read `docs/THREAD_START.md` and `docs/PARALLEL_WORKFLOW.md` before editing files.
+- New Codex threads that involve parallel workstream setup, scope ownership, handoff, promotion, or deploy isolation must consult `[$parallel-workstream-guard](/Users/leesungjun/.codex/skills/parallel-workstream-guard/SKILL.md)` before proceeding.
 - Analysis and review threads may inspect the canonical repo only if they remain non-mutating.
 - Do not let multiple threads share the same physical working tree.
+- Default operator model is `2 spaces`: canonical integration/deploy root plus one feature worktree per mutating thread.
 - Default model is `1 thread = 1 worktree = 1 scope owner`.
 - When parallel mode is active, declare active workstreams in `.omx/workstreams/active.json`.
 - When a feature worktree is created, record its `BASE_SHA`.
@@ -27,6 +30,14 @@ This file applies to the entire `yjtexlab.com` repository.
 - Guarded shared files include `src/app/layout.tsx`, `src/app/globals.css`, `src/components/site/**`, `src/lib/route-matrix.ts`, `src/lib/seo.ts`, `package.json`, `vercel.json`, `README.md`, `AGENTS.md`, and `docs/**`.
 - Only user-approved files, hunks, or commits may be promoted from a feature worktree into the canonical integration branch.
 - Only the integration thread may merge multi-scope work, edit guarded shared files by default, and prepare the final `main` deploy candidate.
+- When a feature workstream appears complete, do not assume more local edits are wanted. Ask first whether the user wants to promote the workstream to `main`, then direct the handoff through `./scripts/handoff-workstream.sh` and clean-main integration.
+- Use `npm run workstream:next` or the post-commit hook output to decide whether the next step is more implementation or promotion/handoff.
+- Prefer `./scripts/start-workstream.sh feature ...` for new mutating workstreams and `npm run workstream:audit` when the canonical root stops being obviously clean.
+- When `[$parallel-workstream-guard](/Users/leesungjun/.codex/skills/parallel-workstream-guard/SKILL.md)` is used, the agent should run the project helper scripts on the user's behalf. Do not turn `start-workstream`, `hooks:install`, or `handoff-workstream` into a manual user checklist unless the helper path is missing or broken.
+- Interpret user shorthand strictly as follows:
+- Start of a new parallel task should use `[$(1)병렬 작업 가드](/Users/leesungjun/.codex/skills/parallel-work-1-guard/SKILL.md)` or `[$parallel-workstream-guard](/Users/leesungjun/.codex/skills/parallel-workstream-guard/SKILL.md)`.
+- `main에 변경 사항 배포해줘` or similar should use `[$(2)병렬 작업 승격 to main](/Users/leesungjun/.codex/skills/parallel-work-2-promote-main/SKILL.md)` and means: promote the current completed workstream onto the canonical `main` candidate only, without final production deployment.
+- `지금까지 변경사항 다 배포해줘` or similar should use `[$(3)병렬 작업 최종 배포](/Users/leesungjun/.codex/skills/parallel-work-3-final-deploy/SKILL.md)` and means: start a deployment/integration thread, gather the already approved `main` candidate, run final verification, and perform the production deploy.
 
 ## Homepage Boundary
 
