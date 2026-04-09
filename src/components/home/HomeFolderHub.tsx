@@ -41,7 +41,7 @@ type HubItem = {
 const hubItems: HubItem[] = [
   {
     id: "trusted",
-    monoLabel: "TRUSTED",
+    monoLabel: "CLIENTS",
     presentation: "inline",
     content: () => <Partners />,
   },
@@ -603,7 +603,7 @@ export default function HomeFolderHub({
       {activeInlineItem || activeModalItem || (isMobileViewport && mobileRailOpen) ? (
         <>
           <button
-            aria-label={activeModalItem ? "Close panel" : activeInlineItem ? "Close trusted focus" : "Close menu"}
+            aria-label={activeModalItem ? "Close panel" : activeInlineItem ? "Close clients focus" : "Close menu"}
             className={styles.overlayDismiss}
             onClick={dismissHubOverlay}
             onPointerDown={(event) => {
