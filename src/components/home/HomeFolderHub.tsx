@@ -29,28 +29,33 @@ export type FolderVariant = "open-bottom" | "open-center" | "inline";
 type SectionId = "trusted" | "global" | "facilities";
 type RailHoverId = SectionId | "products";
 type FooterRevealStage = "free" | "rail-lock" | "prompt-lock" | "footer-release" | "released";
+type HubPresentation = "inline" | "modal";
 
 type HubItem = {
   id: SectionId;
   monoLabel: string;
-  panel: (verifyMode: boolean) => ReactNode;
+  presentation: HubPresentation;
+  content: (verifyMode: boolean) => ReactNode;
 };
 
 const hubItems: HubItem[] = [
   {
     id: "trusted",
     monoLabel: "TRUSTED",
-    panel: () => <Partners variant="panel" />,
+    presentation: "inline",
+    content: () => <Partners />,
   },
   {
     id: "global",
     monoLabel: "GLOBAL",
-    panel: (verifyMode) => <GlobalPresence variant="panel" verifyMode={verifyMode} />,
+    presentation: "modal",
+    content: (verifyMode) => <GlobalPresence variant="panel" verifyMode={verifyMode} />,
   },
   {
     id: "facilities",
     monoLabel: "FACILITIES",
-    panel: (verifyMode) => <Locations variant="panel" verifyMode={verifyMode} />,
+    presentation: "modal",
+    content: (verifyMode) => <Locations variant="panel" verifyMode={verifyMode} />,
   },
 ];
 
@@ -142,21 +147,29 @@ export default function HomeFolderHub({
 }) {
   const rootRef = useRef<HTMLElement | null>(null);
   const railDockRef = useRef<HTMLDivElement | null>(null);
+  const trustedTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const burstRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
   const touchStartYRef = useRef<number | null>(null);
   const transitionTimerRef = useRef<number | null>(null);
   const lastIntentAtRef = useRef(0);
+  const dismissIntentAtRef = useRef(0);
   const reducedMotion = useReducedMotion(verifyMode);
   const [activeId, setActiveId] = useState<SectionId | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
-  const [railVisible, setRailVisible] = useState(verifyMode);
+  const [railVisible, setRailVisible] = useState(false);
   const [mobileRailOpen, setMobileRailOpen] = useState(false);
   const [mobileRailDismissed, setMobileRailDismissed] = useState(false);
   const [hoveredId, setHoveredId] = useState<RailHoverId | null>(null);
   const [footerStage, setFooterStage] = useState<FooterRevealStage>("free");
+  const [trustedLaunchStyle, setTrustedLaunchStyle] = useState<CSSProperties | null>(null);
 
   const activeItem = useMemo(() => hubItems.find((item) => item.id === activeId) ?? null, [activeId]);
+  const activeModalItem =
+    activeItem?.presentation === "modal" ? activeItem : null;
+  const activeInlineItem =
+    activeItem?.presentation === "inline" ? activeItem : null;
 
   useEffect(() => {
     const updateViewportMode = () => {
@@ -175,7 +188,7 @@ export default function HomeFolderHub({
   }, []);
 
   useEffect(() => {
-    if (verifyMode || reducedMotion) {
+    if (reducedMotion) {
       setFooterStage("free");
       setMobileRailOpen(true);
       return;
@@ -187,11 +200,6 @@ export default function HomeFolderHub({
   useEffect(() => {
     const railDock = railDockRef.current;
     if (!railDock) {
-      return;
-    }
-
-    if (verifyMode) {
-      setRailVisible(true);
       return;
     }
 
@@ -263,7 +271,7 @@ export default function HomeFolderHub({
   }, [footerStage]);
 
   useEffect(() => {
-    if (!activeItem && !(isMobileViewport && mobileRailOpen)) {
+    if (!activeModalItem && !activeInlineItem && !(isMobileViewport && mobileRailOpen)) {
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
       return;
@@ -276,7 +284,7 @@ export default function HomeFolderHub({
       document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
     };
-  }, [activeItem, isMobileViewport, mobileRailOpen]);
+  }, [activeInlineItem, activeModalItem, isMobileViewport, mobileRailOpen]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -406,6 +414,40 @@ export default function HomeFolderHub({
     };
   }, [activeItem, footerStage, isMobileViewport, reducedMotion, verifyMode]);
 
+  useEffect(() => {
+    if (!activeInlineItem) {
+      setTrustedLaunchStyle(null);
+      return;
+    }
+
+    const syncTrustedLaunch = () => {
+      const trigger = trustedTriggerRef.current;
+      const burst = burstRef.current;
+
+      if (!trigger || !burst) {
+        return;
+      }
+
+      const triggerRect = trigger.getBoundingClientRect();
+      const burstRect = burst.getBoundingClientRect();
+      const originX = triggerRect.left + triggerRect.width / 2;
+      const originY = triggerRect.top + triggerRect.height / 2;
+      const burstX = burstRect.left + burstRect.width / 2;
+      const burstY = burstRect.top + Math.min(56, burstRect.height * 0.34);
+
+      setTrustedLaunchStyle({
+        "--trusted-origin-x": `${originX}px`,
+        "--trusted-origin-y": `${originY}px`,
+        "--trusted-delta-x": `${burstX - originX}px`,
+        "--trusted-delta-y": `${burstY - originY}px`,
+      } as CSSProperties);
+    };
+
+    syncTrustedLaunch();
+    window.addEventListener("resize", syncTrustedLaunch);
+    return () => window.removeEventListener("resize", syncTrustedLaunch);
+  }, [activeInlineItem]);
+
   const railLift =
     footerStage === "prompt-lock"
       ? 86
@@ -428,11 +470,18 @@ export default function HomeFolderHub({
     "--footer-preview-height": `${footerStage === "footer-release" ? 38 : 0}svh`,
   } as CSSProperties;
 
+  const dismissHubOverlay = () => {
+    dismissIntentAtRef.current = performance.now();
+    setActiveId(null);
+    setMobileRailOpen(false);
+    setMobileRailDismissed(true);
+  };
+
+  const shouldIgnoreImmediateReopen = () => performance.now() - dismissIntentAtRef.current < 280;
+
   const railNode = (
     <div className={styles.railLayer} style={previewStyle}>
-      <div
-        className={styles.bottomRail}
-      >
+      <div className={styles.bottomRail}>
         <div className={styles.railRow}>
           <div aria-hidden="true" className={styles.railSpacer} />
           <div className={styles.labelGroup}>
@@ -449,7 +498,10 @@ export default function HomeFolderHub({
                   key={item.id}
                   onBlur={() => setHoveredId((current) => (current === item.id ? null : current))}
                   onClick={() => {
-                    setActiveId(item.id);
+                    if (shouldIgnoreImmediateReopen()) {
+                      return;
+                    }
+                    setActiveId((current) => (current === item.id ? null : item.id));
                     setMobileRailOpen(false);
                     setMobileRailDismissed(true);
                   }}
@@ -457,6 +509,7 @@ export default function HomeFolderHub({
                   onMouseDown={(event) => event.preventDefault()}
                   onMouseEnter={() => setHoveredId(item.id)}
                   onMouseLeave={() => setHoveredId((current) => (current === item.id ? null : current))}
+                  ref={item.id === "trusted" ? trustedTriggerRef : undefined}
                   type="button"
                 >
                   <span className={styles.railText}>{item.monoLabel}</span>
@@ -469,7 +522,11 @@ export default function HomeFolderHub({
               className={`${styles.productsCta} ${fragmentMono.className}`}
               data-dimmed={hoveredId !== null && hoveredId !== "products" ? "true" : undefined}
               href="/products"
-              onClick={() => {
+              onClick={(event) => {
+                if (shouldIgnoreImmediateReopen()) {
+                  event.preventDefault();
+                  return;
+                }
                 setMobileRailOpen(false);
                 setMobileRailDismissed(true);
               }}
@@ -491,22 +548,40 @@ export default function HomeFolderHub({
       ref={rootRef}
       className={styles.shell}
       data-home-section="folder-hub"
-      data-home-folder-state={activeItem ? "panel-open" : "hub"}
+      data-home-folder-state={activeModalItem ? "panel-open" : activeInlineItem ? "inline-open" : "hub"}
       data-footer-stage={footerStage}
       data-home-folder-variant={folderVariant}
       data-mobile-overlay-open={mobileRailOpen ? "true" : undefined}
-      data-panel-open={activeItem ? "true" : undefined}
+      data-inline-open={activeInlineItem ? "true" : undefined}
+      data-panel-open={activeModalItem ? "true" : undefined}
       data-rail-visible={railVisible ? "true" : undefined}
       data-reduced-motion={reducedMotion ? "true" : undefined}
       data-verify-mode={verifyMode ? "true" : undefined}
     >
+      {activeInlineItem ? <div aria-hidden="true" className={styles.focusFog} /> : null}
+      {activeInlineItem && trustedLaunchStyle ? (
+        <div
+          aria-hidden="true"
+          className={styles.trustedLaunchField}
+          style={trustedLaunchStyle}
+        >
+          <span className={styles.trustedLaunchCapsule} />
+          <span className={styles.trustedLaunchTrail} />
+          <span className={styles.trustedLaunchPulse} />
+        </div>
+      ) : null}
+      {activeInlineItem ? (
+        <div className={styles.inlineLogoBurst} ref={burstRef}>
+          {activeInlineItem.content(verifyMode)}
+        </div>
+      ) : null}
       <div className={styles.railDock} ref={railDockRef}>{railNode}</div>
 
       <div className={styles.track} ref={trackRef}>
         <div className={styles.frame} ref={frameRef}>
           <div
             className={styles.canvas}
-            data-blurred={activeItem || (isMobileViewport && mobileRailOpen) ? "true" : undefined}
+            data-blurred={activeModalItem || (isMobileViewport && mobileRailOpen) ? "true" : undefined}
             data-overlay={isMobileViewport && mobileRailOpen ? "true" : undefined}
             style={previewStyle}
           >
@@ -525,31 +600,31 @@ export default function HomeFolderHub({
         </div>
       </div>
 
-      {activeItem || (isMobileViewport && mobileRailOpen) ? (
+      {activeInlineItem || activeModalItem || (isMobileViewport && mobileRailOpen) ? (
         <>
           <button
-            aria-label={activeItem ? "Close panel" : "Close menu"}
+            aria-label={activeModalItem ? "Close panel" : activeInlineItem ? "Close trusted focus" : "Close menu"}
             className={styles.overlayDismiss}
-            onClick={() => {
-              setActiveId(null);
-              setMobileRailOpen(false);
-              setMobileRailDismissed(true);
+            onClick={dismissHubOverlay}
+            onPointerDown={(event) => {
+              event.preventDefault();
+              dismissIntentAtRef.current = performance.now();
             }}
             type="button"
           />
         </>
       ) : null}
 
-      {activeItem ? (
+      {activeModalItem ? (
         <>
           <div
-            aria-label={activeItem.monoLabel}
+            aria-label={activeModalItem.monoLabel}
             aria-modal="true"
             className={`${styles.panel} ${styles.panelTop}`}
             role="dialog"
           >
             <div className={styles.panelHeader}>
-              <span className={`${styles.panelLabel} ${fragmentMono.className}`}>{activeItem.monoLabel}</span>
+              <span className={`${styles.panelLabel} ${fragmentMono.className}`}>{activeModalItem.monoLabel}</span>
               <button
                 className={`${styles.closeButton} ${fragmentMono.className}`}
                 onClick={() => {
@@ -565,7 +640,7 @@ export default function HomeFolderHub({
               </button>
             </div>
             <div className={styles.panelBody}>
-              <div className={styles.panelInner}>{activeItem.panel(verifyMode)}</div>
+              <div className={styles.panelInner}>{activeModalItem.content(verifyMode)}</div>
             </div>
           </div>
         </>
