@@ -1,6 +1,6 @@
 export default function HomeIntroText() {
   return (
-    <section className="bg-white pb-4 pt-8 md:pb-6 md:pt-10">
+    <section className="bg-white pb-4 pt-8 md:pb-6 md:pt-10" data-home-section="hero">
       <div className="mx-auto max-w-[76rem] px-4 text-center md:max-w-[88rem] lg:px-10">
         <p className="whitespace-nowrap font-sans text-[1rem] font-medium leading-relaxed tracking-[-0.01em] text-neutral-800 md:text-[1.18rem]">
           Since 1962, Yeongjin has supplied premium shirting and woven cotton fabrics from Korea to brand and wholesale buyers.
