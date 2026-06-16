@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Categories from "@/components/home/Categories";
 import HomeFolderHub, { type FolderVariant } from "@/components/home/HomeFolderHub";
-import OriginalLoopVideoHero from "@/components/home/OriginalLoopVideoHero";
+import HomeIntroText from "@/components/home/HomeIntroText";
 import StructuredData from "@/components/site/StructuredData";
 import Footer from "@/components/site/Footer";
 import Header from "@/components/site/Header";
@@ -66,7 +66,7 @@ export default async function Home({
           ]}
         />
         <main className="pt-[calc(env(safe-area-inset-top)+5rem)] md:pt-[calc(env(safe-area-inset-top)+7rem)]">
-          <OriginalLoopVideoHero verifyMode={verifyMode} />
+          <HomeIntroText />
           <Categories verifyMode={verifyMode} />
           <HomeFolderHub folderVariant={folderVariant} verifyMode={verifyMode} />
         </main>
