@@ -151,6 +151,11 @@ export const rootMetadata: Metadata = {
       "max-video-preview": -1,
     },
   },
+  verification: {
+    other: {
+      "facebook-domain-verification": "vv9sjfr15a555y7dovp17ncd0o68j9",
+    },
+  },
   category: "textiles",
   creator: siteConfig.name,
   publisher: siteConfig.name,
