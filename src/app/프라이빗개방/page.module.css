@@ -259,9 +259,9 @@
 
 .qrLink {
   display: block;
-  overflow: hidden;
-  background: #151212;
-  border-radius: 4px;
+  padding: 7px;
+  border: 2px solid #151212;
+  background: #ffffff;
 }
 
 .qrLink img {

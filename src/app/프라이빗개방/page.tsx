@@ -94,7 +94,7 @@ export default function PrivateOpeningPage() {
               <p className={styles.sectionLabel}>INVITATION QR</p>
               <h2 id="qr-title">초대 페이지를 저장해두세요.</h2>
               <p>QR을 스캔하면 이 안내 페이지로 다시 들어올 수 있어요.</p>
-              <a href="/private-opening-qr.svg" download>
+              <a href="/private-opening-qr.png" download>
                 QR 이미지 다운로드
               </a>
             </div>
@@ -104,10 +104,10 @@ export default function PrivateOpeningPage() {
               aria-label="영진원단 비공개 창고 프라이빗 개방 페이지 열기"
             >
               <Image
-                src="/private-opening-qr.svg"
+                src="/private-opening-qr.png"
                 alt="link.yjtexlab.com 프라이빗 개방 페이지 QR 코드"
-                width={410}
-                height={410}
+                width={256}
+                height={256}
               />
             </a>
           </section>
