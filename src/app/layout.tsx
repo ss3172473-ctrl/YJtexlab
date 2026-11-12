@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Montserrat } from "next/font/google";
 import localFont from "next/font/local";
 import { Suspense } from "react";
 import SiteSoundLayer from "@/components/site/SiteSoundLayer";
@@ -7,9 +6,10 @@ import StructuredData from "@/components/site/StructuredData";
 import { organizationJsonLd, rootMetadata, websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
 
-const brandLogo = Montserrat({
-  subsets: ["latin"],
-  weight: ["700", "800", "900"],
+const brandLogo = localFont({
+  src: "../../public/fonts/Montserrat-Latin-Variable.woff2",
+  weight: "700 900",
+  style: "normal",
   variable: "--font-logo",
   display: "swap",
 });
