@@ -6,7 +6,6 @@ import StructuredData from "@/components/site/StructuredData";
 import Footer from "@/components/site/Footer";
 import Header from "@/components/site/Header";
 import PagePreloadGate from "@/components/site/PagePreloadGate";
-import { homeCategoriesBlockingPreloadAssets } from "@/lib/preload-assets";
 import {
   createBreadcrumbJsonLd,
   createHomePageJsonLd,
@@ -47,7 +46,9 @@ export default async function Home({
 
   return (
     <PagePreloadGate
-      assets={verifyMode ? [] : homeCategoriesBlockingPreloadAssets}
+      // The visible category images load in their own DOM. Do not fetch a second,
+      // unused startup set or hold the entire page behind those requests.
+      assets={[]}
       backgroundAssets={[]}
       completionStrategy="all-settled"
       title="Preparing Categories"
