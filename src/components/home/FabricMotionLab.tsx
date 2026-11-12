@@ -515,10 +515,13 @@ function Tile({
 
   const firstFrame = firstFrameEntries[zone.key];
   const useFirstFrame = firstFrame?.itemName === tile.item.name;
-  const imageSrc = useFirstFrame ? firstFrame.desktop.src : tile.item.src;
+  // All animation frames have pre-generated responsive variants. Keep the full
+  // original as a high-DPR fallback without downloading it for every small tile.
+  const optimizedBase = tile.item.src.replace("/new-stage-fabrics/", "/new-stage-fabrics-optimized/").replace(/\.webp$/, "");
+  const imageSrc = useFirstFrame ? firstFrame.desktop.src : `${optimizedBase}-desktop.webp`;
   const imageSrcSet = useFirstFrame
     ? `${firstFrame.mobile.src} ${firstFrame.mobile.width}w, ${firstFrame.desktop.src} ${firstFrame.desktop.width}w`
-    : undefined;
+    : `${optimizedBase}-mobile.webp 420w, ${optimizedBase}-desktop.webp 640w, ${tile.item.src} 900w`;
   const displayKey = `${tile.item.name}:${imageSrc}`;
 
   const style: CSSProperties = {
@@ -563,7 +566,7 @@ function Tile({
             fetchPriority={index < 2 ? "high" : "auto"}
             height={useFirstFrame ? firstFrame.desktop.height : 1200}
             loading={index < 4 ? "eager" : "lazy"}
-            sizes={useFirstFrame ? "(max-width: 720px) 118px, (max-width: 1200px) 148px, 198px" : undefined}
+            sizes={`(max-width: 720px) min(${layout.widthRem}rem, 7.4rem), ${layout.widthRem}rem`}
             src={imageSrc}
             srcSet={imageSrcSet}
             width={useFirstFrame ? firstFrame.desktop.width : 900}
