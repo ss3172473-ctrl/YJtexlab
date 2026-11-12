@@ -67,26 +67,14 @@ export default function Footer() {
         <>
       <div className="mt-10 mb-16 grid grid-cols-1 gap-12 md:grid-cols-4">
         <div>
-          <div className="flex flex-col items-start mb-6">
-            <div className="flex flex-col items-stretch">
-              <div className="flex items-center gap-1.5 font-brand-logo">
-                <span className="text-2xl font-black tracking-tight leading-none text-black">
-                  YJ
-                </span>
-                <div className="relative inline-block">
-                  <div className="absolute -top-[2px] left-0 right-0 border-t-[2.5px] border-black" />
-                  <span className="text-2xl font-black tracking-tight leading-none text-black">
-                    TEXLAB
-                  </span>
-                </div>
-              </div>
-              <div className="flex justify-between w-full mt-0 text-[7.5px] font-bold text-black font-brand-logo leading-none">
-                <span>S</span><span>I</span><span>N</span><span>C</span><span>E</span>
-                <span className="w-2"></span>
-                <span>1</span><span>9</span><span>6</span><span>2</span>
-              </div>
-            </div>
-          </div>
+          <img
+            src="/brand/yjtexlab-logo.png"
+            alt="YJ TexLab"
+            width={405}
+            height={200}
+            className="mb-6 block h-16 w-auto"
+            loading="lazy"
+          />
           <p className="text-gray-500 text-sm max-w-xs mt-4">60년 전통의 최고급 선염 면원단 전문 기업.</p>
         </div>
 

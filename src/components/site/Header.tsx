@@ -28,24 +28,14 @@ export default function Header() {
         </div>
 
         <Link href="/" className="justify-self-center">
-          <div className="flex flex-col items-stretch">
-            <div className="flex items-center gap-1.5 font-brand-logo">
-              <span className="text-[20px] md:text-[24px] lg:text-[28px] font-black tracking-tight leading-none text-black">
-                YJ
-              </span>
-              <div className="relative inline-block mt-0.5">
-                <div className="absolute -top-[2px] md:-top-[3px] left-0 right-0 border-t-[2.5px] border-black" />
-                <span className="text-[20px] md:text-[24px] lg:text-[28px] font-black tracking-tight leading-none text-black">
-                  TEXLAB
-                </span>
-              </div>
-            </div>
-            <div className="flex justify-between w-full mt-0 text-[6.5px] md:text-[7.5px] lg:text-[8.5px] font-bold text-black font-brand-logo leading-none">
-              <span>S</span><span>I</span><span>N</span><span>C</span><span>E</span>
-              <span className="w-2"></span>
-              <span>1</span><span>9</span><span>6</span><span>2</span>
-            </div>
-          </div>
+          <img
+            src="/brand/yjtexlab-logo.png"
+            alt="YJ TexLab"
+            width={405}
+            height={200}
+            className="block h-10 w-auto md:h-12"
+            fetchPriority="high"
+          />
         </Link>
 
         <div className="flex items-center justify-end">
