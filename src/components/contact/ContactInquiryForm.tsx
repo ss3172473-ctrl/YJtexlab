@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type ContactInquiryFormProps = {
   ctaLabel: string;
@@ -9,6 +9,8 @@ type ContactInquiryFormProps = {
 export default function ContactInquiryForm({
   ctaLabel,
 }: ContactInquiryFormProps) {
+  const submissionInFlight = useRef(false);
+  const [submissionUncertain, setSubmissionUncertain] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [replyTo, setReplyTo] = useState("");
   const [subject, setSubject] = useState("");
@@ -20,12 +22,15 @@ export default function ContactInquiryForm({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (submissionInFlight.current || submissionUncertain) return;
     const form = event.currentTarget;
 
     if (!form?.reportValidity()) {
       return;
     }
 
+    submissionInFlight.current = true;
+    let definitelyRejected = false;
     try {
       setIsSubmitting(true);
       setStatusMessage(null);
@@ -44,9 +49,11 @@ export default function ContactInquiryForm({
         }),
       });
 
-      const result = (await response.json()) as { error?: string; message?: string };
+      definitelyRejected = response.status === 400;
+      const result = (await response.json()) as { error?: string; message?: string; saved?: boolean | "unknown" };
 
       if (!response.ok) {
+        if (result.saved === "unknown" || response.status >= 500) setSubmissionUncertain(true);
         throw new Error(result.error || "문의 전송에 실패했습니다.");
       }
 
@@ -58,11 +65,16 @@ export default function ContactInquiryForm({
       setMessage("");
       form.reset();
     } catch (error) {
+      // Lost responses can follow a successful save. Block blind re-submission.
+      if (!definitelyRejected) setSubmissionUncertain(true);
       setStatusTone("error");
       setStatusMessage(
-        error instanceof Error ? error.message : "문의 전송에 실패했습니다.",
+        !definitelyRejected
+          ? "접수 결과를 확인하지 못했습니다. 다시 전송하지 말고 직접 연락해 확인해 주세요."
+          : error instanceof Error ? error.message : "문의 전송에 실패했습니다.",
       );
     } finally {
+      submissionInFlight.current = false;
       setIsSubmitting(false);
     }
   };
@@ -146,10 +158,10 @@ export default function ContactInquiryForm({
       <div className="flex flex-col gap-4 border-t border-black/10 pt-4">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || submissionUncertain}
           className="inline-flex w-full items-center justify-between border border-black bg-black px-5 py-4 font-sans text-[11px] uppercase tracking-[0.3em] text-white transition-all duration-300 hover:bg-white hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black disabled:cursor-not-allowed disabled:border-black/10 disabled:bg-black/10 disabled:text-black/35"
         >
-          <span>{isSubmitting ? "Sending..." : ctaLabel}</span>
+          <span>{submissionUncertain ? "접수 확인 필요" : isSubmitting ? "Sending..." : ctaLabel}</span>
           <span className="text-base leading-none">↗</span>
         </button>
 

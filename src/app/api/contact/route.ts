@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import { google } from "googleapis";
 import { NextResponse } from "next/server";
+import { contactRowNumber, notifyContactRow } from "@/lib/contact-notification";
 
 import { buildContactSheetRow, normalizeContactSubmission, type ContactSubmission } from "@/lib/contact";
 
@@ -64,7 +65,7 @@ async function appendContactRow(values: string[]) {
     });
   }
 
-  await sheets.spreadsheets.values.append({
+  const appended = await sheets.spreadsheets.values.append({
     spreadsheetId: contactSpreadsheetId,
     range: `${contactSheetName}!A2:F`,
     valueInputOption: "USER_ENTERED",
@@ -73,6 +74,7 @@ async function appendContactRow(values: string[]) {
       values: [values],
     },
   });
+  return contactRowNumber(appended.data.updates?.updatedRange);
 }
 
 export async function POST(request: Request) {
@@ -88,18 +90,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
+  let rowNumber: number | null;
   try {
-    await appendContactRow(buildContactSheetRow(payload));
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to store inquiry.";
-
-    console.error("Failed to append contact inquiry", error);
-    return NextResponse.json({ error: message }, { status: 503 });
+    rowNumber = await appendContactRow(buildContactSheetRow(payload));
+  } catch {
+    // Append may have succeeded before its response was lost. No automatic retry.
+    // Never expose credential/provider error details or ask users to resubmit blindly.
+    console.error("contact_store_result_uncertain");
+    return NextResponse.json({
+      ok: false,
+      saved: "unknown",
+      error: "접수 결과를 확인하지 못했습니다. 중복 접수를 막기 위해 다시 전송하지 말고 직접 연락해 확인해 주세요.",
+    }, { status: 503 });
   }
 
+  const notification = rowNumber === null ? "uncertain" : await notifyContactRow(rowNumber);
+  if (notification !== "sent" && notification !== "already_sent") {
+    console.warn("contact_notification_not_confirmed", { rowNumber, status: notification });
+  }
   return NextResponse.json({
     ok: true,
-    message: "Inquiry sent successfully.",
+    saved: true,
+    notification,
+    message: "문의가 접수되었습니다. 확인 후 회신드리겠습니다.",
   });
 }
