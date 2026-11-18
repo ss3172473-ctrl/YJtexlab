@@ -46,8 +46,10 @@ function assert(condition, message) {
 }
 
 function captureScreenshot(chromePath, args, outputPath) {
+  // Each capture uses a fresh empty profile, never the owner's Chrome session.
+  const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), "yjtex-verify-chrome-profile-"));
   try {
-    execFileSync(chromePath, args, {
+    execFileSync(chromePath, [`--user-data-dir=${profileDir}`, ...args], {
       timeout: 30000,
       stdio: "ignore",
     });
