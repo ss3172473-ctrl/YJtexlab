@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import BusinessIdentity from "./BusinessIdentity";
+import { businessContact } from "@/lib/business-contact";
 import { useState } from "react";
 import {
   footerCompanyRoutes,
@@ -29,7 +31,7 @@ export default function Footer() {
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-gray-400 md:text-[11px] md:tracking-[0.22em]">
           <a
-            href="mailto:yjtexlab@gmail.com"
+            href={`mailto:${businessContact.email}`}
             className="transition-colors hover:text-black"
           >
             Email
@@ -61,6 +63,10 @@ export default function Footer() {
         >
           [{isExpanded ? "Close Footer" : "Open Footer"}]
         </button>
+      </div>
+
+      <div className="mt-6 border-t border-gray-100 pt-5">
+        <BusinessIdentity />
       </div>
 
       {isExpanded ? (

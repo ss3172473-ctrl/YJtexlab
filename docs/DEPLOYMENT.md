@@ -2,9 +2,9 @@
 
 ## Required Path
 
-Deploy from `/Users/leesungjun/Desktop/yjtexlab.com` with Vercel.
+Deploy from `/Users/leesungjun/Library/CloudStorage/GoogleDrive-ss3172473@gmail.com/내 드라이브/LSJ/LSJ_OS/01_Projects/Project/PJ_영진원단/06_Web_Automation/site/yjtexlab.com` with Vercel.
 Treat this folder as the canonical integration/deploy root, not the default feature-editing folder.
-If a temporary migration copy exists at `/Users/leesungjun/Desktop/yjtexlab.com-clean-20260326`, cut back to the canonical root before production deploys.
+If a temporary migration copy exists at `/Users/leesungjun/Library/CloudStorage/GoogleDrive-ss3172473@gmail.com/내 드라이브/LSJ/LSJ_OS/01_Projects/Project/PJ_영진원단/06_Web_Automation/site/yjtexlab.com-clean-20260326`, cut back to the canonical root before production deploys.
 
 ## Before Deploy
 

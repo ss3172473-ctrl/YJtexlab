@@ -181,3 +181,18 @@
     letter-spacing: 0.14em;
   }
 }
+
+/* Keep the complete moving swatches on narrow screens, rather than clipping
+   the document or hiding content that drifts past the viewport. */
+@media (max-width: 1023px) {
+  .tile {
+    --responsive-tile-width: var(--zone-width, 10rem);
+    left: clamp(0.75rem, calc(var(--x) + var(--tx)), calc(100% - var(--responsive-tile-width) - 0.75rem));
+    transform: translate3d(0, var(--ty), 0);
+  }
+  .tileAnchor { width: var(--responsive-tile-width); }
+  .variantCta { left: auto; right: 0.75rem; }
+}
+@media (max-width: 720px) {
+  .tile { --responsive-tile-width: min(var(--zone-width, 10rem), 7.4rem); }
+}

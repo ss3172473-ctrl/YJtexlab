@@ -1,3 +1,5 @@
+import { businessContact } from "@/lib/business-contact";
+
 export type ContactChannelIcon = "email" | "whatsapp" | "line";
 
 export const contactContent = {
@@ -6,7 +8,7 @@ export const contactContent = {
     {
       label: "Email",
       icon: "email" as const,
-      href: "mailto:yjtexlab@yjtexlab.com",
+      href: `mailto:${businessContact.email}`,
     },
     {
       label: "WhatsApp",

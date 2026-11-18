@@ -1,13 +1,14 @@
+import { businessContact } from "@/lib/business-contact";
 import type { Metadata } from "next";
 
 export const siteConfig = {
   name: "YJ TexLab",
-  legalName: "YJ TexLab",
+  legalName: businessContact.name,
   url: "https://yjtexlab.com",
   language: "ko",
   locale: "ko_KR",
-  email: "yjtexlab@yjtexlab.com",
-  phone: "+82-53-556-4561",
+  email: businessContact.email,
+  phone: businessContact.phone,
   foundingDate: "1962",
   defaultTitle: "YJ TexLab",
   defaultDescription:

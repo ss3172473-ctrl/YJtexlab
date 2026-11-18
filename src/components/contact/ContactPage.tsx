@@ -3,6 +3,7 @@ import { Mail, MessageCircle, MessagesSquare } from "lucide-react";
 import { contactContent, type ContactChannelIcon } from "@/content/contact";
 
 import ContactInquiryForm from "./ContactInquiryForm";
+import BusinessIdentity from "@/components/site/BusinessIdentity";
 
 const contactChannelIcons: Record<ContactChannelIcon, typeof Mail> = {
   email: Mail,
@@ -30,6 +31,8 @@ export default function ContactPage() {
                   Send inquiry
                 </h1>
               </div>
+
+              <BusinessIdentity />
 
               <div className="space-y-4 border-t border-black/10 pt-5">
                 <p className="font-sans text-[11px] uppercase tracking-[0.28em] text-black/42">

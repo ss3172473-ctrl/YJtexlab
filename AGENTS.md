@@ -5,9 +5,9 @@ This file applies to the entire `yjtexlab.com` repository.
 ## Deployment
 
 - Production deployment is Vercel only.
-- Always deploy from the repository root: `/Users/leesungjun/Desktop/yjtexlab.com`.
-- Treat `/Users/leesungjun/Desktop/yjtexlab.com` as the canonical integration/deploy root, not as the default feature-editing folder.
-- Temporary migration work may happen in `/Users/leesungjun/Desktop/yjtexlab.com-clean-20260326`, but the canonical long-term local root is `/Users/leesungjun/Desktop/yjtexlab.com`.
+- Always deploy from the repository root: `/Users/leesungjun/Library/CloudStorage/GoogleDrive-ss3172473@gmail.com/내 드라이브/LSJ/LSJ_OS/01_Projects/Project/PJ_영진원단/06_Web_Automation/site/yjtexlab.com`.
+- Treat `/Users/leesungjun/Library/CloudStorage/GoogleDrive-ss3172473@gmail.com/내 드라이브/LSJ/LSJ_OS/01_Projects/Project/PJ_영진원단/06_Web_Automation/site/yjtexlab.com` as the canonical integration/deploy root, not as the default feature-editing folder.
+- Temporary migration work may happen in `/Users/leesungjun/Library/CloudStorage/GoogleDrive-ss3172473@gmail.com/내 드라이브/LSJ/LSJ_OS/01_Projects/Project/PJ_영진원단/06_Web_Automation/site/yjtexlab.com-clean-20260326`, but the canonical long-term local root is `/Users/leesungjun/Library/CloudStorage/GoogleDrive-ss3172473@gmail.com/내 드라이브/LSJ/LSJ_OS/01_Projects/Project/PJ_영진원단/06_Web_Automation/site/yjtexlab.com`.
 - Feature work must be implemented in an isolated worktree first, then promoted into the canonical integration branch before production deploys.
 - Record the feature worktree `BASE_SHA` at isolation time and define promotable scope against that `BASE_SHA`, not against the current canonical dirty state.
 - Before production deploys, run `npm run build` and `npm run verify`.
