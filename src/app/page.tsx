@@ -71,7 +71,9 @@ export default async function Home({
           <Categories verifyMode={verifyMode} />
           <HomeFolderHub folderVariant={folderVariant} verifyMode={verifyMode} />
         </main>
-        <Footer />
+        <div className="relative z-20">
+          <Footer collapseBusinessIdentity />
+        </div>
       </div>
     </PagePreloadGate>
   );

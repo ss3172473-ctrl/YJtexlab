@@ -10,7 +10,11 @@ import {
   footerProductRoutes,
 } from "@/lib/route-matrix";
 
-export default function Footer() {
+export default function Footer({
+  collapseBusinessIdentity = false,
+}: {
+  collapseBusinessIdentity?: boolean;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -65,7 +69,10 @@ export default function Footer() {
         </button>
       </div>
 
-      <div className="mt-6 border-t border-gray-100 pt-5">
+      <div
+        className="mt-6 border-t border-gray-100 pt-5"
+        hidden={collapseBusinessIdentity && !isExpanded}
+      >
         <BusinessIdentity />
       </div>
 
