@@ -13,7 +13,7 @@ const server = launchBuiltServer(root, port);
 try {
   await waitForHttp(baseUrl);
 
-  for (const route of smokeRoutes) {
+  for (const route of [...smokeRoutes, { href: "/link", expectedStatus: 404 }]) {
     const response = await fetch(`${baseUrl}${route.href}`, {
       cache: "no-store",
       redirect: route.expectedStatus === 307 ? "manual" : "follow",

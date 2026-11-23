@@ -3,7 +3,7 @@ import { routeMatrix } from "@/lib/route-matrix";
 import { absoluteUrl } from "@/lib/seo";
 
 const LAST_MODIFIED = new Date("2026-03-26T00:00:00+09:00");
-const EXCLUDED_SITEMAP_ROUTES = new Set(["/privacy", "/terms", "/link"]);
+const EXCLUDED_SITEMAP_ROUTES = new Set(["/privacy", "/terms"]);
 
 const changeFrequencyMap: Record<string, MetadataRoute.Sitemap[number]["changeFrequency"]> = {
   "/": "weekly",
