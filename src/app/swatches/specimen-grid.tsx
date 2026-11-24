@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowUpRight, Pause, Play } from "lucide-react";
 
@@ -45,9 +45,9 @@ function observePhoto(node: Element, load: () => void) {
   };
 }
 
-function SpecimenPhoto({ variant, variants, hero, cycle, index, manualSku, groupName, onShown, warmBehindWelcome, warmedCover }: {
+function SpecimenPhoto({ variant, variants, hero, cycle, index, manualSku, groupName, onShown, warmBehindWelcome, warmedCover, allowListThumb }: {
   variant: Variant; variants: Variant[]; hero: boolean; cycle: boolean; index: number; manualSku?: string; groupName: string; onShown: (group: string, sku: string) => void;
-  warmBehindWelcome: boolean; warmedCover: boolean;
+  warmBehindWelcome: boolean; warmedCover: boolean; allowListThumb: boolean;
 }) {
   const frame = useRef<HTMLSpanElement>(null);
   const [inRange, setInRange] = useState(false);
@@ -115,22 +115,55 @@ function SpecimenPhoto({ variant, variants, hero, cycle, index, manualSku, group
     return () => window.clearInterval(timer);
   }, [cycle, choices, failed, hero, inRange, index, loaded, pending, shown]);
 
+  const canRender = warmBehindWelcome ? warmedCover : (hero || inRange || warmedCover);
+  const canUseThumb = allowListThumb && choices.some(entry => entry.listThumb);
+  const [density, setDensity] = useState<"thumbnail" | "original">();
+  const [thumbFailures, setThumbFailures] = useState<string[]>([]);
+  useLayoutEffect(() => {
+    const node = frame.current;
+    if (!node || !canRender || !canUseThumb || density === "original") return;
+    const measure = () => {
+      const width = node.getBoundingClientRect().width;
+      // Once an original was chosen, don't downgrade and fetch a second copy.
+      const fits = width > 0 && Math.ceil(width * (window.devicePixelRatio || 1)) <= 384;
+      setDensity(before => before === "original" || !fits ? "original" : "thumbnail");
+    };
+    measure();
+    const resize = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure);
+    resize?.observe(node);
+    window.addEventListener("resize", measure);
+    return () => {
+      resize?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [canRender, canUseThumb, density]);
   const accent = loaded[shown];
   return <span ref={frame} className={styles.mainSpecimenPhoto} data-rendered-sku={shown} data-painted-sku={accent ? shown : undefined}>
     <span className={styles.unpaintedCover}>
       {failed.includes(shown) && <span className={styles.specimenPhotoError}>사진 로드 오류</span>}
     </span>
-    {(warmBehindWelcome ? warmedCover : (hero || inRange || warmedCover)) && choices.filter((v) => v.image && requested.includes(v.sku)).map((entry) => (
-      <Image key={entry.sku} src={entry.image!} alt="" fill unoptimized loading="eager"
+    {canRender && choices.filter((v) => v.image && requested.includes(v.sku)).map((entry) => {
+      const thumbnail = canUseThumb && !!entry.listThumb && !thumbFailures.includes(entry.sku);
+      if (thumbnail && !density) return null;
+      const useThumb = thumbnail && density === "thumbnail";
+      const src = useThumb ? entry.listThumb! : entry.image!;
+      const loadFailed = () => {
+        if (useThumb) setThumbFailures(before => before.includes(entry.sku) ? before : [...before, entry.sku]);
+        else imageFailed(entry.sku);
+      };
+      // Next Image can rewrite a relative src attribute as an absolute URL.
+      const isCurrentImage = (image: HTMLImageElement) => image.isConnected
+        && image.src === new URL(src, image.baseURI).href;
+      return <Image key={src} src={src} alt="" fill unoptimized loading="eager"
         className={styles.rotatingCover} data-cover-sku={entry.sku} data-visible={Boolean(loaded[entry.sku]) && shown === entry.sku} aria-hidden="true"
         fetchPriority={hero && entry.sku === variant.sku ? "high" : "low"} decoding="async" referrerPolicy="no-referrer"
         onLoad={async ({ currentTarget: image }) => {
           try { if (typeof image.decode === "function") await image.decode(); }
-          catch { if (image.isConnected) imageFailed(entry.sku); return; }
-          if (!image.isConnected) return;
-          if (!image.naturalWidth) { imageFailed(entry.sku); return; }
+          catch { if (isCurrentImage(image)) loadFailed(); return; }
+          if (!isCurrentImage(image)) return;
+          if (!image.naturalWidth) { loadFailed(); return; }
           const color = paintedAccent(image, chip(entry.color));
-          setLoaded((before) => before[entry.sku] ? before : { ...before, [entry.sku]: color });
+          setLoaded((before) => before[entry.sku] === color ? before : { ...before, [entry.sku]: color });
           const wanted = pendingRef.current;
           if (wanted?.sku === entry.sku) {
             pendingRef.current = undefined;
@@ -138,8 +171,8 @@ function SpecimenPhoto({ variant, variants, hero, cycle, index, manualSku, group
             if (wanted.kind === "manual" || mayAutoCommit()) setShown(entry.sku);
           }
         }}
-        onError={() => imageFailed(entry.sku)} />
-    ))}
+        onError={({ currentTarget: image }) => { if (isCurrentImage(image)) loadFailed(); }} />;
+    })}
     {accent && <span aria-hidden="true" className={styles.paintedAccent}
       data-accent-sku={shown} style={{ background: accent }} />}
   </span>;
@@ -380,7 +413,7 @@ export default function SpecimenGrid({ patterns, language, query, onQuery, onOpe
               aria-pressed={editor ? selected : undefined} aria-label={`${title} · ${group.name}`}>
               <SpecimenPhoto key={representative.image ?? representative.sku} variant={representative} variants={group.variants} hero={!editor && !search && index === 0} cycle={!warmBehindWelcome && !editor && !search && !reducedMotion && !cyclePaused && group.variants.length > 3} index={index}
                 manualSku={manual[group.name]} groupName={group.name} onShown={updateShown}
-                warmBehindWelcome={warmBehindWelcome} warmedCover={Boolean(representative.image && warmedCovers.has(representative.image))} />
+                allowListThumb={!editor} warmBehindWelcome={warmBehindWelcome} warmedCover={Boolean(representative.image && warmedCovers.has(representative.image))} />
             </button>
           </div>
           <button type="button" className={styles.specimenInfo} onClick={(event) => open(group, displayedVariant(event.currentTarget.parentElement ?? event.currentTarget, representative, group))}>

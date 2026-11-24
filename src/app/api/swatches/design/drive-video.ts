@@ -67,7 +67,7 @@ export const hasDriveFrontForSku = (sku: string) => getConfig("front")?.entries.
 export const hasDriveReverseForSku = (sku: string) => getConfig("reverse")?.entries.has(sku) ?? false;
 
 let auth: InstanceType<typeof google.auth.GoogleAuth> | undefined;
-async function driveToken() {
+export async function driveToken() {
   if (!auth) {
     const key = await readSwatchesGoogleCredentials();
     const credentials: unknown = key ? JSON.parse(key) : undefined;
