@@ -15,3 +15,8 @@ public 2
 scripts 2
 원단
 원단 2
+
+# No private assets or identifiers in deploy source archive.
+swatches-media/
+*.private-manifest.json
+*.private.env

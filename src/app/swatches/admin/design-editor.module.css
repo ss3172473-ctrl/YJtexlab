@@ -1,0 +1,77 @@
+.page { padding-top: clamp(24px, 4vw, 55px); }
+.header, .toolbarTop, .selection, .actions {
+  display: flex;
+  align-items: center;
+  gap: 12px 20px;
+}
+.header, .toolbarTop { justify-content: space-between; }
+.header { align-items: baseline; border-bottom: 1px solid #d7d7d7; padding-bottom: 18px; }
+.header h1 { font-size: clamp(25px, 4.5vw, 49px); font-weight: 500; letter-spacing: -.05em; line-height: 1.05; }
+.actions { flex-wrap: wrap; justify-content: flex-end; font-size: 13px; }
+.actions a, .actions button:not(.primary) { text-decoration: underline; text-underline-offset: 4px; }
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  padding: 12px 0 9px;
+  border-bottom: 1px solid #d7d7d7;
+  background: #fff;
+}
+.selection { flex-wrap: wrap; gap: 2px 12px; }
+.selection strong { font: 600 15px ui-monospace, monospace; }
+.selection span, .feedback { color: #5c5c5c; font-size: 12px; }
+.feedback { margin-top: 10px; min-height: 18px; }
+.error { color: #a22d2d; }
+.login { width: min(350px, 100%); display: grid; gap: 11px; margin: 36px 0; }
+.login label { font-size: 14px; }
+.login input { width: 100%; padding: 9px 11px; }
+.controls {
+  display: grid;
+  grid-template-columns: auto minmax(135px, 1fr) minmax(90px, .65fr) minmax(145px, 1fr);
+  gap: 12px 18px;
+  min-width: 0;
+  margin: 13px 0 0;
+  border: 0;
+  padding: 0;
+}
+.control { display: grid; align-content: start; gap: 5px; min-width: 0; }
+.control label { font-size: 12px; }
+.control output { margin-inline-start: 6px; color: #555; font-variant-numeric: tabular-nums; }
+.position, .height { display: flex; gap: 5px; align-items: center; }
+.control select, .position input, .position button, .height button, .login input {
+  border: 1px solid #c6c6c6;
+  border-radius: 0;
+  background: #fff;
+  min-height: 34px;
+  font-size: 13px;
+}
+.control select { width: 100%; padding: 4px 7px; }
+.position input { width: 55px; text-align: center; }
+.position button, .height button { display: inline-grid; place-items: center; padding-inline: 8px; white-space: nowrap; }
+.height input { flex: 1 1 auto; width: 100%; min-width: 0; accent-color: #222; }
+.primary { background: #191919; color: #fff; padding: 8px 18px; min-height: 38px; }
+.page button:disabled { opacity: .43; cursor: default; }
+.preview { overflow-x: auto; }
+.preview > section { min-width: 720px; }
+@media (max-width: 700px) {
+  .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .actions { gap: 6px 12px; }
+  .header { align-items: flex-start; }
+}
+.actions .upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #c6c6c6;
+  padding-inline: 10px;
+  min-height: 38px;
+  text-decoration: none;
+}
+
+.gridSettings { margin-top: 10px; font-size: 12px; }
+.gridSettings summary { cursor: pointer; width: fit-content; color: #444; }
+.gridSettings fieldset { border: 0; margin: 7px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 7px 23px; }
+.gridSettings label { display: inline-flex; gap: 8px; align-items: center; }
+.gridSettings select { background: #fff; border: 1px solid #c6c6c6; padding: 3px; }
+.gridSettings input { width: 90px; accent-color: #222; }
+.gridSettings output { min-width: 32px; font-variant-numeric: tabular-nums; }

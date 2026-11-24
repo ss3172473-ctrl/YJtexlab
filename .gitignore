@@ -18,3 +18,8 @@ yarn-error.log*
 .tmp-playwright
 tsconfig.tsbuildinfo
 .vercel
+
+# Swatches media and manifests are private, never tracked.
+swatches-media/
+*.private-manifest.json
+*.private.env

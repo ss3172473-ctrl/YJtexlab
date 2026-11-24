@@ -1,5 +1,10 @@
 {
   "framework": "nextjs",
   "buildCommand": "npm run vercel-build",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "git": {
+    "deploymentEnabled": {
+      "swatches-code-review-20261124": false
+    }
+  }
 }
