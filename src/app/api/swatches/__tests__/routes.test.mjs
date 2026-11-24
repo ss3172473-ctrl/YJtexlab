@@ -117,6 +117,7 @@ function setup() {
       "../sheets": sheets,
       "../active-session": activeSession,
       "../design/photos": { withSwatchPhotos: async (patterns) => patterns },
+      "../design/drive-list-thumbnails": { listThumbnailUrl: () => undefined },
       "../design/store": { readSwatchesLayout: async () => ({ order: [], covers: {}, sizes: {}, rowHeights: {} }) },
       "../session": session,
       "@/app/swatches/catalog": catalog,

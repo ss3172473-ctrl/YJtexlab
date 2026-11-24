@@ -13,6 +13,7 @@ export type Variant = {
   width: string;
   price: number | null;
   image: string | null;
+  listThumb?: string;
   video?: string | null;
   reverse?: string | null;
   visual?: PhotoVisual;
