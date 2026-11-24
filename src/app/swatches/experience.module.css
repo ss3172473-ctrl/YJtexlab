@@ -70,20 +70,20 @@
 
 .welcome { display: grid; place-items: center; text-align: center; padding-bottom: 14vh; }
 .welcome > div { width: min(100%, 620px); }
-.unlockIcon { position: relative; width: 64px; height: 64px; margin: 0 auto 24px; animation: release .75s cubic-bezier(.2,.75,.25,1) both; }
+.unlockIcon { position: relative; width: 64px; height: 64px; margin: 0 auto 24px; animation: release .42s cubic-bezier(.2,.75,.25,1) both; }
 .unlockIcon svg { position: absolute; inset: 0; margin: auto; }
-.lockBefore { animation: lockOut .38s both; }
-.lockAfter { animation: lockIn .5s .15s both; }
+.lockBefore { animation: lockOut .18s both; }
+.lockAfter { animation: lockIn .26s .08s both; }
 @keyframes lockOut { to { opacity: 0; transform: translateY(-4px); } }
 @keyframes lockIn { from { opacity: 0; transform: translateY(3px) scale(.9); } }
-.welcome p { color: #626262; margin-bottom: 10px; letter-spacing: .12em; font-size: 14px; animation: welcomeIn .45s .13s ease both; }
+.welcome p { color: #626262; margin-bottom: 10px; letter-spacing: .12em; font-size: 14px; animation: welcomeIn .24s .04s ease both; }
 .welcome h1 {
   font-size: clamp(34px, 7vw, 84px);
   font-weight: 500;
   letter-spacing: -.065em;
   line-height: 1;
   overflow-wrap: anywhere;
-  animation: welcomeIn .55s .25s cubic-bezier(.2,.75,.25,1) both;
+  animation: welcomeIn .30s .10s cubic-bezier(.2,.75,.25,1) both;
 }
 @keyframes release { from { opacity: .3; transform: translateY(10px) rotate(-16deg) scale(.8); } to { transform: rotate(0) scale(1); } }
 @keyframes welcomeIn { from { opacity: 0; transform: translateY(12px); } }

@@ -45,9 +45,9 @@ function observePhoto(node: Element, load: () => void) {
   };
 }
 
-function SpecimenPhoto({ variant, variants, hero, cycle, index, manualSku, groupName, onShown, warmBehindWelcome, warmedCover, allowListThumb }: {
+function SpecimenPhoto({ variant, variants, hero, cycle, index, manualSku, groupName, onShown, warmBehindWelcome, warmedCover, allowListThumb, onCoverReady }: {
   variant: Variant; variants: Variant[]; hero: boolean; cycle: boolean; index: number; manualSku?: string; groupName: string; onShown: (group: string, sku: string) => void;
-  warmBehindWelcome: boolean; warmedCover: boolean; allowListThumb: boolean;
+  warmBehindWelcome: boolean; warmedCover: boolean; allowListThumb: boolean; onCoverReady?: () => void;
 }) {
   const frame = useRef<HTMLSpanElement>(null);
   const [inRange, setInRange] = useState(false);
@@ -164,6 +164,7 @@ function SpecimenPhoto({ variant, variants, hero, cycle, index, manualSku, group
           if (!image.naturalWidth) { loadFailed(); return; }
           const color = paintedAccent(image, chip(entry.color));
           setLoaded((before) => before[entry.sku] === color ? before : { ...before, [entry.sku]: color });
+          if (warmedCover && entry.sku === variant.sku) onCoverReady?.();
           const wanted = pendingRef.current;
           if (wanted?.sku === entry.sku) {
             pendingRef.current = undefined;
@@ -183,7 +184,7 @@ function displayedVariant(node: HTMLElement, fallback: Variant, group: Pattern) 
   return group.variants.find((v) => v.sku === sku) ?? fallback;
 }
 
-export default function SpecimenGrid({ patterns, language, query, onQuery, onOpen, layout, editor, warmBehindWelcome = false }: {
+export default function SpecimenGrid({ patterns, language, query, onQuery, onOpen, layout, editor, warmBehindWelcome = false, onFirstCoverReady }: {
   patterns: Pattern[];
   language: Language;
   query: string;
@@ -192,6 +193,7 @@ export default function SpecimenGrid({ patterns, language, query, onQuery, onOpe
   layout?: SwatchesLayout;
   editor?: GridEditor;
   warmBehindWelcome?: boolean;
+  onFirstCoverReady?: () => void;
 }) {
   const t = swatchesText(language);
   const search = Boolean(query.trim());
@@ -413,7 +415,8 @@ export default function SpecimenGrid({ patterns, language, query, onQuery, onOpe
               aria-pressed={editor ? selected : undefined} aria-label={`${title} · ${group.name}`}>
               <SpecimenPhoto key={representative.image ?? representative.sku} variant={representative} variants={group.variants} hero={!editor && !search && index === 0} cycle={!warmBehindWelcome && !editor && !search && !reducedMotion && !cyclePaused && group.variants.length > 3} index={index}
                 manualSku={manual[group.name]} groupName={group.name} onShown={updateShown}
-                allowListThumb={!editor} warmBehindWelcome={warmBehindWelcome} warmedCover={Boolean(representative.image && warmedCovers.has(representative.image))} />
+                allowListThumb={!editor} warmBehindWelcome={warmBehindWelcome} warmedCover={Boolean(representative.image && warmedCovers.has(representative.image))}
+                onCoverReady={onFirstCoverReady} />
             </button>
           </div>
           <button type="button" className={styles.specimenInfo} onClick={(event) => open(group, displayedVariant(event.currentTarget.parentElement ?? event.currentTarget, representative, group))}>

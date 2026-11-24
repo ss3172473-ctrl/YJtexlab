@@ -50,6 +50,8 @@ export default function Swatches() {
   const [status, setStatus] = useState<"initial" | "locked" | "ready">("initial");
   const [code, setCode] = useState("");
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
+  const [firstCoverReady, setFirstCoverReady] = useState(false);
+  const markFirstCoverReady = useCallback(() => setFirstCoverReady(true), []);
   const finishWelcome = useCallback(() => setWelcomeName(null), []);
   const welcomePreparing = welcomeName !== null;
   const collectionElement = useCallback((node: HTMLElement | null) => {
@@ -159,6 +161,7 @@ export default function Swatches() {
       }
       const result = await response.json();
       void import("./specimen-grid").catch(() => {});
+      setFirstCoverReady(false);
       setWelcomeName(typeof result.welcomeName === "string" ? result.welcomeName : "");
       setCode("");
       setStatus("ready");
@@ -304,7 +307,8 @@ export default function Swatches() {
   }
 
   return <>
-    {welcomePreparing && <Welcome name={welcomeName} language={language} onDone={finishWelcome} />}
+    {welcomePreparing && <Welcome name={welcomeName} language={language} onDone={finishWelcome}
+      firstCoverReady={firstCoverReady} />}
     <main className={styles.shell} lang={language} ref={collectionElement}
       data-welcome-preparing={welcomePreparing || undefined} aria-hidden={welcomePreparing || undefined}>
     <div className={styles.collectionBar}>
@@ -364,7 +368,8 @@ export default function Swatches() {
       </section>
     </motion.article> : catalog && <SpecimenGrid patterns={visiblePatterns} language={language}
       query={query} onQuery={setQuery} onOpen={openPattern} layout={catalog.layout}
-      warmBehindWelcome={welcomePreparing} />}
+      warmBehindWelcome={welcomePreparing}
+      onFirstCoverReady={welcomePreparing ? markFirstCoverReady : undefined} />}
 
     <dialog className={styles.cart} ref={cartDialog} aria-labelledby="cart-title">
       <div className={styles.cartBody}>

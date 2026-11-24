@@ -82,13 +82,20 @@ export function AccessGate({
   </main>;
 }
 
-export function Welcome({ name, language, onDone }: { name: string; language: Language; onDone: () => void }) {
+export function Welcome({ name, language, onDone, firstCoverReady }: {
+  name: string; language: Language; onDone: () => void; firstCoverReady: boolean;
+}) {
   const t = swatchesText(language);
+  const startedAt = useRef<number>();
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const timer = window.setTimeout(onDone, reduced ? 800 : 1900);
+    startedAt.current ??= performance.now();
+    // Finish as soon as the first approved cover is ready after the animation,
+    // with a short cap even when catalog/photo loading is slower or unavailable.
+    const duration = reduced ? (firstCoverReady ? 100 : 300) : (firstCoverReady ? 440 : 700);
+    const timer = window.setTimeout(onDone, Math.max(0, duration - (performance.now() - startedAt.current)));
     return () => window.clearTimeout(timer);
-  }, [onDone]);
+  }, [onDone, firstCoverReady]);
   return <main className={`${styles.shell} ${experience.welcome}`} lang={language}>
     <div role="status">
       <div className={experience.unlockIcon} aria-hidden="true">
