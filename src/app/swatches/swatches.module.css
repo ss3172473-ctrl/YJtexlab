@@ -12,6 +12,14 @@
   background: #fff;
 }
 
+.shell[data-welcome-preparing] {
+  position: fixed;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
+  overflow: hidden;
+}
+
 .shell button:focus-visible, .shell input:focus-visible, .shell a:focus-visible {
   outline: 2px solid #696969;
   outline-offset: 4px;

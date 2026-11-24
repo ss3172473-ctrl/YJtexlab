@@ -51,6 +51,10 @@ export default function Swatches() {
   const [code, setCode] = useState("");
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const finishWelcome = useCallback(() => setWelcomeName(null), []);
+  const welcomePreparing = welcomeName !== null;
+  const collectionElement = useCallback((node: HTMLElement | null) => {
+    if (node) node.inert = welcomePreparing;
+  }, [welcomePreparing]);
   const [accessError, setAccessError] = useState<TextKey | "">("");
   const [accessPending, setAccessPending] = useState(false);
   const verifyingCode = useRef(false);
@@ -96,6 +100,7 @@ export default function Swatches() {
       const response = await fetch(`${api}/catalog`, { cache: "no-store" });
       if (response.status === 401) {
         setStatus("locked");
+        setWelcomeName(null);
         setCatalog(null);
         setCart([]);
         cartDialog.current?.close();
@@ -287,8 +292,6 @@ export default function Swatches() {
     </main>;
   }
 
-  if (welcomeName !== null) return <Welcome name={welcomeName} language={language} onDone={finishWelcome} />;
-
   if (status !== "ready") {
     const gateError = accessError || stockError;
     return <AccessGate language={language} code={code} onCode={(value) => {
@@ -300,7 +303,10 @@ export default function Swatches() {
       languageToggle={<LanguageToggle active={language} onSelect={pickLanguage} />} />;
   }
 
-  return <main className={styles.shell} lang={language}>
+  return <>
+    {welcomePreparing && <Welcome name={welcomeName} language={language} onDone={finishWelcome} />}
+    <main className={styles.shell} lang={language} ref={collectionElement}
+      data-welcome-preparing={welcomePreparing || undefined} aria-hidden={welcomePreparing || undefined}>
     <div className={styles.collectionBar}>
       {pattern ? <button type="button" className={styles.textButton} onClick={() => {
         setPatternName("");
@@ -357,7 +363,8 @@ export default function Swatches() {
         </> : <div className={styles.soldOut} role="status">{t("soldOutLabel")}</div>}
       </section>
     </motion.article> : catalog && <SpecimenGrid patterns={visiblePatterns} language={language}
-      query={query} onQuery={setQuery} onOpen={openPattern} layout={catalog.layout} />}
+      query={query} onQuery={setQuery} onOpen={openPattern} layout={catalog.layout}
+      warmBehindWelcome={welcomePreparing} />}
 
     <dialog className={styles.cart} ref={cartDialog} aria-labelledby="cart-title">
       <div className={styles.cartBody}>
@@ -390,5 +397,6 @@ export default function Swatches() {
         </>}
       </div>
     </dialog>
-  </main>;
+    </main>
+  </>;
 }

@@ -13,6 +13,7 @@ import { arrangeSpecimens, curateSpecimens, type CuratedSpecimen } from "./curat
 import { colorName, countLabel, fabricName, swatchesText, type Language } from "./language";
 import SwatchExpansion, { expansionSpring, type ExpansionBounds } from "./swatch-expansion";
 import { fitSmallExpansion } from "./small-expansion-layout";
+import { welcomeRowCovers } from "./welcome-covers";
 import styles from "./swatches.module.css";
 
 type OpenPattern = (group: Pattern, selected: Variant) => void;
@@ -44,8 +45,9 @@ function observePhoto(node: Element, load: () => void) {
   };
 }
 
-function SpecimenPhoto({ variant, variants, hero, cycle, index, manualSku, groupName, onShown }: {
+function SpecimenPhoto({ variant, variants, hero, cycle, index, manualSku, groupName, onShown, warmBehindWelcome, warmedCover }: {
   variant: Variant; variants: Variant[]; hero: boolean; cycle: boolean; index: number; manualSku?: string; groupName: string; onShown: (group: string, sku: string) => void;
+  warmBehindWelcome: boolean; warmedCover: boolean;
 }) {
   const frame = useRef<HTMLSpanElement>(null);
   const [inRange, setInRange] = useState(false);
@@ -89,9 +91,9 @@ function SpecimenPhoto({ variant, variants, hero, cycle, index, manualSku, group
   }, [manualSku]);
 
   useEffect(() => {
-    if (hero || inRange || !frame.current) return;
+    if (hero || inRange || warmBehindWelcome || !frame.current) return;
     return observePhoto(frame.current, () => setInRange(true));
-  }, [hero, inRange]);
+  }, [hero, inRange, warmBehindWelcome]);
 
   useEffect(() => {
     if (!cycle || !(hero || inRange) || choices.length < 2 || pending) return;
@@ -118,7 +120,7 @@ function SpecimenPhoto({ variant, variants, hero, cycle, index, manualSku, group
     <span className={styles.unpaintedCover}>
       {failed.includes(shown) && <span className={styles.specimenPhotoError}>사진 로드 오류</span>}
     </span>
-    {(hero || inRange) && choices.filter((v) => v.image && requested.includes(v.sku)).map((entry) => (
+    {(warmBehindWelcome ? warmedCover : (hero || inRange || warmedCover)) && choices.filter((v) => v.image && requested.includes(v.sku)).map((entry) => (
       <Image key={entry.sku} src={entry.image!} alt="" fill unoptimized loading="eager"
         className={styles.rotatingCover} data-cover-sku={entry.sku} data-visible={Boolean(loaded[entry.sku]) && shown === entry.sku} aria-hidden="true"
         fetchPriority={hero && entry.sku === variant.sku ? "high" : "low"} decoding="async" referrerPolicy="no-referrer"
@@ -148,7 +150,7 @@ function displayedVariant(node: HTMLElement, fallback: Variant, group: Pattern) 
   return group.variants.find((v) => v.sku === sku) ?? fallback;
 }
 
-export default function SpecimenGrid({ patterns, language, query, onQuery, onOpen, layout, editor }: {
+export default function SpecimenGrid({ patterns, language, query, onQuery, onOpen, layout, editor, warmBehindWelcome = false }: {
   patterns: Pattern[];
   language: Language;
   query: string;
@@ -156,6 +158,7 @@ export default function SpecimenGrid({ patterns, language, query, onQuery, onOpe
   onOpen: OpenPattern;
   layout?: SwatchesLayout;
   editor?: GridEditor;
+  warmBehindWelcome?: boolean;
 }) {
   const t = swatchesText(language);
   const search = Boolean(query.trim());
@@ -167,6 +170,14 @@ export default function SpecimenGrid({ patterns, language, query, onQuery, onOpe
   const columns = layout?.columns ?? 5;
   const reposition = useMemo(() => ({ order, sizes, columns }), [order, sizes, columns]);
   const designed = !search && (layout?.columns || layout?.rowGap || layout?.columnGap);
+  // Keep the exact initially warmed image nodes on reveal, even if the viewport,
+  // search or catalog order changes later. The observer handles newly visible cards.
+  const [warmedCovers] = useState(() => {
+    if (!warmBehindWelcome || editor || search || typeof window === "undefined") return new Set<string>();
+    return welcomeRowCovers(specimens.map(({ group, representative }) => ({
+      image: representative.image, span: sizes?.[group.name] ?? 1,
+    })), window.innerWidth, designed ? columns : 6);
+  });
   const [drag, setDrag] = useState<{ from: string; over: string }>();
   const reducedMotion = useReducedMotion();
   const [cyclePaused, setCyclePaused] = useState(false);
@@ -367,8 +378,9 @@ export default function SpecimenGrid({ patterns, language, query, onQuery, onOpe
             onPointerCancel={() => window.clearTimeout(openTimer.current)}>
             <button type="button" className={styles.mainSpecimenButton} onClick={(event) => open(group, displayedVariant(event.currentTarget, representative, group))}
               aria-pressed={editor ? selected : undefined} aria-label={`${title} · ${group.name}`}>
-              <SpecimenPhoto key={representative.image ?? representative.sku} variant={representative} variants={group.variants} hero={!editor && !search && index === 0} cycle={!editor && !search && !reducedMotion && !cyclePaused && group.variants.length > 3} index={index}
-                manualSku={manual[group.name]} groupName={group.name} onShown={updateShown} />
+              <SpecimenPhoto key={representative.image ?? representative.sku} variant={representative} variants={group.variants} hero={!editor && !search && index === 0} cycle={!warmBehindWelcome && !editor && !search && !reducedMotion && !cyclePaused && group.variants.length > 3} index={index}
+                manualSku={manual[group.name]} groupName={group.name} onShown={updateShown}
+                warmBehindWelcome={warmBehindWelcome} warmedCover={Boolean(representative.image && warmedCovers.has(representative.image))} />
             </button>
           </div>
           <button type="button" className={styles.specimenInfo} onClick={(event) => open(group, displayedVariant(event.currentTarget.parentElement ?? event.currentTarget, representative, group))}>
