@@ -71,36 +71,62 @@ export function countLabel(count: number, unit: "roll" | "color" | "pattern", la
 }
 
 const fabricNames: Record<string, readonly [string, string]> = {
-  "10수OX": ["10s Oxford", "10 支牛津布"],
-  "40수OX": ["40s Oxford", "40 支牛津布"],
-  "40수체크": ["40s Check", "40 支格纹"],
-  "50수선염": ["50s Yarn-Dyed", "50 支色织面料"],
-  "50수체크": ["50s Check", "50 支格纹"],
-  "CN스판": ["CN Stretch", "棉锦弹力面料"],
-  "CP선염": ["CP Yarn-Dyed", "涤棉色织面料"],
-  "CP스판": ["CP Stretch", "涤棉弹力面料"],
+  "10수OX": ["10s Oxford", "10支牛津布"],
+  "40수OX": ["40s Oxford", "40支牛津布"],
+  "40수체크": ["40s Check", "40支格纹"],
+  "50수선염": ["50s Yarn-Dyed", "50支色织面料"],
+  "50수체크": ["50s Check", "50支格纹"],
+  "CN스판": ["CN Stretch", "CN 弹力面料"],
+  "CP선염": ["CP Yarn-Dyed", "CP 色织面料"],
+  "CP스판": ["CP Stretch", "CP 弹力面料"],
   "TR OX": ["TR Oxford", "TR 牛津布"],
   "고밀도투일": ["High-Density Twill", "高密斜纹面料"],
-  "멀티ST": ["Multi Stripe", "多色条纹"],
-  "면선염": ["Yarn-Dyed Cotton", "纯棉色织面料"],
+  "면선염": ["Yarn-Dyed Cotton", "色织棉布"],
   "모달": ["Modal", "莫代尔面料"],
-  "변형체크": ["Variation Check", "变化格纹"],
-  "점선OX": ["Dotted-Line Oxford", "虚线牛津布"],
 };
 
 const chineseColors: Record<string, string> = {
   Apricot: "杏色", Beige: "米色", Black: "黑色", Blue: "蓝色", Brown: "棕色",
   Burgundy: "酒红色", "Dark Gray": "深灰色", "Dark Navy": "深藏青色", "Deep Blue": "深蓝色",
   "Deep Sky Blue": "深天蓝色", "Emerald Light Green": "浅翠绿色", "Emerald Sky Blue": "翠天蓝色",
-  Green: "绿色", "Green/Mint": "绿色／薄荷色", "Indian Pink": "印度粉", Indigo: "靛蓝色",
+  Green: "绿色", "Green/Mint": "绿色／薄荷色", Indigo: "靛蓝色",
   Jade: "翡翠色", Khaki: "卡其色", "Light Green": "浅绿色", "Light Navy": "浅藏青色",
   "Light Sky Blue": "浅天蓝色", Mint: "薄荷色", Navy: "藏青色", "Optical White": "亮白色",
   Orange: "橙色", Pink: "粉色", Purple: "紫色", Red: "红色", "Sky Blue": "天蓝色",
   White: "白色", "White/Navy": "白色／藏青色", Yellow: "黄色",
 };
 
+// Catalog text is stored as given. Only translate complete, recognized names
+// or the unambiguous yarn-count + fabric family form; never guess at custom
+// style names, new brand terms, or codes. A finish such as 기모 is not
+// enough information to distinguish napping, brushing, or sanding.
+const fabricKey = (name: string) => name.normalize("NFKC").replace(/\s+/g, "").toUpperCase();
+const knownFabricNames = new Map(Object.entries(fabricNames).map(([name, translation]) => [fabricKey(name), translation]));
+const fabricFamilies = new Map<string, readonly [string, string]>([
+  ["OX", ["Oxford", "牛津布"]],
+  ["옥스포드", ["Oxford", "牛津布"]],
+  ["체크", ["Check", "格纹"]],
+  ["스트라이프", ["Stripe", "条纹"]],
+  ["선염", ["Yarn-Dyed", "色织面料"]],
+  ["선염체크", ["Yarn-Dyed Check", "色织格纹"]],
+  ["선염스트라이프", ["Yarn-Dyed Stripe", "色织条纹"]],
+  ["고밀도투일", ["High-Density Twill", "高密斜纹面料"]],
+  ["고밀도트윌", ["High-Density Twill", "高密斜纹面料"]],
+  ["투일", ["Twill", "斜纹面料"]],
+  ["트윌", ["Twill", "斜纹面料"]],
+]);
+
 export function fabricName(name: string, language: Language) {
-  return language === "ko" ? name : fabricNames[name]?.[language === "en" ? 0 : 1] ?? name;
+  if (language === "ko") return name;
+  const index = language === "en" ? 0 : 1;
+  const key = fabricKey(name);
+  const known = knownFabricNames.get(key) ?? fabricFamilies.get(key);
+  if (known) return known[index];
+
+  const match = /^([1-9][0-9]{0,2})수(.+)$/.exec(key);
+  const family = match && !/^\d/.test(match[2]) && (fabricFamilies.get(match[2]) ?? knownFabricNames.get(match[2]));
+  if (!match || !family) return name;
+  return language === "en" ? `${match[1]}s ${family[0]}` : `${match[1]}支${family[1]}`;
 }
 
 export function colorName(color: string, language: Language) {

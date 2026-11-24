@@ -5,40 +5,42 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { aboutPageContent, type LocalizedLines, type LocalizedText } from "@/content/about";
+import { aboutPageContent, type AboutLanguage, type LocalizedLines, type LocalizedText } from "@/content/about";
 
 import styles from "./AboutPage.module.css";
 
-type Language = "ko" | "en";
 const LANGUAGE_STORAGE_KEY = "about-language";
+const languageOptions = [
+  { id: "ko", label: "Korean", short: "KO" },
+  { id: "en", label: "English", short: "EN" },
+  { id: "zh-CN", label: "简体中文", short: "中文" },
+] as const satisfies readonly { id: AboutLanguage; label: string; short: string }[];
 const fragmentMono = Fragment_Mono({
   subsets: ["latin"],
   weight: ["400"],
   display: "swap",
 });
 
-function pick(text: LocalizedText, language: Language) {
+function pick(text: LocalizedText, language: AboutLanguage) {
   return text[language];
 }
 
-function pickLines(text: LocalizedLines, language: Language) {
+function pickLines(text: LocalizedLines, language: AboutLanguage) {
   return text[language];
 }
 
 export default function AboutPage() {
-  const [language, setLanguage] = useState<Language>("ko");
+  const [language, setLanguage] = useState<AboutLanguage>("ko");
   const [isPreferenceResolved, setIsPreferenceResolved] = useState(false);
   const [showLanguageEntry, setShowLanguageEntry] = useState(false);
   const [canPersistPreference, setCanPersistPreference] = useState(true);
 
   useEffect(() => {
-    let nextLanguage: Language = "ko";
+    let nextLanguage: AboutLanguage = "ko";
 
     try {
       const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-      if (storedLanguage === "ko" || storedLanguage === "en") {
-        nextLanguage = storedLanguage;
-      }
+      nextLanguage = languageOptions.find(({ id }) => id === storedLanguage)?.id ?? "ko";
     } catch {
       setCanPersistPreference(false);
     }
@@ -84,7 +86,7 @@ export default function AboutPage() {
     };
   }, [showLanguageEntry]);
 
-  function persistLanguage(nextLanguage: Language) {
+  function persistLanguage(nextLanguage: AboutLanguage) {
     if (!canPersistPreference) return;
 
     try {
@@ -94,7 +96,7 @@ export default function AboutPage() {
     }
   }
 
-  function handleLanguageSelection(nextLanguage: Language) {
+  function handleLanguageSelection(nextLanguage: AboutLanguage) {
     setLanguage(nextLanguage);
     setShowLanguageEntry(false);
     persistLanguage(nextLanguage);
@@ -106,6 +108,7 @@ export default function AboutPage() {
   return (
     <main
       className={styles.pageShell}
+      lang={currentLanguage}
       data-language={currentLanguage}
       data-language-ready={isReadingReady ? "true" : "false"}
     >
@@ -121,29 +124,22 @@ export default function AboutPage() {
         <div className={styles.heroOverlay} />
         <div className={styles.heroContent}>
           {isReadingReady ? (
-            <div className={[styles.languageToggle, fragmentMono.className].join(" ")} aria-label="Language switcher">
-              <button
-                type="button"
-                className={[
-                  styles.languageButton,
-                  currentLanguage === "ko" ? styles.languageButtonActive : "",
-                ].join(" ").trim()}
-                onClick={() => handleLanguageSelection("ko")}
-                aria-pressed={currentLanguage === "ko"}
-              >
-                KO
-              </button>
-              <button
-                type="button"
-                className={[
-                  styles.languageButton,
-                  currentLanguage === "en" ? styles.languageButtonActive : "",
-                ].join(" ").trim()}
-                onClick={() => handleLanguageSelection("en")}
-                aria-pressed={currentLanguage === "en"}
-              >
-                EN
-              </button>
+            <div className={[styles.languageToggle, fragmentMono.className].join(" ")} aria-label={currentLanguage === "zh-CN" ? "切换语言" : "Language switcher"}>
+              {languageOptions.map(({ id, label, short }) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-label={label}
+                  lang={id === "ko" ? "en" : id}
+                  className={currentLanguage === id
+                    ? `${styles.languageButton} ${styles.languageButtonActive}`
+                    : styles.languageButton}
+                  onClick={() => handleLanguageSelection(id)}
+                  aria-pressed={currentLanguage === id}
+                >
+                  {short}
+                </button>
+              ))}
             </div>
           ) : null}
 
@@ -153,23 +149,21 @@ export default function AboutPage() {
               role="dialog"
               aria-modal="false"
               aria-label="Choose language"
+              lang="en"
             >
               <p className={styles.entryTitle}>LANGUAGE</p>
               <div className={styles.entryActions}>
-                <button
-                  type="button"
-                  className={styles.entryButton}
-                  onClick={() => handleLanguageSelection("ko")}
-                >
-                  <span className={styles.entryButtonText}>Korean</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.entryButton}
-                  onClick={() => handleLanguageSelection("en")}
-                >
-                  <span className={styles.entryButtonText}>English</span>
-                </button>
+                {languageOptions.map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={styles.entryButton}
+                    lang={id === "ko" ? "en" : id}
+                    onClick={() => handleLanguageSelection(id)}
+                  >
+                    <span className={styles.entryButtonText}>{label}</span>
+                  </button>
+                ))}
               </div>
             </div>
           ) : null}
@@ -233,15 +227,15 @@ export default function AboutPage() {
                 ))}
               </section>
 
-              <nav className={styles.linksSection} aria-label="About links">
+              <nav className={styles.linksSection} aria-label={currentLanguage === "zh-CN" ? "相关链接" : "About links"}>
                 <Link href="/products" className={styles.linkLabel}>
-                  Products
+                  {currentLanguage === "zh-CN" ? "面料系列" : "Products"}
                 </Link>
                 <span className={styles.linkDivider} aria-hidden="true">
                   ㅣ
                 </span>
                 <Link href="/contact" className={styles.linkLabel}>
-                  Contact
+                  {currentLanguage === "zh-CN" ? "联系我们" : "Contact"}
                 </Link>
               </nav>
             </>
