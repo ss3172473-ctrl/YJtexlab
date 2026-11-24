@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import vm from "node:vm";
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { gzipSync } from "node:zlib";
 import ts from "typescript";
 
 const require = createRequire(import.meta.url);
@@ -26,13 +27,22 @@ function load(file, dependencies = {}, testFetch = fetch) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText, {
     exports,
-    require: (name) => Object.hasOwn(dependencies, name) ? dependencies[name] : require(name),
+    require: (name) => Object.hasOwn(dependencies, name)
+      ? dependencies[name]
+      : /^(?:\.\/|\.\.\/)google-credentials$/.test(name) ? googleCredentials : require(name),
     process: { env, cwd: process.cwd },
     Buffer, URL, fetch: testFetch, Response, Headers, setTimeout, clearTimeout, AbortController,
     console: { error() {}, warn() {} },
   });
   return exports;
 }
+
+const googleCredentials = load("src/app/api/swatches/google-credentials.ts", { "server-only": {} });
+const configCodec = load("src/app/api/swatches/design/secret-config.ts");
+const loadDrive = (dependencies, testFetch) => load("src/app/api/swatches/design/drive-video.ts", {
+  "./secret-config": configCodec, ...dependencies,
+}, testFetch);
+const packed = (data) => `gzip1:${gzipSync(data).toString("base64url")}`;
 
 const catalog = load("src/app/swatches/catalog.ts");
 const codes = load("src/app/swatches/customer-code.ts");
@@ -368,7 +378,7 @@ function driveSetup({ manifest = fakeManifest, metadata = fakeMetadata, badRange
     type: userOauth ? "authorized_user" : "service_account",
     client_email: "unprivileged@example.invalid", private_key: "isolated-test-string",
   });
-  const drive = load("src/app/api/swatches/design/drive-video.ts", { googleapis: { google: { auth: { GoogleAuth } } } }, testFetch);
+  const drive = loadDrive({ googleapis: { google: { auth: { GoogleAuth } } } }, testFetch);
   delete env.SWATCHES_DRIVE_VIDEO_FOLDER_ID;
   delete env.SWATCHES_DRIVE_VIDEO_MANIFEST;
   const media = load("src/app/api/swatches/design/media.ts", {
@@ -583,7 +593,7 @@ test("front and reverse images require an active session, separate manifests, an
         parents:[assetFolders[p]],size:String(size),md5Checksum:md5,trashed:false,capabilities:{canDownload:true},
       });
     };
-    const drive = load("src/app/api/swatches/design/drive-video.ts", { googleapis: {google} }, testFetch);
+    const drive = loadDrive({ googleapis: {google} }, testFetch);
     const media = load("src/app/api/swatches/design/media.ts", {googleapis:{google},"./drive-video":drive});
     const reverse = load("src/app/api/swatches/design/reverse-textures.ts", {"./drive-video":drive});
     const photos = load("src/app/api/swatches/design/photos.ts", {"./media":media,"./reverse-textures":reverse});
@@ -613,12 +623,139 @@ test("front and reverse images require an active session, separate manifests, an
     assert.equal((await view(reverseRoute,"S1")).status,404);
     assert.deepEqual(urls,[0,0,1,1,1]);
     env[keys[2]]=assetFolders[0];
-    const crossed = load("src/app/api/swatches/design/drive-video.ts",{googleapis:{google}},testFetch);
+    const crossed = loadDrive({googleapis:{google}},testFetch);
     assert.equal(crossed.hasDriveFrontForSku("S1"),false);
     assert.equal(crossed.hasDriveReverseForSku("S1"),false);
     assert.equal((await crossed.driveFront("S1")).status,404);
   } finally {
     env.GOOGLE_SERVICE_ACCOUNT_JSON=prev;
     for(const k of keys)delete env[k];
+  }
+});
+
+test("server configuration accepts plain JSON or canonical gzip1 with strict byte limits", () => {
+  const { decodeSwatchesConfig } = configCodec;
+  const plain = JSON.stringify({ caption: "원단 눈으로 보기" });
+  assert.equal(decodeSwatchesConfig(plain, 128), plain);
+  assert.equal(decodeSwatchesConfig(packed(plain), 128), plain);
+  assert.equal(decodeSwatchesConfig(plain, Buffer.byteLength(plain) - 1), undefined);
+  assert.equal(decodeSwatchesConfig(packed(plain) + "=", 128), undefined);
+  assert.equal(decodeSwatchesConfig(packed(plain) + "\n", 128), undefined);
+  assert.equal(decodeSwatchesConfig(packed(plain).slice(0, -3), 128), undefined);
+  assert.equal(decodeSwatchesConfig("gzip1:" + Buffer.from("not gzip").toString("base64url"), 128), undefined);
+  assert.equal(decodeSwatchesConfig(packed(Buffer.from([0xc0, 0xae])), 128), undefined);
+  assert.equal(decodeSwatchesConfig(packed("x".repeat(2_048)), 128), undefined);
+});
+
+test("compressed Drive manifest still validates allowlists and approved metadata", async () => {
+  const previous = env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const fixture = driveSetup({ manifest: packed(fakeManifest) });
+  try {
+    assert.equal(fixture.drive.hasDriveVideo, true);
+    const response = await fixture.drive.driveVideo("S86", "bytes=4-8");
+    assert.equal(response.status, 206);
+    assert.equal(await response.text(), "45678");
+    const invalid = packed(JSON.stringify({ version: 1, assets: [fakeManifestEntry, fakeManifestEntry] }));
+    assert.equal(fixture.drive.parseDriveVideoConfig(fakeDriveFolder, invalid), undefined);
+  } finally { env.GOOGLE_SERVICE_ACCOUNT_JSON = previous; }
+});
+
+test("compressed layout snapshot never enables the mutable store", async () => {
+  const layoutModel = load("src/app/swatches/design-layout.ts");
+  const snapshot = { order: ["직조A"], covers: { 직조A: "S86" }, sizes: {}, rowHeights: {}, columns: 5 };
+  const store = () => load("src/app/api/swatches/design/store.ts", {
+    "@/app/swatches/design-layout": layoutModel,
+    "./secret-config": configCodec,
+    googleapis: { google: { sheets() { throw Error("unexpected Sheets access"); } } },
+  });
+  try {
+    env.SWATCHES_LAYOUT_JSON = packed(JSON.stringify(snapshot));
+    env.SWATCHES_DESIGN_SHEET_ID = "fake-sheet-must-not-be-called";
+    const reader = store();
+    assert.deepEqual(JSON.parse(JSON.stringify(await reader.readSwatchesLayout())), snapshot);
+    assert.equal(reader.canSaveSwatchesLayout(), false);
+    await assert.rejects(reader.saveSwatchesLayout(snapshot), /read-only/);
+    env.SWATCHES_LAYOUT_JSON = "gzip1:invalid";
+    const rejected = store();
+    assert.equal(rejected.canSaveSwatchesLayout(), false);
+    await assert.rejects(rejected.readSwatchesLayout(), /invalid/i);
+  } finally {
+    delete env.SWATCHES_LAYOUT_JSON;
+    delete env.SWATCHES_DESIGN_SHEET_ID;
+  }
+});
+
+test("hosted Swatches requires the dedicated credential and never falls back from an invalid value", async () => {
+  const names = ["VERCEL", "VERCEL_ENV", "VERCEL_TARGET_ENV", "NODE_ENV", "SWATCHES_GOOGLE_SERVICE_ACCOUNT_JSON", "GOOGLE_SERVICE_ACCOUNT_JSON"];
+  const saved = Object.fromEntries(names.map((key) => [key, env[key]]));
+  try {
+    for (const key of names) delete env[key];
+    env.NODE_ENV = "production";
+    env.GOOGLE_SERVICE_ACCOUNT_JSON = JSON.stringify({ client_email: "old-contact@example.invalid" });
+    assert.equal(await googleCredentials.readSwatchesGoogleCredentials(), env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    env.VERCEL_ENV = "production";
+    await assert.rejects(googleCredentials.readSwatchesGoogleCredentials(), /dedicated service account is missing/);
+    assert.equal(await googleCredentials.readContactGoogleCredentials(), env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    env.SWATCHES_GOOGLE_SERVICE_ACCOUNT_JSON = "broken-dedicated-value-must-not-be-echoed";
+    await assert.rejects(googleCredentials.readSwatchesGoogleCredentials(), {
+      message: "Swatches dedicated service account is invalid",
+    });
+    env.SWATCHES_GOOGLE_SERVICE_ACCOUNT_JSON = "";
+    await assert.rejects(googleCredentials.readSwatchesGoogleCredentials(), /dedicated service account is invalid/);
+    env.SWATCHES_GOOGLE_SERVICE_ACCOUNT_JSON = JSON.stringify({ type: "client_web", client_email: "swatch@example.invalid", private_key: "invalid" });
+    await assert.rejects(googleCredentials.readSwatchesGoogleCredentials(), /dedicated service account is invalid/);
+  } finally {
+    for (const key of names) {
+      if (saved[key] === undefined) delete env[key];
+      else env[key] = saved[key];
+    }
+  }
+});
+
+test("CRM and catalog use the dedicated identity while contact inquiries preserve Contact credentials", async () => {
+  const names = ["VERCEL_ENV", "SWATCHES_GOOGLE_SERVICE_ACCOUNT_JSON", "GOOGLE_SERVICE_ACCOUNT_JSON"];
+  const saved = Object.fromEntries(names.map((key) => [key, env[key]]));
+  const activity = [];
+  try {
+    env.VERCEL_ENV = "production";
+    env.SWATCHES_GOOGLE_SERVICE_ACCOUNT_JSON = JSON.stringify({
+      type: "service_account",
+      client_email: "swatch@example.invalid",
+      private_key: "-----BEGIN PRIVATE KEY-----\nfixture-not-a-real-key\n-----END PRIVATE KEY-----\n",
+    });
+    env.GOOGLE_SERVICE_ACCOUNT_JSON = JSON.stringify({ client_email: "contact@example.invalid" });
+    const google = {
+      auth: { GoogleAuth: class { constructor({ credentials }) { this.identity = credentials.client_email; } } },
+      sheets: ({ auth }) => ({ spreadsheets: { values: {
+        get: async () => { activity.push(["crm-read", auth.identity]); return { data: { values: crmRows } }; },
+        batchGet: async () => { activity.push(["inventory-read", auth.identity]); return { data: { valueRanges: [{ values: productRows }, { values: rollRows }] } }; },
+        append: async ({ spreadsheetId }) => {
+          activity.push([spreadsheetId === env.SWATCHES_CRM_SHEET_ID ? "crm-append" : "contact-append", auth.identity]);
+          return { data: { updates: { updatedRange: "'Inquiries'!A2:F2" } } };
+        },
+      } } }),
+    };
+    const sheets = load("src/app/api/swatches/sheets.ts", {
+      googleapis: { google },
+      "@/app/swatches/catalog": catalog,
+      "@/app/swatches/customer-code": codes,
+      "@/lib/contact": contact,
+      "@/lib/contact-notification": { ...notification, notifyContactRow: async () => "sent" },
+    });
+    const [company] = await sheets.readCompanies();
+    await sheets.readCatalog();
+    await sheets.logAccess(company, "fixture");
+    assert.equal(await sheets.recordInquiry(company, "fixture inquiry"), "sent");
+    assert.deepEqual(activity, [
+      ["crm-read", "swatch@example.invalid"],
+      ["inventory-read", "swatch@example.invalid"],
+      ["crm-append", "swatch@example.invalid"],
+      ["contact-append", "contact@example.invalid"],
+    ]);
+  } finally {
+    for (const key of names) {
+      if (saved[key] === undefined) delete env[key];
+      else env[key] = saved[key];
+    }
   }
 });

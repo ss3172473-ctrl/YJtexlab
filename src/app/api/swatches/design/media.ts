@@ -1,5 +1,6 @@
 import { createReadStream } from "node:fs";
-import { readFile, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
+import { readSwatchesGoogleCredentials } from "../google-credentials";
 import { join } from "node:path";
 import { Readable } from "node:stream";
 import { google } from "googleapis";
@@ -26,12 +27,10 @@ export function validApprovedSku(sku: string | null): sku is string {
 let auth: InstanceType<typeof google.auth.GoogleAuth> | undefined;
 async function cloudToken() {
   if (!auth) {
-    const key = process.env.GOOGLE_SERVICE_ACCOUNT_JSON ??
-      (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH
-        ? await readFile(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH, "utf8")
-        : undefined);
+    const key = await readSwatchesGoogleCredentials();
+    if (!key) throw new Error("Swatches service account is missing");
     auth = new google.auth.GoogleAuth({
-      credentials: key ? JSON.parse(key) : undefined,
+      credentials: JSON.parse(key),
       scopes: ["https://www.googleapis.com/auth/devstorage.read_only"],
     });
   }

@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { readFile, rename, rm, writeFile } from "node:fs/promises";
 import { google } from "googleapis";
+import { readSwatchesGoogleCredentials } from "../google-credentials";
+import { decodeSwatchesConfig } from "./secret-config";
 import { emptySwatchesLayout, normalizeSwatchesLayout, type SwatchesLayout } from "@/app/swatches/design-layout";
 
 const range = "'Swatches 디자인 설정'!A1";
@@ -15,10 +17,7 @@ export function canSaveSwatchesLayout() {
 }
 
 async function designSheets() {
-  const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_JSON ||
-    (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH
-      ? await readFile(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH, "utf8")
-      : "");
+  const credentials = await readSwatchesGoogleCredentials();
   if (!credentials) throw new Error("Swatches design store credentials are missing");
   const auth = new google.auth.GoogleAuth({
     credentials: JSON.parse(credentials),
@@ -29,9 +28,9 @@ async function designSheets() {
 
 export async function readSwatchesLayout(): Promise<SwatchesLayout> {
   if (layoutSnapshot !== undefined) {
-    if (!layoutSnapshot.trim() || layoutSnapshot.length > 45_000)
-      throw new Error("Invalid Swatches layout snapshot");
-    const layout = normalizeSwatchesLayout(JSON.parse(layoutSnapshot));
+    const json = decodeSwatchesConfig(layoutSnapshot, 45_000);
+    if (!json?.trim()) throw new Error("Invalid Swatches layout snapshot");
+    const layout = normalizeSwatchesLayout(JSON.parse(json));
     if (!layout.order.length || !Object.keys(layout.covers).length)
       throw new Error("Invalid Swatches layout snapshot");
     return layout;

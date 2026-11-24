@@ -1,5 +1,6 @@
-import { readFile } from "node:fs/promises";
+import { readSwatchesGoogleCredentials } from "../google-credentials";
 import { google } from "googleapis";
+import { decodeSwatchesConfig } from "./secret-config";
 
 type Entry = Readonly<{ fileId: string; bytes: number; md5: string }>;
 type Config = Readonly<{ folderId: string; entries: ReadonlyMap<string, Entry> }>;
@@ -26,9 +27,11 @@ function record(value: unknown): value is Record<string, unknown> {
 
 // IDs and hashes are injected as a server-only deployment setting, never in source/catalog responses.
 function parseConfig(folderId: unknown, raw: string | undefined, maxBytes: number): Config | undefined {
-  if (!isId(folderId) || !raw || raw.length > 80_000) return;
+  if (!isId(folderId)) return;
+  const json = decodeSwatchesConfig(raw, 80_000);
+  if (!json) return;
   try {
-    const data: unknown = JSON.parse(raw);
+    const data: unknown = JSON.parse(json);
     if (!record(data) || Object.keys(data).length !== 2 || data.version !== 1
       || !Array.isArray(data.assets) || data.assets.length < 1 || data.assets.length > 236) return;
     const entries = new Map<string, Entry>();
@@ -66,10 +69,7 @@ export const hasDriveReverseForSku = (sku: string) => getConfig("reverse")?.entr
 let auth: InstanceType<typeof google.auth.GoogleAuth> | undefined;
 async function driveToken() {
   if (!auth) {
-    const key = process.env.GOOGLE_SERVICE_ACCOUNT_JSON ??
-      (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH
-        ? await readFile(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH, "utf8")
-        : undefined);
+    const key = await readSwatchesGoogleCredentials();
     const credentials: unknown = key ? JSON.parse(key) : undefined;
     // Do not fall back to a developer's ADC/user refresh token.
     if (!record(credentials) || credentials.type !== "service_account"

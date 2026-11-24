@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readContactGoogleCredentials, readSwatchesGoogleCredentials } from "./google-credentials";
 import { google } from "googleapis";
 import { type Catalog, type Pattern, type Roll } from "@/app/swatches/catalog";
 import { customerCode } from "@/app/swatches/customer-code";
@@ -15,13 +15,11 @@ type Row = unknown[];
 const cell = (value: unknown) => String(value ?? "").trim();
 const tab = (name: string) => `'${name.replaceAll("'", "''")}'`;
 
-let sheetsClient: ReturnType<typeof initSheets> | undefined;
+let swatchesClient: ReturnType<typeof initSheets> | undefined;
+let contactClient: ReturnType<typeof initSheets> | undefined;
 
-async function initSheets() {
-  const key = process.env.GOOGLE_SERVICE_ACCOUNT_JSON ??
-    (process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH
-      ? await readFile(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH, "utf8")
-      : undefined);
+async function initSheets(readCredentials: typeof readSwatchesGoogleCredentials) {
+  const key = await readCredentials();
   if (!key) throw new Error("Swatches service account is missing");
   const auth = new google.auth.GoogleAuth({
     credentials: JSON.parse(key),
@@ -31,8 +29,13 @@ async function initSheets() {
 }
 
 async function sheets() {
-  sheetsClient ??= initSheets();
-  return sheetsClient;
+  swatchesClient ??= initSheets(readSwatchesGoogleCredentials);
+  return swatchesClient;
+}
+
+async function contactSheets() {
+  contactClient ??= initSheets(readContactGoogleCredentials);
+  return contactClient;
 }
 
 function column(headers: Row, name: string) {
@@ -156,7 +159,7 @@ export async function recordInquiry(company: Company, message: string) {
   if (!spreadsheetId || !process.env.CONTACT_EMAIL_WEBHOOK_URL || !process.env.CONTACT_EMAIL_WEBHOOK_SECRET) {
     throw new Error("Swatches contact sheet or mail notification is missing");
   }
-  const client = await sheets();
+  const client = await contactSheets();
   const values = buildContactSheetRow({
     companyName: company.name,
     replyTo: company.email,

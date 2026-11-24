@@ -6,10 +6,13 @@ Keep the storage folders restricted; do not make links public.
 
 ## Required server configuration
 
-- Set `GOOGLE_SERVICE_ACCOUNT_JSON` on the hosting service only. A local
-  operator can point `GOOGLE_SERVICE_ACCOUNT_KEY_PATH` at an external trusted
-  file. Do not put credential material in code, build logs, or any
-  `NEXT_PUBLIC_*` variable.
+- Set the dedicated `SWATCHES_GOOGLE_SERVICE_ACCOUNT_JSON` as a secret on the
+  hosting service. Hosted builds do not fall back to Contact credentials. For
+  local previews only, the existing `GOOGLE_SERVICE_ACCOUNT_JSON` or an
+  external trusted file via `GOOGLE_SERVICE_ACCOUNT_KEY_PATH` still works when
+  no dedicated value is set. A malformed dedicated value never falls back.
+  Keep the existing Contact identity for Contact and inquiry delivery, and
+  never put credentials in Git, build logs, or a `NEXT_PUBLIC_*` setting.
 - Set `SWATCHES_INVENTORY_SHEET_ID` and `SWATCHES_CRM_SHEET_ID` explicitly.
   No production IDs are embedded and absent or invalid IDs do not fall back
   to another Sheet. The server reads live inventory; never publish Sheet photo
