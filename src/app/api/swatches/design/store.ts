@@ -6,9 +6,12 @@ import { emptySwatchesLayout, normalizeSwatchesLayout, type SwatchesLayout } fro
 const range = "'Swatches 디자인 설정'!A1";
 const spreadsheetId = process.env.SWATCHES_DESIGN_SHEET_ID;
 const layoutFile = process.env.SWATCHES_LAYOUT_FILE;
+// Read-only approved layout for hosts that cannot mount a private JSON file.
+// Never put this setting in public client config or the repository.
+const layoutSnapshot = process.env.SWATCHES_LAYOUT_JSON;
 
 export function canSaveSwatchesLayout() {
-  return Boolean(layoutFile || spreadsheetId);
+  return layoutSnapshot === undefined && Boolean(layoutFile || spreadsheetId);
 }
 
 async function designSheets() {
@@ -25,6 +28,14 @@ async function designSheets() {
 }
 
 export async function readSwatchesLayout(): Promise<SwatchesLayout> {
+  if (layoutSnapshot !== undefined) {
+    if (!layoutSnapshot.trim() || layoutSnapshot.length > 45_000)
+      throw new Error("Invalid Swatches layout snapshot");
+    const layout = normalizeSwatchesLayout(JSON.parse(layoutSnapshot));
+    if (!layout.order.length || !Object.keys(layout.covers).length)
+      throw new Error("Invalid Swatches layout snapshot");
+    return layout;
+  }
   if (layoutFile) {
     try {
       return normalizeSwatchesLayout(JSON.parse(await readFile(layoutFile, "utf8")));
@@ -41,6 +52,7 @@ export async function readSwatchesLayout(): Promise<SwatchesLayout> {
 }
 
 export async function saveSwatchesLayout(input: SwatchesLayout): Promise<SwatchesLayout> {
+  if (layoutSnapshot !== undefined) throw new Error("Swatches layout snapshot is read-only");
   const layout = normalizeSwatchesLayout(input);
   const json = JSON.stringify(layout);
   if (json.length > 45_000) throw new Error("Swatches layout exceeds the design store limit");
