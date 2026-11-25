@@ -69,11 +69,15 @@
   max-width: 58rem;
   margin: clamp(24px, 3vw, 44px) auto;
   color: var(--ink);
-  font-size: clamp(18px, 2vw, 26px);
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.5;
   text-align: center;
   text-wrap: balance;
+}
+
+@media (min-width: 768px) {
+  .rollStockNote { font-size: 1.18rem; }
 }
 
 .collectionBar > span, .mono {
