@@ -275,14 +275,14 @@
   line-break: strict;
 }
 
-.pageShell[data-language="zh-CN"] .heroIntro,
-.pageShell[data-language="zh-CN"] .introParagraph,
-.pageShell[data-language="zh-CN"] .valueParagraph {
+.pageShell:is([data-language="zh-CN"], [data-language="ja"]) .heroIntro,
+.pageShell:is([data-language="zh-CN"], [data-language="ja"]) .introParagraph,
+.pageShell:is([data-language="zh-CN"], [data-language="ja"]) .valueParagraph {
   word-break: normal;
 }
 
-.pageShell[data-language="zh-CN"] .title,
-.pageShell[data-language="zh-CN"] .valueTitle {
+.pageShell:is([data-language="zh-CN"], [data-language="ja"]) .title,
+.pageShell:is([data-language="zh-CN"], [data-language="ja"]) .valueTitle {
   letter-spacing: normal;
 }
 

@@ -14,6 +14,7 @@ const languageOptions = [
   { id: "ko", label: "Korean", short: "KO" },
   { id: "en", label: "English", short: "EN" },
   { id: "zh-CN", label: "简体中文", short: "中文" },
+  { id: "ja", label: "日本語", short: "JA" },
 ] as const satisfies readonly { id: AboutLanguage; label: string; short: string }[];
 const fragmentMono = Fragment_Mono({
   subsets: ["latin"],
@@ -124,7 +125,7 @@ export default function AboutPage() {
         <div className={styles.heroOverlay} />
         <div className={styles.heroContent}>
           {isReadingReady ? (
-            <div className={[styles.languageToggle, fragmentMono.className].join(" ")} aria-label={currentLanguage === "zh-CN" ? "切换语言" : "Language switcher"}>
+            <div className={[styles.languageToggle, fragmentMono.className].join(" ")} aria-label={currentLanguage === "zh-CN" ? "切换语言" : currentLanguage === "ja" ? "言語切替" : "Language switcher"}>
               {languageOptions.map(({ id, label, short }) => (
                 <button
                   key={id}
@@ -227,15 +228,15 @@ export default function AboutPage() {
                 ))}
               </section>
 
-              <nav className={styles.linksSection} aria-label={currentLanguage === "zh-CN" ? "相关链接" : "About links"}>
+              <nav className={styles.linksSection} aria-label={currentLanguage === "zh-CN" ? "相关链接" : currentLanguage === "ja" ? "関連リンク" : "About links"}>
                 <Link href="/products" className={styles.linkLabel}>
-                  {currentLanguage === "zh-CN" ? "面料系列" : "Products"}
+                  {currentLanguage === "zh-CN" ? "面料系列" : currentLanguage === "ja" ? "生地を見る" : "Products"}
                 </Link>
                 <span className={styles.linkDivider} aria-hidden="true">
                   ㅣ
                 </span>
                 <Link href="/contact" className={styles.linkLabel}>
-                  {currentLanguage === "zh-CN" ? "联系我们" : "Contact"}
+                  {currentLanguage === "zh-CN" ? "联系我们" : currentLanguage === "ja" ? "お問い合わせ" : "Contact"}
                 </Link>
               </nav>
             </>

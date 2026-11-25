@@ -8,9 +8,6 @@ export default function HomeIntroText() {
         <p className="mt-2 whitespace-normal [overflow-wrap:anywhere] xl:whitespace-nowrap font-sans text-[11px] leading-5 tracking-[0.02em] text-neutral-500 md:text-[12.5px]">
           1962년 대구에서 시작해 3대째, 영진원단은 한국 선염 면원단의 기준을 만들어 왔습니다.
         </p>
-        <p lang="ja" className="mt-2 whitespace-normal [overflow-wrap:anywhere] xl:whitespace-nowrap font-sans text-[11px] leading-5 tracking-[0.02em] text-neutral-500 md:text-[12.5px]">
-          1962年に韓国・大邱で創業。3代にわたり、先染めコットン生地をブランドや卸売業者の皆さまにお届けしています。
-        </p>
       </div>
     </section>
   );
