@@ -114,13 +114,13 @@ export async function readCatalog() {
   return parseCatalog(products?.values ?? [], stock?.values ?? []);
 }
 
-export type Company = { name: string; email: string; code: string };
+export type Company = { name: string; email: string; code: string; canViewPrices: boolean };
 
 export async function readCompanies(): Promise<Company[]> {
   const client = await sheets();
   const response = await client.spreadsheets.values.get({
     spreadsheetId: sheetId("SWATCHES_CRM_SHEET_ID"),
-    range: "'업체현황'!A:Z",
+    range: tab("업체현황"),
   });
   const [header = [], ...rows] = response.data.values ?? [];
   const nameCol = column(header, "업체명");
@@ -128,13 +128,15 @@ export async function readCompanies(): Promise<Company[]> {
   const codeCol = column(header, "고객 코드");
   const activeCol = column(header, "활성 상태");
 
+  const visibilityColumns = header.flatMap((label, index) => cell(label) === "가격 공개" ? [index] : []);
+
   return rows.flatMap((row) => {
     const name = cell(row[nameCol]);
     const email = cell(row[emailCol]);
     const code = customerCode(cell(row[codeCol]));
     return cell(row[activeCol]) === "활성" && name &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && code
-      ? [{ name, email, code }]
+      ? [{ name, email, code, canViewPrices: visibilityColumns.length === 1 && row[visibilityColumns[0]] === "공개" }]
       : [];
   });
 }

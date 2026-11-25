@@ -49,6 +49,7 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
   }, [welcomePreparing]);
   const [accessError, setAccessError] = useState<TextKey | "">("");
   const [accessPending, setAccessPending] = useState(false);
+  const visit = useRef("");
   const verifyingCode = useRef(false);
   const [stockError, setStockError] = useState<TextKey | "">("");
   const [patternName, setPatternName] = useState("");
@@ -60,12 +61,13 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
   }, [filmProgress, reduceLayoutMotion]);
   const [sku, setSku] = useState("");
   const [query, setQuery] = useState("");
-  const [cart, setCart] = useState<CartLine[]>([]);
+  const [cart, setCart] = useState<Omit<CartLine, "price">[]>([]);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const cartDialog = useRef<HTMLDialogElement>(null);
   const [inquiryError, setInquiryError] = useState<TextKey | "">("");
   const [sending, setSending] = useState(false);
   const submitting = useRef(false);
+  const [refreshing, setRefreshing] = useState(false);
   const loadingStock = useRef(false);
 
   useEffect(() => {
@@ -83,11 +85,13 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
   const loadCatalog = useCallback(async () => {
     if (loadingStock.current) return;
     loadingStock.current = true;
+    setRefreshing(true);
     prepareCovers();
     try {
-      const response = await fetch(`${api}/catalog`, { cache: "no-store" });
+      const response = await fetch(`${api}/catalog`, { cache: "no-store", headers: { "X-Swatches-Visit": visit.current } });
       if (response.status === 401) {
         resetPreparedCovers();
+        visit.current = "";
         setStatus("locked");
         setWelcomeName(null);
         setCatalog(null);
@@ -97,16 +101,27 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
       }
       if (!response.ok) throw new Error("Catalog source unavailable");
       const live: Catalog = await response.json();
-      setCatalog((previous) => previous && previous.updatedAt > live.updatedAt ? previous : live);
+      setCatalog(live);
       setStatus("ready");
       setStockError("");
       setAccessError("");
     } catch {
+      setCatalog(null);
       setStockError("stockUnavailable");
     } finally {
       loadingStock.current = false;
+      setRefreshing(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (status !== "ready") return;
+    const onReturn = () => {
+      if (!document.hidden && !submitting.current) void loadCatalog();
+    };
+    document.addEventListener("visibilitychange", onReturn);
+    return () => document.removeEventListener("visibilitychange", onReturn);
+  }, [status, loadCatalog]);
 
   async function enter(value: string) {
     const validated = customerCode(value);
@@ -126,6 +141,7 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
         return;
       }
       const result = await response.json();
+      visit.current = result.visitKey;
       void import("./specimen-grid").catch(() => {});
       setFirstCoverReady(false);
       setWelcomeName(typeof result.welcomeName === "string" ? result.welcomeName : "");
@@ -155,9 +171,10 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
   const available = useMemo(() => selectRolls(patterns ?? []), [patterns]);
   const cartEntries: CartEntry[] = cart.map((line) => {
     const live = available.get(line.id);
-    return live ? { ...live, available: true } : { ...line, available: false };
+    return live ? { ...live, available: !catalog?.canViewPrices || live.price != null } : { ...line, available: false };
   });
-  const total = cartEntries.reduce((sum, line) => line.available ? sum + lineTotal(line.yards, line.price) : sum, 0);
+  const showPrices = catalog?.canViewPrices === true && !refreshing;
+  const total = cartEntries.reduce((sum, line) => line.available && line.price != null ? sum + lineTotal(line.yards, line.price) : sum, 0);
 
   const openPattern = useCallback((group: Pattern, selectedVariant?: Variant) => {
     const initial = selectedVariant ?? group.variants.find((entry) => entry.rolls.length > 0) ?? group.variants[0];
@@ -176,25 +193,27 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
     const line = available.get(id);
     if (!line || cart.some((entry) => entry.id === id)) return;
     if (cart.length >= 100) return;
-    setCart((entries) => entries.some((entry) => entry.id === id) ? entries : [...entries, line]);
+    const { sku, color, pattern, yards } = line;
+    setCart((entries) => entries.some((entry) => entry.id === id) ? entries : [...entries, { id, sku, color, pattern, yards }]);
     if (receipt !== "uncertain") setReceipt(null);
     setInquiryError("");
   }
 
   function showCart() {
+    void loadCatalog();
     cartDialog.current?.showModal();
   }
 
   async function submit() {
-    if (submitting.current || !cartEntries.length || cartEntries.some((entry) => !entry.available)) return;
+    if (submitting.current || loadingStock.current || !catalog || !cartEntries.length || cartEntries.some((entry) => !entry.available)) return;
     submitting.current = true;
     setSending(true);
     setInquiryError("");
     try {
       const response = await fetch(`${api}/inquiry`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cartEntries.map(({ id, price }) => ({ id, price })) }),
+        headers: { "Content-Type": "application/json", "X-Swatches-Visit": visit.current },
+        body: JSON.stringify({ items: cartEntries.map(({ id, price }) => showPrices ? { id, price } : { id }) }),
       });
       const result = await response.json();
       if (response.status === 401) {
@@ -202,14 +221,12 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
         setCatalog(null);
         setCart([]);
         resetPreparedCovers();
+        visit.current = "";
         setStatus("locked");
         setAccessError("codeExpired");
         return;
       }
-      if (response.status === 409 && result.catalog) {
-        const live: Catalog = result.catalog;
-        setCatalog((previous) => previous && previous.updatedAt > live.updatedAt ? previous : live);
-      }
+      if (response.status === 409) await loadCatalog();
       if (result.uncertain) {
         setReceipt("uncertain");
         return;
@@ -292,7 +309,7 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
           {specs?.composition && <div><dt>{t("composition")}</dt><dd>{specs.composition}</dd></div>}
           {specs?.finishing && <div><dt>{t("finishing")}</dt><dd>{specs.finishing}</dd></div>}
           {specs?.width && <div><dt>{t("width")}</dt><dd>{specs.width}</dd></div>}
-          <div><dt>{t("unitPrice")}</dt><dd>{variant.price === null ? t("pricePending") : money(variant.price)}</dd></div>
+          {showPrices && <div><dt>{t("unitPrice")}</dt><dd>{variant.price == null ? t("pricePending") : money(variant.price)}</dd></div>}
         </dl>
         {variant.rolls.length ? <>
           <div className={styles.stockTitle}>
@@ -303,7 +320,7 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
           {variant.rolls.map((roll) => {
             const added = cart.some((entry) => entry.id === roll.id);
             return <li key={roll.id}>
-              <button type="button" disabled={added || variant.price === null || cart.length >= 100}
+              <button type="button" disabled={added || (showPrices && variant.price == null) || cart.length >= 100}
                 aria-label={`${yardage(roll.yards)} · ${added ? t("added") : t("add")}`}
                 onClick={() => add(roll.id)}>
                 <span className={styles.rollIcon} aria-hidden="true" />
@@ -341,18 +358,18 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
           <ul className={styles.cartItems}>
             {cartEntries.map((line) => <li key={line.id}>
               <div><strong>{line.pattern} · {colorName(line.color, language)}</strong><span>{line.sku} · {yardage(line.yards)}</span></div>
-              <div><span>{line.available ? money(lineTotal(line.yards, line.price)) : t("soldOut")}</span>
+              <div><span>{!line.available ? t("soldOut") : showPrices && line.price != null ? money(lineTotal(line.yards, line.price)) : null}</span>
                 <button type="button" className={styles.iconButton} aria-label={`${t("remove")} · ${line.sku} ${yardage(line.yards)}`} disabled={sending}
                   onClick={() => setCart((entries) => entries.filter((entry) => entry.id !== line.id))}><X size={15} /></button>
               </div>
             </li>)}
           </ul>
           <footer>
-            <div className={styles.total}><span>{t("subtotal")} <small>{t("shipping")}</small></span><strong>{money(total)}</strong></div>
+            {showPrices && <div className={styles.total}><span>{t("subtotal")} <small>{t("shipping")}</small></span><strong>{money(total)}</strong></div>}
             {cartEntries.some((entry) => !entry.available) && <p className={styles.error}>{t("removeSoldOut")}</p>}
             {inquiryError && <p className={styles.error} role="alert">{t(inquiryError)}</p>}
-            <button className={styles.primary} type="button" disabled={sending || cartEntries.some((entry) => !entry.available)}
-              onClick={() => void submit()}>{sending ? t("sending") : t("inquire")}<ArrowRight size={17} /></button>
+            <button className={styles.primary} type="button" disabled={sending || refreshing || !catalog || cartEntries.some((entry) => !entry.available)}
+              onClick={() => void submit()}>{sending ? t("sending") : t(catalog?.canViewPrices ? "inquire" : "requestQuote")}<ArrowRight size={17} /></button>
           </footer>
         </>}
       </div>

@@ -11,7 +11,7 @@ export type Variant = {
   color: string;
   composition: string;
   width: string;
-  price: number | null;
+  price?: number | null;
   image: string | null;
   listThumb?: string;
   video?: string | null;
@@ -21,14 +21,14 @@ export type Variant = {
 };
 
 export type Pattern = { name: string; patternType?: string; variants: Variant[] };
-export type Catalog = { patterns: Pattern[]; updatedAt: string; sampleImages?: boolean; layout?: SwatchesLayout };
+export type Catalog = { patterns: Pattern[]; canViewPrices?: boolean; updatedAt: string; sampleImages?: boolean; layout?: SwatchesLayout };
 export type CartLine = {
   id: string;
   pattern: string;
   sku: string;
   color: string;
   yards: number;
-  price: number;
+  price?: number | null;
 };
 
 const amount = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 2 });
@@ -49,7 +49,6 @@ export function selectRolls(patterns: Pattern[]) {
   const rolls = new Map<string, CartLine>();
   for (const { name, variants } of patterns) {
     for (const { sku, color, price, rolls: available } of variants) {
-      if (price === null) continue;
       for (const { id, yards } of available) {
         rolls.set(id, { id, pattern: name, sku, color, yards, price });
       }

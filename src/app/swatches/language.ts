@@ -56,6 +56,7 @@ const strings = {
   shipping: ["배송비 별도", "Shipping excluded", "运费另计", "送料別"],
   removeSoldOut: ["품절된 롤을 삭제한 뒤 문의해 주세요.", "Remove out-of-stock rolls before sending.", "请移除缺货的布卷后再提交。", "在庫切れの反物を削除してからお問い合わせください。"],
   sending: ["보내는 중", "Sending", "正在提交", "送信中"],
+  requestQuote: ["견적 요청하기", "Request a quote", "索取报价", "見積もりを依頼する"],
   inquire: ["구매 문의 보내기", "Send purchase inquiry", "提交采购询价", "購入について問い合わせる"],
   previewMail: ["미리보기에서는 문의 메일을 보내지 않습니다.", "Email sending is disabled in this preview.", "此预览不会发送询价邮件。", "プレビューではお問い合わせメールは送信されません。"],
   previewPhoto: ["사진은 미리보기용입니다.", "Photos are for preview only.", "图片仅供预览。", "写真はプレビュー用です。"],

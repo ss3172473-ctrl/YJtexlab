@@ -1,7 +1,7 @@
 import { type NextRequest } from "next/server";
 import { customerCode } from "@/app/swatches/customer-code";
 import { logAccess, readCompanies } from "../sheets";
-import { cookieName, createSession, equal, json, sameOrigin, sessionSeconds } from "../session";
+import { cookieName, createSession, equal, json, sameOrigin, sessionSeconds, visitKey } from "../session";
 import { accessAttemptSource, createAccessAttemptLimiter, readAccessJson } from "./attempt-guard";
 
 const consumeAttempt = createAccessAttemptLimiter();
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     if (matches.length !== 1) return json({ error: "메일로 받은 고객 코드를 확인해 주세요." }, 401);
     const token = createSession(matches[0].code);
     await logAccess(matches[0], campaign);
-    const response = json({ ok: true, welcomeName: matches[0].name.slice(0, 100) });
+    const response = json({ ok: true, visitKey: visitKey(token), welcomeName: matches[0].name.slice(0, 100) });
     response.cookies.set(cookieName, token, {
       httpOnly: true,
       sameSite: "strict",

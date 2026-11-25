@@ -1,16 +1,17 @@
 import { type NextRequest } from "next/server";
 import { lineTotal, money, selectRolls, yardage, type CartLine } from "@/app/swatches/catalog";
-import { readCatalog, readCompanies, recordInquiry } from "../sheets";
-import { codeFingerprint, equal, json, readSession, sameOrigin } from "../session";
+import { readCatalog, recordInquiry } from "../sheets";
+import { readActiveCompany } from "../active-session";
+import { json, sameOrigin } from "../session";
 
-type Selection = { id: string; price: number };
+type Selection = { id: string; price?: number };
 
 function readSelections(value: unknown): Selection[] | null {
   if (!Array.isArray(value) || value.length === 0 || value.length > 100) return null;
   const seen = new Set<string>();
   for (const item of value) {
     if (!item || typeof item.id !== "string" || item.id.length > 120 ||
-      typeof item.price !== "number" || !Number.isFinite(item.price) || item.price <= 0 ||
+      (item.price !== undefined && (typeof item.price !== "number" || !Number.isFinite(item.price) || item.price <= 0)) ||
       seen.has(item.id)) return null;
     seen.add(item.id);
   }
@@ -18,10 +19,16 @@ function readSelections(value: unknown): Selection[] | null {
 }
 
 function inquiryText(lines: CartLine[]) {
+  const summary = lines.every(line => line.price != null)
+    ? money(lines.reduce((sum, line) => sum + lineTotal(line.yards, line.price!), 0))
+    : "견적 확인 필요";
   return [
-    ...lines.map((line) => `${line.pattern} · ${line.color} · ${line.sku} | ${yardage(line.yards)} × ${money(line.price)}/y | ${money(lineTotal(line.yards, line.price))}`),
+    ...lines.map(line => {
+      const pricing = line.price == null ? "견적 확인 필요" : `${money(line.price)}/y | ${money(lineTotal(line.yards, line.price))}`;
+      return `${line.pattern} · ${line.color} · ${line.sku} | ${line.id} | ${yardage(line.yards)} × ${pricing}`;
+    }),
     "",
-    `선택 ${lines.length}롤 · 원단 합계 ${money(lines.reduce((sum, roll) => sum + lineTotal(roll.yards, roll.price), 0))} (배송비 별도)`,
+    `선택 ${lines.length}롤 · 원단 합계 ${summary} (배송비 별도)`,
   ].join("\n");
 }
 
@@ -34,18 +41,20 @@ export async function POST(request: NextRequest) {
   let company;
   let lines: CartLine[];
   try {
-    const fingerprint = readSession(request);
-    if (!fingerprint) return json({ error: "고객 코드를 다시 입력해 주세요." }, 401);
-    const [companies, catalog] = await Promise.all([readCompanies(), readCatalog()]);
-    const matches = companies.filter((entry) => equal(codeFingerprint(entry.code), fingerprint));
-    if (matches.length !== 1) return json({ error: "고객 코드를 다시 입력해 주세요." }, 401);
-    company = matches[0];
+    company = await readActiveCompany(request);
+    if (!company) return json({ error: "고객 코드를 다시 입력해 주세요." }, 401);
+    const catalog = await readCatalog();
     const available = selectRolls(catalog.patterns);
     lines = [];
     for (const item of selections) {
       const live = available.get(item.id);
-      if (!live || live.price !== item.price) {
-        return json({ error: "일부 롤의 재고나 단가가 바뀌었습니다. 장바구니를 확인해 주세요.", catalog }, 409);
+      // A previously priced cart must reload after a downgrade. The result
+      // for a hidden company never depends on the numeric price supplied.
+      const changed = company.canViewPrices
+        ? live?.price == null || live.price !== item.price
+        : item.price !== undefined;
+      if (!live || changed) {
+        return json({ error: "일부 롤의 재고나 단가가 바뀌었습니다. 장바구니를 확인해 주세요." }, 409);
       }
       lines.push(live);
     }

@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import type { Pattern } from "@/app/swatches/catalog";
 import { normalizeSwatchesLayout, type SwatchesLayout } from "@/app/swatches/design-layout";
 import { json, sameOrigin } from "../session";
+import { customerPatterns } from "../price-visibility";
 import { readCatalog } from "../sheets";
 import { createDesignSession, designCookie, designSessionSeconds, hasAdminKey, hasDesignSession, isAdminKey, secureDesignCookie } from "./auth";
 import { photoStorageAvailable, withSwatchPhotos } from "./photos";
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     const [catalog, layout] = await Promise.all([readCatalog(), readSwatchesLayout()]);
     return json({
       layout: currentLayout(layout, catalog.patterns),
-      patterns: await withSwatchPhotos(catalog.patterns, true),
+      patterns: customerPatterns(await withSwatchPhotos(catalog.patterns, true), false),
       photoWritable: photoStorageAvailable,
       writable: canSaveSwatchesLayout(),
     });

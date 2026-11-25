@@ -64,8 +64,8 @@ const rollRows = [
   ["A2", 0.5, "보유중"], ["B1", 12, "보유중"],
 ];
 const crmRows = [
-  ["업체명", "이메일", "고객 코드", "활성 상태"],
-  ["Fixture Company", "buyer@example.invalid", "0358", "활성"],
+  ["업체명", "이메일", "고객 코드", "활성 상태", "가격 공개"],
+  ["Fixture Company", "buyer@example.invalid", "0358", "활성", "공개"],
   ["Disabled Company", "former@example.invalid", "1458", "비활성"],
 ];
 const origin = "https://catalog.example.invalid";
@@ -118,6 +118,7 @@ function setup(companies = crmRows) {
       "../sheets": sheets,
       "./attempt-guard": attemptGuard,
       "../active-session": activeSession,
+      "../price-visibility": load("src/app/api/swatches/price-visibility.ts"),
       "../design/photos": { withSwatchPhotos: async (patterns) => patterns },
       "../design/drive-list-thumbnails": { listThumbnailUrl: () => undefined },
       "../design/store": { readSwatchesLayout: async () => ({ order: [], covers: {}, sizes: {}, rowHeights: {} }) },
@@ -129,10 +130,12 @@ function setup(companies = crmRows) {
   return { routes, writes, reads, emails, market };
 }
 
+const fixtureSession = load(sessionPath);
+
 function request(body, token, requestOrigin = origin) {
   return {
     nextUrl: new URL(origin),
-    headers: new Headers({ origin: requestOrigin }),
+    headers: new Headers({ origin: requestOrigin, ...(token ? { "X-Swatches-Visit": fixtureSession.visitKey(token) } : {}) }),
     body: body === undefined ? null : new Response(JSON.stringify(body)).body,
     cookies: { get: () => token ? { value: token } : undefined },
     json: async () => body,
@@ -920,4 +923,113 @@ test("poster registry requires 236 unique bounded assets, exact set and matching
   assert.throws(() => parse([...assets.slice(1), assets[1]]), /duplicate/);
   assert.throws(() => parse(assets, "0".repeat(64)), /digest/);
   assert.throws(() => parse([...assets.slice(1), {...assets[0], fileId:"fixture_manifest"}]), /duplicate/);
+});
+
+test("only the exact affirmative CRM cell on one column discloses prices", async () => {
+  const company = ["Fixture B", "b@example.invalid", "B002", "활성"];
+  for (const [labels, values] of [
+    [[], []], [["가격 공개"], []], [["가격 공개"], ["비공개"]], [["가격 공개"], ["공개 "]],
+    [["가격 공개"], [true]], [["가격 공개"], ["YES"]], [["가격 공개", "가격 공개"], ["공개", "공개"]],
+  ]) {
+    const { routes } = setup([[...crmRows[0].slice(0, 4), ...labels], [...company, ...values]]);
+    const entered = await routes.access.POST(request({ code: "B002" }));
+    assert.equal(entered.body.welcomeName, "Fixture B");
+    const result = await routes.catalog.GET(request(undefined, entered.cookies.get("yj_swatches")));
+    assert.equal(result.body.canViewPrices, false);
+    assert.doesNotMatch(JSON.stringify(result.body), /"price"|4200|3900/);
+    assert.deepEqual(JSON.parse(JSON.stringify(result.body.patterns[0].variants[0].rolls[0])), { id: "A1:92:1", yards: 92 });
+  }
+});
+
+test("signed sessions honor CRM changes on the next catalog and inquiry, including conflicts", async () => {
+  const rows = crmRows.map(row => [...row]);
+  const { routes, writes, market } = setup(rows);
+  const entered = await routes.access.POST(request({ code: "0358" }));
+  const token = entered.cookies.get("yj_swatches");
+  const query = () => routes.catalog.GET(request(undefined, token));
+  const send = items => routes.inquiry.POST(request({ items }, token));
+  const id = "A1:92:1";
+  assert.equal((await query()).body.patterns[0].variants[0].price, 4200);
+  rows[1][4] = "비공개";
+  assert.equal((await query()).body.canViewPrices, false);
+  const exists = [{ id }];
+  for (const items of [[{ id, price: 4200 }], [{ id, price: 3999 }], [{ id: "sold-roll" }]]) {
+    const conflict = await send(items);
+    assert.equal(conflict.status, 409);
+    assert.deepEqual(Object.keys(conflict.body), ["error"]);
+    assert.match(conflict.headers["Cache-Control"], /private, no-store/);
+    assert.equal(conflict.headers["Vary"], "Cookie");
+    assert.equal(conflict.headers["Vercel-CDN-Cache-Control"], "no-store");
+  }
+  market.products[1][3] = 6743;
+  const result = await send(exists);
+  assert.equal(result.status, 200);
+  assert.doesNotMatch(JSON.stringify(result.body), /6743|620356/);
+  assert.match(writes.at(-1).requestBody.values[0][4], /A1:92:1.*₩6,743.*₩620,356/);
+  market.stock[1][2] = market.stock[2][2] = "출고완료";
+  assert.equal((await send(exists)).status, 409);
+  rows[1][3] = "비활성";
+  assert.equal((await query()).status, 401);
+  assert.equal((await send(exists)).status, 401);
+  assert.equal(writes.length, 2);
+});
+
+test("projection preserves the detail media and removes unknown monetary fields", () => {
+  const { customerPatterns } = load("src/app/api/swatches/price-visibility.ts");
+  const image = "/api/swatches/photo?sku=S1&v=1", video = "/api/swatches/video?sku=S1";
+  const input = [{ name: "Twill", total: 81234, variants: [{ sku: "S1", image, video, price: 87654,
+    landedCost: 76543, rolls: [{ id: "S1:3:1", yards: 3, total: 65432 }] }] }];
+  const [hidden] = customerPatterns(input, false);
+  assert.equal(hidden.variants[0].image, image);
+  assert.equal(hidden.variants[0].video, video);
+  assert.doesNotMatch(JSON.stringify(hidden), /"price"|total|Cost|87654|76543|65432|81234/);
+  assert.equal(customerPatterns(input, true)[0].variants[0].price, 87654);
+});
+
+
+test("a new document or another company's tab cannot use the shared cookie for catalog or inquiry", async () => {
+  const { routes, reads, writes } = setup([...crmRows, ["Fixture B", "b@example.invalid", "B002", "활성", "비공개"]]);
+  const login = code => routes.access.POST(request({ code }));
+  const a = await login("0358");
+  const b = await login("B002");
+  for (const key of ["", b.body.visitKey]) {
+    const stale = request({ items: [{ id: "A1:92:1" }] }, a.cookies.get("yj_swatches"));
+    stale.headers.set("X-Swatches-Visit", key);
+    assert.equal((await routes.catalog.GET(stale)).status, 401);
+    assert.equal((await routes.inquiry.POST(stale)).status, 401);
+  }
+  assert.equal(reads.includes("inventory"), false);
+  assert.equal(writes.length, 2);
+});
+
+test("a source outage fails closed after a priced visit and writes no inquiry", async () => {
+  const { routes, market, writes } = setup();
+  const entered = await routes.access.POST(request({ code: "0358" }));
+  const token = entered.cookies.get("yj_swatches");
+  assert.equal((await routes.catalog.GET(request(undefined, token))).body.canViewPrices, true);
+  Object.defineProperty(market, "stock", { get() { throw Error("provider diagnostic: 1234567"); } });
+  for (const result of [
+    await routes.catalog.GET(request(undefined, token)),
+    await routes.inquiry.POST(request({ items: [{ id: "A1:92:1", price: 4200 }] }, token)),
+  ]) {
+    assert.equal(result.status, 503);
+    assert.deepEqual(Object.keys(result.body), ["error"]);
+    assert.doesNotMatch(JSON.stringify(result.body), /provider|1234567|4200/);
+    assert.match(result.headers["Cache-Control"], /no-store/);
+  }
+  assert.equal(writes.length, 1);
+});
+
+test("design editor login alone does not disclose price", async () => {
+  const layout = { order: [], covers: {}, sizes: {}, rowHeights: {} };
+  const design = load("src/app/api/swatches/design/route.ts", {
+    "@/app/swatches/design-layout": {}, "../session": { json: body => body },
+    "../price-visibility": load("src/app/api/swatches/price-visibility.ts"),
+    "../sheets": { readCatalog: async () => ({ patterns: [{ name: "Test", variants: [{ sku: "S1", price: 765432, rolls: [] }] }] }) },
+    "./auth": { hasDesignSession: () => true }, "./store": { readSwatchesLayout: () => layout, canSaveSwatchesLayout: () => false },
+    "./photos": { withSwatchPhotos: patterns => patterns },
+  });
+  const result = await design.GET(request());
+  assert.equal(result.patterns[0].variants[0].sku, "S1");
+  assert.doesNotMatch(JSON.stringify(result), /price|765432/);
 });

@@ -20,6 +20,17 @@ export function codeFingerprint(code: string) {
   return sign("swatches-code", code);
 }
 
+// A second tab may change the shared cookie. Bind catalog and inquiry calls
+// to the code entered in this document without exposing the HttpOnly token.
+export function visitKey(token: string) {
+  return sign("swatches-visit", token);
+}
+
+export function matchesVisit(request: NextRequest) {
+  const token = request.cookies.get(cookieName)?.value;
+  return Boolean(token && equal(request.headers.get("X-Swatches-Visit") ?? "", visitKey(token)));
+}
+
 export function createSession(code: string) {
   const payload = `${codeFingerprint(code)}.${Math.floor(Date.now() / 1000) + sessionSeconds}`;
   return `${payload}.${sign("swatches-session", payload)}`;
@@ -48,6 +59,9 @@ export function json(data: unknown, status = 200, headers: Record<string, string
     status,
     headers: {
       "Cache-Control": "private, no-store",
+      "CDN-Cache-Control": "no-store",
+      "Vercel-CDN-Cache-Control": "no-store",
+      "Vary": "Cookie",
       "X-Robots-Tag": "noindex, nofollow",
       ...headers,
     },

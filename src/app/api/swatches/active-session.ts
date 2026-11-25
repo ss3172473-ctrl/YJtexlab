@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { readCompanies } from "./sheets";
-import { codeFingerprint, readSession } from "./session";
+import { codeFingerprint, equal, matchesVisit, readSession } from "./session";
 
 export const SESSION_RECHECK_TTL = 15_000;
 
@@ -36,4 +36,13 @@ const check = createActiveCodeCheck(async () => (await readCompanies()).map(({ c
 export async function hasActiveSession(request: NextRequest) {
   const fingerprint = readSession(request);
   return fingerprint ? check(fingerprint) : false;
+}
+
+// Price-bearing operations always resolve the current CRM row. The media-only
+// burst cache above never supplies a pricing permission.
+export async function readActiveCompany(request: NextRequest) {
+  const fingerprint = readSession(request);
+  if (!fingerprint || !matchesVisit(request)) return null;
+  const matches = (await readCompanies()).filter(({ code }) => equal(codeFingerprint(code), fingerprint));
+  return matches.length === 1 ? matches[0] : null;
 }
