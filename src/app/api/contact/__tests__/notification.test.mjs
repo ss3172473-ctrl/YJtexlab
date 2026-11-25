@@ -15,6 +15,25 @@ const config={url:'https://script.google.com/macros/s/test/exec',secret:'isolate
  assert.equal(await helper.notifyContactRow(6,{},()=>{throw Error('MUST_NOT_FETCH')}),'not_configured');
  const timeoutHelper=load('src/lib/contact-notification.ts',{}, {setTimeout:fn=>{queueMicrotask(fn);return 1},clearTimeout(){}});
  assert.equal(await timeoutHelper.notifyContactRow(6,config,async(_,options)=>new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(Error('abort'))))),'uncertain');
+ const scenarios = [
+  ["pending", async()=>({ok:true,json:async()=>({ok:false,status:"pending"})})],
+  ["quota", async()=>({ok:true,json:async()=>({ok:false,status:"quota"})})],
+  ["unauthorized", async()=>({ok:true,json:async()=>({ok:false,status:"unauthorized"})})],
+  ["unexpected_response", async()=>({ok:true,json:async()=>({ok:false,status:"isolated-fake-secret qa@example.invalid"})})],
+  ["response_not_json", async()=>({ok:true,json:async()=>{throw Error("isolated-fake-secret")}})],
+  ["http_error", async()=>({ok:false,status:503})],
+  ["transport_error", async()=>{throw Error("qa@example.invalid")}],
+ ];
+ for (const [expected, responder] of scenarios) {
+   let count=0; const buckets=[];
+   const result=await helper.notifyContactRow(6,config,async()=>{count++;return responder()},bucket=>buckets.push(bucket));
+   assert.equal(count,1); assert.deepEqual(buckets,[expected]); assert.equal(result,"uncertain");
+   assert.equal(result==="sent",false); // Same positive predicate as swatches inquiry newlySent.
+ }
+ const buckets=[];
+ assert.equal(await helper.notifyContactRow(6,config,async()=>({ok:true,json:async()=>({ok:true,status:"sent"})}),bucket=>{buckets.push(bucket);throw Error("sink")}),"sent");
+ assert.deepEqual(buckets,["sent"]);
+ console.log("PASS: seven single-attempt negative buckets, allowlist, no GA4 on ambiguity, and one positive sink-failure case.");
  const events=[];let failAppend=false;
  const values={get:async()=>({data:{values:[['Received At (KST)','Company / Name','Reply-to Email','Subject','Message','Source']]}}),update:async()=>{throw Error('UNEXPECTED_HEADER_WRITE')},append:async()=>{events.push('append');if(failAppend)throw Error('fake secret');return{data:{updates:{updatedRange:"'시트1'!A6:F6"}}};}};
  const google={auth:{GoogleAuth:class{}},sheets:()=>({spreadsheets:{values}})};

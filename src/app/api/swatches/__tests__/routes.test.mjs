@@ -70,7 +70,7 @@ const crmRows = [
 ];
 const origin = "https://catalog.example.invalid";
 
-function setup(companies = crmRows) {
+function setup(companies = crmRows, fixtureNotify) {
   const market = { products: productRows.map((x) => [...x]), stock: rollRows.map((x) => [...x]) };
   const writes = [];
   const reads = [];
@@ -104,7 +104,7 @@ function setup(companies = crmRows) {
     "@/lib/contact": contact,
     "@/lib/contact-notification": {
       ...notification,
-      notifyContactRow: async (row) => { emails.push(row); return "sent"; },
+      notifyContactRow: async (row) => { emails.push(row); return fixtureNotify ? fixtureNotify(row) : "sent"; },
     },
   });
   const session = load(sessionPath, { "next/server": { NextResponse: {
@@ -198,6 +198,25 @@ test("inquiry checks live prices, stock and duplicates before recording and noti
   assert.match(row[4], /원단 합계 ₩388,350 \(배송비 별도\)/);
   assert.equal(row[5], "website/swatches");
   assert.deepEqual(emails, [2]);
+});
+
+test("swatches entry point persists once and logs a fixed bucket without a second send or GA4 eligibility", async () => {
+  const buckets = [];
+  let deliveries = 0;
+  const { routes, writes, emails } = setup(crmRows, row => notification.notifyContactRow(row,
+    { url: "https://script.google.com/macros/s/fixture/exec", secret: "fake-fixture" },
+    async () => { deliveries++; return { ok: true, json: async () => ({ ok: false, status: "pending" }) }; },
+    bucket => buckets.push(bucket)));
+  const entered = await routes.access.POST(request({ code: "0358" }));
+  const result = await routes.inquiry.POST(request({ items: [{ id: "A1:92:1", price: 4200 }] }, entered.cookies.get("yj_swatches")));
+  assert.equal(result.status, 200);
+  assert.equal(result.body.ok, true);
+  assert.equal(result.body.sent, false);
+  assert.equal(result.body.newlySent, false);
+  assert.equal(writes.filter(w => w.requestBody.values[0][5] === "website/swatches").length, 1);
+  assert.deepEqual(emails, [2]);
+  assert.equal(deliveries, 1);
+  assert.deepEqual(buckets, ["pending"]);
 });
 
 test("four-character input normalizes only ASCII letters and outer whitespace", () => {
