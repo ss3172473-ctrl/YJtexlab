@@ -49,7 +49,11 @@ export function parseCatalog([header = [], ...products]: Row[], [rollHeader = []
   const patternCol = column(header, "패턴 그룹");
   const colorCol = column(header, "Color");
   const productNameCol = column(header, "품 명");
-  const priceCol = column(header, "가격");
+  // The export catalog and inquiry must use KRW per yard, never domestic or indicative USD prices.
+  const exportLabel = "수출가(원/yd)";
+  const priceCol = column(header, exportLabel);
+  if (header.slice(priceCol + 1).some((value) => cell(value) === exportLabel))
+    throw new Error("Ambiguous Swatches export price column");
   const compositionCol = column(header, "혼용률");
   const widthCol = column(header, "inch");
   const kindCol = header.findIndex((name) => cell(name) === "패턴 유형");

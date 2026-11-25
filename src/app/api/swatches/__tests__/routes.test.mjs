@@ -53,7 +53,7 @@ const sessionPath = "src/app/api/swatches/session.ts";
 const offDrive = { driveVideo() { throw new Error("unexpected Drive call"); }, hasDriveVideo: false, hasDriveVideoForSku: () => false, hasDriveFrontForSku: () => false, hasDriveReverseForSku: () => false };
 
 const productRows = [
-  ["SKU", "패턴 그룹", "Color", "가격", "혼용률", "inch", "품 명"],
+  ["SKU", "패턴 그룹", "Color", "수출가(원/yd)", "혼용률", "inch", "품 명"],
   ["A1", "Pattern A", "Navy", 4200, "C100%", '56"', "면선염"],
   ["A2", "Pattern A", "White", 3900, "C100%", '56"', "면선염"],
   ["B1", "Pattern B", "Mint", "", "C100%", '58"', "모달"],
@@ -619,6 +619,19 @@ test("missing Sheet IDs fail closed without falling back to any real data source
     assert.deepEqual(writes, []);
     assert.equal(result.cookies.size, 0);
   } finally { env.SWATCHES_CRM_SHEET_ID = crm; }
+});
+
+test("selects only export KRW/yd and fails closed rather than quoting domestic or USD prices", () => {
+  const sh = load("src/app/api/swatches/sheets.ts", {
+    "@/app/swatches/customer-code": codes, "@/lib/contact": contact, "@/lib/contact-notification": notification,
+  });
+  const [h, row] = productRows;
+  const [head, data] = [[...h, "한국 가격", "참고가(USD/yd)"], [...row, 123, 5]];
+  const parse = (header, values) => sh.parseCatalog([header, values], rollRows).patterns[0].variants[0].price;
+  assert.equal(parse(head, data), row[3]);
+  assert.equal(parse(head, data.map((v, i) => i === 3 ? "" : v)), null);
+  assert.throws(() => parse(head.map((v) => v === "수출가(원/yd)" ? "가격" : v), data), /Missing/);
+  assert.throws(() => parse([...head, "수출가(원/yd)"], [...data, 321]), /Ambiguous/);
 });
 
 test("public code-only catalog parser never forwards Sheet photo URLs", () => {
