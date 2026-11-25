@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Image from "next/image";
 import { Maximize2, Minimize2, Pause, Play } from "lucide-react";
 import type { Variant } from "./catalog";
 import type { Language } from "./language";
 import styles from "./fabric-film.module.css";
+
+function playInline(element: HTMLVideoElement) {
+  element.defaultMuted = true;
+  element.muted = true;
+  return element.play();
+}
 
 const words = {
   ko: { title: "원단 움직임", play: "영상 재생", pause: "영상 일시 정지", expand: "영상 확대", collapse: "영상 축소" },
@@ -18,7 +25,14 @@ export default function FabricFilm({ variant, language, onExpanded }: { variant:
   const { sku, video, image } = variant;
   const t = words[language];
   const panel = useRef<HTMLDivElement>(null);
-  const clip = useRef<HTMLVideoElement>(null);
+  const clip = useRef<HTMLVideoElement | null>(null);
+  const registerClip = useCallback((element: HTMLVideoElement | null) => {
+    clip.current = element;
+    if (element) {
+      element.defaultMuted = true;
+      element.muted = true;
+    }
+  }, []);
   const hoverIntent = useRef<number | undefined>(undefined);
   const [visible, setVisible] = useState(false);
   const [enabled, setEnabled] = useState(false);
@@ -47,9 +61,12 @@ export default function FabricFilm({ variant, language, onExpanded }: { variant:
   useEffect(() => {
     const node = panel.current;
     if (!node) return;
-    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting && entry.intersectionRatio >= .45), {
-      threshold: [.45],
-    });
+    // A tall expanded portrait on a short mobile viewport need not be 45% visible.
+    const visibility = matchMedia("(max-width: 1039px)");
+    const observer = new IntersectionObserver(([entry]) => {
+      const threshold = visibility.matches ? .2 : .45;
+      setVisible(entry.isIntersecting && entry.intersectionRatio >= threshold);
+    }, { threshold: [.2, .45] });
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
@@ -76,9 +93,7 @@ export default function FabricFilm({ variant, language, onExpanded }: { variant:
       if (element && visible && intendsPlay && !document.hidden) {
         element.defaultPlaybackRate = .75;
         element.playbackRate = .75;
-        element.defaultMuted = true;
-        element.muted = true;
-        void element.play().catch(() => {});
+        void playInline(element).catch(() => setPlaying(false));
       } else element?.pause();
     }
     sync();
@@ -101,22 +116,32 @@ export default function FabricFilm({ variant, language, onExpanded }: { variant:
     onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocus(false); }}>
     <div className={styles.anchor} ref={panel}>
     <div className={styles.frame}>
-      {visible && !hasPlayed && image && <Image src={image} alt="" unoptimized fill loading="eager" fetchPriority="low" decoding="async" sizes="(max-width: 480px) 80vw, 334px" />}
+      {visible && (!enabled || failed) && image && <Image src={image} alt="" unoptimized fill loading="eager" fetchPriority="low" decoding="async" sizes="(max-width: 480px) 80vw, 334px" />}
       {enabled && !failed && <video
-        ref={clip} src={video} data-video-sku={sku} muted loop playsInline preload="metadata"
+        ref={registerClip} src={video} poster={image || undefined} data-video-sku={sku} muted loop playsInline preload="metadata"
         onLoadedMetadata={({ currentTarget }) => {
           currentTarget.defaultPlaybackRate = .75;
           currentTarget.playbackRate = .75;
           currentTarget.defaultMuted = true;
           currentTarget.muted = true;
         }}
-        className={hasPlayed ? styles.loaded : ""} onPlaying={() => { setPlaying(true); setHasPlayed(true); }}
+        onPlaying={() => { setPlaying(true); setHasPlayed(true); }}
         onPause={() => setPlaying(false)} onError={() => { setFailed(true); setHasPlayed(false); setPlaying(false); }}
         aria-label={`${t.title} · ${sku}`} />}
       {hasPlayed && !failed && <Image src="/brand/yjtexlab-logo.png" alt="" width={405} height={200} unoptimized
         className={styles.watermark} data-film-watermark aria-hidden="true" draggable={false} />}
       {!failed && <div className={styles.controls}>
-        <button type="button" aria-label={playing ? t.pause : t.play} onClick={() => setRequested(!playing)}>
+        <button type="button" aria-label={playing ? t.pause : t.play} onClick={() => {
+          if (playing) {
+            setRequested(false);
+            clip.current?.pause();
+            return;
+          }
+          // Safari needs play() to run in the tap handler when autoplay is blocked.
+          if (!enabled) flushSync(() => setEnabled(true));
+          if (clip.current) void playInline(clip.current).catch(() => setPlaying(false));
+          setRequested(true);
+        }}>
           {playing ? <Pause aria-hidden="true" size={14} /> : <Play aria-hidden="true" size={14} />}
         </button>
         <button type="button" aria-label={pinned ? t.collapse : t.expand} aria-expanded={expanded} onClick={() => {
