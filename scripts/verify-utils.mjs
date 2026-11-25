@@ -43,7 +43,7 @@ export async function waitForHttp(url, timeoutMs = 120000) {
 }
 
 export function launchBuiltServer(cwd, port) {
-  return spawn("npm", ["run", "start", "--", "--port", String(port)], {
+  return spawn("npm", ["run", "start", "--", "--hostname", "127.0.0.1", "--port", String(port)], {
     cwd,
     stdio: "inherit",
     env: {

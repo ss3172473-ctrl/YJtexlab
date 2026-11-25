@@ -3,10 +3,10 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 
 import { readRouteMatrix } from "./read-route-matrix.mjs";
-import { findOpenPort, launchDevServer, stopChild, waitForHttp } from "./verify-utils.mjs";
+import { findOpenPort, launchBuiltServer, stopChild, waitForHttp } from "./verify-utils.mjs";
 
 const root = process.cwd();
 const baseDir = path.join(root, "docs/baselines/home/20260326");
@@ -33,11 +33,7 @@ for (const filePath of requiredBaselines) {
 const port = await findOpenPort(4130);
 const baseUrl = `http://127.0.0.1:${port}`;
 const verifyUrl = `${baseUrl}/`;
-const tsconfigPath = path.join(root, "tsconfig.json");
-const nextEnvPath = path.join(root, "next-env.d.ts");
-const tsconfigSnapshot = fs.existsSync(tsconfigPath) ? fs.readFileSync(tsconfigPath, "utf8") : null;
-const nextEnvSnapshot = fs.existsSync(nextEnvPath) ? fs.readFileSync(nextEnvPath, "utf8") : null;
-const server = launchDevServer(root, port);
+const server = launchBuiltServer(root, port);
 
 function assert(condition, message) {
   if (!condition) {
@@ -45,24 +41,51 @@ function assert(condition, message) {
   }
 }
 
-function captureScreenshot(chromePath, args, outputPath) {
-  // Each capture uses a fresh empty profile, never the owner's Chrome session.
-  const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), "yjtex-verify-chrome-profile-"));
-  try {
-    execFileSync(chromePath, [`--user-data-dir=${profileDir}`, ...args], {
-      timeout: 30000,
-      stdio: "ignore",
-    });
-    return fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0;
-  } catch (error) {
-    if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
-      return true;
-    }
+function ego(script) {
+  const result = spawnSync("ego-browser", ["nodejs", "-e", script], {
+    encoding: "utf8",
+    timeout: 90000,
+  });
+  if (result.error) throw result.error;
+  const output = (result.stdout ?? "") + "\n" + (result.stderr ?? "");
+  assert(result.status === 0, `Ego screenshot verification failed: ${output.trim()}`);
+  return output;
+}
 
-    console.warn(
-      `Screenshot capture skipped for ${path.basename(outputPath)}: ${error.signal ?? error.message}`,
-    );
-    return false;
+function captureHomeScreenshots(verifyUrl, tempDir) {
+  let spaceId;
+  try {
+    const setup = ego(`
+      const task = await taskSpace("YJTEXLAB local deployment corridor");
+      console.log("YJTEX_CORRIDOR_SPACE=" + task.spaceId);
+    `);
+    spaceId = Number(setup.match(/YJTEX_CORRIDOR_SPACE=(\d+)/)?.[1]);
+    assert(Number.isSafeInteger(spaceId) && spaceId > 0, "Ego did not identify the verification space.");
+    const dimensions = [[1440, 900, false, "desktop.png"], [390, 844, true, "mobile.png"]];
+    for (const [width, height, mobile, filename] of dimensions) {
+      const outputPath = path.join(tempDir, filename);
+      ego(`
+        const task = await taskSpace(${spaceId});
+        const page = task.page("p1");
+        await page.cdp("Emulation.setDeviceMetricsOverride", {width:${width}, height:${height}, deviceScaleFactor:1, mobile:${mobile}});
+        await page.goto(${JSON.stringify(verifyUrl)});
+        await page.waitForFunction(() => {
+          const hero = document.querySelector('[data-home-section="hero"]');
+          return Boolean(hero?.getBoundingClientRect().height);
+        }, undefined, {timeout:20000});
+        if (!await page.evaluate(() => document.querySelectorAll("main").length === 1)) {
+          throw new Error("Ego rendered an unexpected home structure.");
+        }
+        await page.screenshot({path:${JSON.stringify(outputPath)}});
+      `);
+      const png = fs.readFileSync(outputPath);
+      assert(png.length > 1024 && png.readUInt32BE(16) === width && png.readUInt32BE(20) === height,
+        `Ego screenshot did not match ${width}×${height}.`);
+    }
+  } finally {
+    if (Number.isSafeInteger(spaceId) && spaceId > 0) {
+      ego(`const task = await taskSpace(${spaceId}); await task.finish({keep: []});`);
+    }
   }
 }
 
@@ -99,46 +122,8 @@ try {
   }
 
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "yjtex-home-verify-"));
-  const chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-  const desktopShot = path.join(tempDir, "desktop.png");
-  const mobileShot = path.join(tempDir, "mobile.png");
-
-  const desktopCaptured = captureScreenshot(chrome, [
-    "--headless=new",
-    "--disable-gpu",
-    "--hide-scrollbars",
-    "--window-size=1440,900",
-    "--virtual-time-budget=2500",
-    "--run-all-compositor-stages-before-draw",
-    `--screenshot=${desktopShot}`,
-    verifyUrl,
-  ], desktopShot);
-
-  const mobileCaptured = captureScreenshot(chrome, [
-    "--headless=new",
-    "--disable-gpu",
-    "--hide-scrollbars",
-    "--window-size=390,844",
-    "--user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-    "--virtual-time-budget=2500",
-    "--run-all-compositor-stages-before-draw",
-    `--screenshot=${mobileShot}`,
-    verifyUrl,
-  ], mobileShot);
-
-  if (!desktopCaptured || !mobileCaptured) {
-    console.warn("Homepage corridor screenshots were partially skipped; DOM contract checks still passed.");
-  }
-
-  console.log("Homepage verify corridor passed.");
+  captureHomeScreenshots(verifyUrl, tempDir);
+  console.log(`Homepage verify corridor passed (Ego desktop and mobile: ${tempDir}).`);
 } finally {
   await stopChild(server);
-
-  if (tsconfigSnapshot != null && fs.readFileSync(tsconfigPath, "utf8") !== tsconfigSnapshot) {
-    fs.writeFileSync(tsconfigPath, tsconfigSnapshot);
-  }
-
-  if (nextEnvSnapshot != null && fs.readFileSync(nextEnvPath, "utf8") !== nextEnvSnapshot) {
-    fs.writeFileSync(nextEnvPath, nextEnvSnapshot);
-  }
 }

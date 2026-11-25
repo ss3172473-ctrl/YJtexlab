@@ -6,6 +6,8 @@ Use the independent clone at `$HOME/Projects/YJTEXLAB/yjtexlab.com` with origin 
 
 Run `bash scripts/deploy-production.sh --check-only` to check the physical root, clean main branch, fetch and push destinations, and any local Vercel project link without pushing.
 
+The full local check uses the installed `ego-browser` CLI against a loopback-only production build. Both the desktop and mobile screenshots must pass; no Google Chrome profile is opened.
+
 ## Before Deploy
 
 1. `npm run clean:artifacts`
