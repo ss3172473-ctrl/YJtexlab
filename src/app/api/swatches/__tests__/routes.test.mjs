@@ -84,7 +84,8 @@ function setup(companies = crmRows) {
           assert.equal(ranges.length, 2);
           return { data: { valueRanges: [{ values: market.products }, { values: market.stock }] } };
         },
-        get: async () => {
+        get: async ({ range }) => {
+          assert.equal(range, "'업체현황'");
           reads.push("crm");
           return { data: { values: companies } };
         },
@@ -1032,4 +1033,25 @@ test("design editor login alone does not disclose price", async () => {
   const result = await design.GET(request());
   assert.equal(result.patterns[0].variants[0].sku, "S1");
   assert.doesNotMatch(JSON.stringify(result), /price|765432/);
+});
+
+
+test("visibility appended at Z or AA resolves by header; another copy beyond Z denies disclosure", async () => {
+  for (const index of [25, 26]) {
+    const header = [...crmRows[0].slice(0, 4)];
+    const row = [...crmRows[1].slice(0, 4)];
+    while (header.length < index) { header.push("other"); row.push(""); }
+    header.push("가격 공개");
+    row.push("공개");
+    const { routes } = setup([header, row]);
+    const login = await routes.access.POST(request({ code: "0358" }));
+    const catalogRequest = request(undefined, login.cookies.get("yj_swatches"));
+    const catalog = () => routes.catalog.GET(catalogRequest);
+    assert.equal((await catalog()).body.patterns[0].variants[0].price, 4200);
+    header.push("가격 공개");
+    row.push("공개");
+    const hidden = await catalog();
+    assert.equal(hidden.body.canViewPrices, false);
+    assert.doesNotMatch(JSON.stringify(hidden.body), /"price"/);
+  }
 });

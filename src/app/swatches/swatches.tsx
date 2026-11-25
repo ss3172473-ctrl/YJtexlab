@@ -114,15 +114,6 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
     }
   }, []);
 
-  useEffect(() => {
-    if (status !== "ready") return;
-    const onReturn = () => {
-      if (!document.hidden && !submitting.current) void loadCatalog();
-    };
-    document.addEventListener("visibilitychange", onReturn);
-    return () => document.removeEventListener("visibilitychange", onReturn);
-  }, [status, loadCatalog]);
-
   async function enter(value: string) {
     const validated = customerCode(value);
     if (!validated || verifyingCode.current || status !== "locked") return;
@@ -200,7 +191,6 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
   }
 
   function showCart() {
-    void loadCatalog();
     cartDialog.current?.showModal();
   }
 
