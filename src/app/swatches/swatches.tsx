@@ -39,7 +39,7 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
   const currentLanguage = language ?? "ko";
   const t = swatchesText(currentLanguage);
   const [catalog, setCatalog] = useState<Catalog | null>(null);
-  const [status, setStatus] = useState<"initial" | "locked" | "ready">("initial");
+  const [status, setStatus] = useState<"locked" | "ready">("locked");
   const [code, setCode] = useState("");
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const [firstCoverReady, setFirstCoverReady] = useState(false);
@@ -86,7 +86,17 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
     try { window.localStorage.setItem(languagePreference, value); } catch {}
   }
 
-  useEffect(() => () => resetPreparedCovers(), []);
+  useEffect(() => {
+    // A history-cache restore is a new entry, not permission to reveal the old catalog.
+    const requireCodeOnReturn = (event: PageTransitionEvent) => {
+      if (event.persisted) window.location.reload();
+    };
+    window.addEventListener("pageshow", requireCodeOnReturn);
+    return () => {
+      window.removeEventListener("pageshow", requireCodeOnReturn);
+      resetPreparedCovers();
+    };
+  }, []);
 
   const loadCatalog = useCallback(async () => {
     if (loadingStock.current) return;
@@ -111,31 +121,14 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
       setAccessError("");
     } catch {
       setStockError("stockUnavailable");
-      setStatus((previous) => previous === "initial" ? "locked" : previous);
     } finally {
       loadingStock.current = false;
     }
   }, []);
 
-  const hasLanguage = language !== null;
-  useEffect(() => {
-    if (hasLanguage) void loadCatalog();
-  }, [hasLanguage, loadCatalog]);
-
-  useEffect(() => {
-    if (status !== "ready") return;
-    const refresh = () => { if (document.visibilityState === "visible") void loadCatalog(); };
-    const timer = window.setInterval(refresh, 30_000);
-    document.addEventListener("visibilitychange", refresh);
-    return () => {
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", refresh);
-    };
-  }, [loadCatalog, status]);
-
   async function enter(value: string) {
     const validated = customerCode(value);
-    if (!validated || verifyingCode.current || status === "initial") return;
+    if (!validated || verifyingCode.current || status !== "locked") return;
     verifyingCode.current = true;
     setAccessPending(true);
     setAccessError("");
@@ -189,14 +182,12 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
     setPatternName(group.name);
     setSku(initial.sku);
     window.scrollTo({ top: 0 });
-    void loadCatalog();
-  }, [loadCatalog]);
+  }, []);
 
   function selectColor(index: number) {
     if (!pattern || index === active) return;
     const selected = pattern.variants[index];
     setSku(selected.sku);
-    void loadCatalog();
   }
 
   function add(id: string) {
@@ -210,7 +201,6 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
 
   function showCart() {
     cartDialog.current?.showModal();
-    void loadCatalog();
   }
 
   async function submit() {
@@ -279,7 +269,7 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
       if (accessError) setAccessError("");
       void enter(value);
     }}
-      pending={accessPending} disabled={status === "initial"} error={gateError ? t(gateError) : ""}
+      pending={accessPending} disabled={false} error={gateError ? t(gateError) : ""}
       languageToggle={<LanguageToggle active={language} onSelect={pickLanguage} />} />;
   }
 

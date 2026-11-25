@@ -1,5 +1,6 @@
 "use client";
 import Image, { type ImageProps } from "next/image";
+import { firstRowEnabled } from "./first-row-policy";
 import { useLayoutEffect, useRef, useState } from "react";
 
 const pending = new Map<string, HTMLImageElement>();
@@ -10,7 +11,7 @@ let inflight: AbortController | undefined;
 const eligible = /^\/api\/swatches\/(?:thumbnail\?sku=[ST][1-9]\d{0,2}|photo\?sku=[ST][1-9]\d{0,2}&v=1)$/;
 
 export function firstRowCanary() {
-  return typeof window !== "undefined" && new URLSearchParams(location.search).get("swatchPerf") === "firstrow";
+  return typeof window !== "undefined" && firstRowEnabled(location.search);
 }
 export function resetPreparedCovers() {
   epoch++;
