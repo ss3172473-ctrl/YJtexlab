@@ -1172,7 +1172,7 @@ test("tail checks the session before reads and never requests the lead", async (
 });
 
 test("split access emits visit binding only after successful fresh CRM check and synchronous audit", async () => {
-  for (const auditSucceeds of [true, false]) {
+  for (const auditSucceeds of [true, false]) for (const planMode of ["stream", "empty", "unavailable"]) {
     const calls = [];
     const visitKey = token => "bound:" + token;
     class StreamResponse extends Response { cookies = new Map(); }
@@ -1183,9 +1183,9 @@ test("split access emits visit binding only after successful fresh CRM check and
         readCompanies: async () => {calls.push("CRM"); return [{code:"8S42",name:"Synthetic"}];},
         logAccess: async () => {calls.push("audit"); if (!auditSucceeds) throw Error("fixture down");}
       },
-      "../session": {sameOrigin: () => true, equal: (a,b) => a === b, createSession: () => "fixture-session", visitKey, cookieName:"yj_swatches", sessionSeconds:3600, json: (data,status) => Response.json(data,{status})},
+      "../session": {sameOrigin: () => true, equal: (a,b) => a === b, createSession: () => "fixture-session", visitKey, cookieName:"yj_swatches", sessionSeconds:3600, json: (data,status) => { const response = Response.json(data,{status}); response.cookies = new Map(); return response; }},
       "./attempt-guard": {accessAttemptSource: () => "",createAccessAttemptLimiter: () => () => 0,readAccessJson: async () => ({code:"8S42"})},
-      "../first-row/plan": {rowImages: async () => {calls.push("plan"); return ["/api/swatches/photo?sku=S85"];}},
+      "../first-row/plan": {rowImages: async () => {calls.push("plan"); if (planMode === "unavailable") throw Error("fixture planner unavailable"); return planMode === "empty" ? [] : ["/api/swatches/photo?sku=S85"];}},
       "../first-row/lead": {leadStream: data => {calls.push("lead"); return JSON.stringify(data)+"\n";}}
     });
     const result = await POST({headers:new Headers({accept:"application/x-swatch-cover"}),nextUrl:new URL("http://localhost/swatches")});
@@ -1193,6 +1193,14 @@ test("split access emits visit binding only after successful fresh CRM check and
       assert.equal(result.status,503);
       assert.deepEqual(calls,["CRM","audit"]);
       assert.equal(result.headers.get("Content-Type"),"application/json");
+      continue;
+    }
+    if (planMode !== "stream") {
+      assert.deepEqual(calls,["CRM","audit","plan"]);
+      assert.equal(result.status,200);
+      assert.equal(result.headers.get("Content-Type"),"application/json");
+      assert.deepEqual(await result.json(),{ok:true,visitKey:"bound:fixture-session",welcomeName:"Synthetic"});
+      assert.equal(result.cookies.get("yj_swatches"),"fixture-session");
       continue;
     }
     assert.deepEqual(calls,["CRM","audit","plan","lead"]);

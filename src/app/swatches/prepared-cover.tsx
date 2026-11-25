@@ -1,6 +1,6 @@
 "use client";
 import Image, { type ImageProps } from "next/image";
-import { firstRowEnabled } from "./first-row-policy";
+import { firstRowEnabled, splitRowEnabled } from "./first-row-policy";
 import { useLayoutEffect, useRef, useState } from "react";
 
 const pending = new Map<string, HTMLImageElement>();
@@ -43,9 +43,8 @@ function reserve(src: string, priority: "high" | "low") {
 }
 
 export function splitViewport() {
-  const modes = new URLSearchParams(location.search).getAll("swatchPerf");
-  if (modes.length !== 1 || modes[0] !== "split" || document.hidden ||
-      (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+  if (!splitRowEnabled(location.search, document.hidden, Boolean(
+      (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData))) return;
   return new URLSearchParams({ width: String(window.innerWidth), dpr: String(devicePixelRatio || 1) }).toString();
 }
 
