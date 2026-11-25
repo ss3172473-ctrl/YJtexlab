@@ -2,9 +2,9 @@
 
 ## Required Path
 
-Deploy from `/Users/leesungjun/Library/CloudStorage/GoogleDrive-ss3172473@gmail.com/내 드라이브/LSJ/LSJ_OS/01_Projects/Project/PJ_영진원단/06_Web_Automation/site/yjtexlab.com` with Vercel.
-Treat this folder as the canonical integration/deploy root, not the default feature-editing folder.
-If a temporary migration copy exists at `/Users/leesungjun/Library/CloudStorage/GoogleDrive-ss3172473@gmail.com/내 드라이브/LSJ/LSJ_OS/01_Projects/Project/PJ_영진원단/06_Web_Automation/site/yjtexlab.com-clean-20260326`, cut back to the canonical root before production deploys.
+Use the independent clone at `$HOME/Projects/YJTEXLAB/yjtexlab.com` with origin `ss3172473-ctrl/YJtexlab`. The link subdomain has a separate repository. Do not deploy from a synced archive, temporary clone, or feature worktree.
+
+Run `bash scripts/deploy-production.sh --check-only` to check the physical root, clean main branch, fetch and push destinations, and any local Vercel project link without pushing.
 
 ## Before Deploy
 

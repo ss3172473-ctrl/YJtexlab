@@ -1,8 +1,7 @@
 # AI Handoff
 
 - production baseline: 2026-03-26
-- canonical root: `/Users/leesungjun/Desktop/yjtexlab.com`
-- temporary migration workspace: `/Users/leesungjun/Desktop/yjtexlab.com-clean-20260326`
+- canonical root: `$HOME/Projects/YJTEXLAB/yjtexlab.com` (independent GitHub clone, not a synced archive)
 - homepage media-art owner: `src/components/home/FabricMotionLab.tsx`
 - homepage categories freeze: `src/components/home/Categories.tsx` and `src/components/home/FabricMotionLab.tsx` must not change unless the user explicitly requests a Categories change
 - route authority: `src/lib/route-matrix.ts`

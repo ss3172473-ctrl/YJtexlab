@@ -5,7 +5,7 @@
 ## 핵심 규칙
 
 - 기본 operator 모델은 `2공간` 입니다.
-- canonical root `/Users/leesungjun/Desktop/yjtexlab.com` 는 integration/deploy 기준으로 최대한 깨끗하게 유지합니다.
+- canonical root `$HOME/Projects/YJTEXLAB/yjtexlab.com` 는 integration/deploy 기준으로 최대한 깨끗하게 유지합니다.
 - 실제 기능 수정은 feature worktree에서만 진행합니다.
 - 일반 사용 흐름에서는 새 쓰레드에서 `parallel-workstream-guard`를 먼저 호출하고, helper script 실행은 에이전트가 대신 수행합니다.
 - 기본 모델은 `1 쓰레드 = 1 worktree = 1 담당 범위` 입니다.

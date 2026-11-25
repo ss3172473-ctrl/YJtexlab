@@ -20,7 +20,7 @@ const checks = [
   },
   {
     file: "docs/DEPLOYMENT.md",
-    required: ["/Users/leesungjun/Library/CloudStorage/GoogleDrive-ss3172473@gmail.com/내 드라이브/LSJ/LSJ_OS/01_Projects/Project/PJ_영진원단/06_Web_Automation/site/yjtexlab.com", "npm run verify:deploy", "npm run verify:parallel", "main", "/privacy", "/terms"],
+    required: ["$HOME/Projects/YJTEXLAB/yjtexlab.com", "ss3172473-ctrl/YJtexlab", "--check-only", "npm run verify:deploy", "npm run verify:parallel", "main", "/privacy", "/terms"],
   },
   {
     file: "docs/RESEARCH_NOTES.md",
