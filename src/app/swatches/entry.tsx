@@ -95,20 +95,25 @@ export function Welcome({ name, language, onDone, firstCoverReady }: {
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     startedAt.current ??= performance.now();
-    // Finish as soon as the first approved cover is ready after the animation,
-    // with a short cap even when catalog/photo loading is slower or unavailable.
+    // Preserve first-row warming only. This timer never gates paint, interaction,
+    // or the lifetime of the welcome announcement.
     const duration = reduced ? (firstCoverReady ? 100 : 300) : (firstCoverReady ? 440 : 700);
     const timer = window.setTimeout(onDone, Math.max(0, duration - (performance.now() - startedAt.current)));
-    return () => window.clearTimeout(timer);
+    const cancel = () => window.clearTimeout(timer);
+    window.addEventListener("pagehide", cancel);
+    return () => {
+      cancel();
+      window.removeEventListener("pagehide", cancel);
+    };
   }, [onDone, firstCoverReady]);
-  return <main className={`${styles.shell} ${experience.welcome}`} lang={language}>
-    <div role="status">
+  return <div className={experience.welcome} lang={language}>
+    <div role="status" aria-atomic="true">
       <div className={experience.unlockIcon} aria-hidden="true">
         <LockKeyhole size={31} strokeWidth={1.3} className={experience.lockBefore} />
         <LockKeyholeOpen size={33} strokeWidth={1.3} className={experience.lockAfter} />
       </div>
       <p>{t("welcome")}</p>
-      {name && <h1>{name}</h1>}
+      {name && <h1 title={name}>{name}</h1>}
     </div>
-  </main>;
+  </div>;
 }

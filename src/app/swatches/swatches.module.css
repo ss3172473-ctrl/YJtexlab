@@ -12,12 +12,11 @@
   background: #fff;
 }
 
-.shell[data-welcome-preparing] {
-  position: fixed;
-  inset: 0;
-  visibility: hidden;
-  pointer-events: none;
-  overflow: hidden;
+/* Reserved across welcome success/error: no overlay or dismissal layout shift. */
+.welcomeSlot { min-height: 96px; }
+.welcomeSlot[hidden] { display: none; }
+@media (max-width: 640px), (max-height: 700px) {
+  .welcomeSlot { min-height: 64px; }
 }
 
 .shell button:focus-visible, .shell input:focus-visible, .shell a:focus-visible {

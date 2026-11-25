@@ -45,11 +45,13 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const [firstCoverReady, setFirstCoverReady] = useState(false);
   const markFirstCoverReady = useCallback(() => setFirstCoverReady(true), []);
-  const finishWelcome = useCallback(() => setWelcomeName(null), []);
-  const welcomePreparing = welcomeName !== null;
+  // Keep first-row preparation independent of catalog visibility and welcome text.
+  const [welcomePreparing, setWelcomePreparing] = useState(false);
+  const finishWelcome = useCallback(() => setWelcomePreparing(false), []);
   const collectionElement = useCallback((node: HTMLElement | null) => {
-    if (node) node.inert = welcomePreparing;
-  }, [welcomePreparing]);
+    // The accepted code input has unmounted; give keyboard users a stable destination.
+    if (node && document.activeElement === document.body) node.focus({ preventScroll: true });
+  }, []);
   const [accessError, setAccessError] = useState<TextKey | "">("");
   const [accessPending, setAccessPending] = useState(false);
   const visit = useRef("");
@@ -109,6 +111,8 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
       setStockError("");
       setAccessError("");
     } catch {
+      setWelcomeName(null);
+      setWelcomePreparing(false);
       setCatalog(null);
       setStockError("stockUnavailable");
     } finally {
@@ -148,11 +152,14 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
       else cover?.cancel();
       void import("./specimen-grid").catch(() => {});
       setFirstCoverReady(false);
+      setWelcomePreparing(true);
       setWelcomeName(typeof result.welcomeName === "string" ? result.welcomeName : "");
       setCode("");
       setStatus("ready");
       await loadCatalog();
     } catch {
+      setWelcomeName(null);
+      setWelcomePreparing(false);
       setAccessError("codeUnavailable");
     } finally {
       verifyingCode.current = false;
@@ -287,10 +294,11 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
   }
 
   return <>
-    {welcomePreparing && <Welcome name={welcomeName} language={language} onDone={finishWelcome}
-      firstCoverReady={firstCoverReady} />}
-    <main className={styles.shell} lang={language} ref={collectionElement}
-      data-welcome-preparing={welcomePreparing || undefined} aria-hidden={welcomePreparing || undefined}>
+    <main className={styles.shell} lang={language} ref={collectionElement} tabIndex={-1}>
+    <div className={styles.welcomeSlot} hidden={Boolean(pattern && variant)}>
+      {welcomeName !== null && <Welcome name={welcomeName} language={language} onDone={finishWelcome}
+        firstCoverReady={firstCoverReady} />}
+    </div>
     <div className={styles.collectionBar}>
       {pattern ? <button type="button" className={styles.textButton} onClick={() => {
         setPatternName("");
