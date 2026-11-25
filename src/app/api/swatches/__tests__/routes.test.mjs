@@ -1055,3 +1055,44 @@ test("visibility appended at Z or AA resolves by header; another copy beyond Z d
     assert.doesNotMatch(JSON.stringify(hidden.body), /"price"/);
   }
 });
+
+test("twenty distinct P/Q fixture companies keep their identity across disclosure and restoration", async () => {
+  const { makeCompanyMatrix } = await import("./company-matrix.mjs");
+  const { headers, external, internal } = makeCompanyMatrix();
+  const original = external.map(row => [...row]);
+  const hidden = external.slice(0, 10);
+  const temporary = external.slice(10);
+  assert.equal(new Set([...external, internal].map(row => row[2])).size, 21);
+  assert.equal(new Set(external.map(row => row[0])).size, 20);
+
+  async function check(row, admitted, showPrice) {
+    const { routes, reads } = setup([headers, ...external, internal]);
+    const entered = await routes.access.POST(request({ code: row[2] }));
+    assert.equal(entered.status, admitted ? 200 : 401);
+    if (!admitted) {
+      assert.equal(reads.includes("inventory"), false);
+      assert.equal(entered.cookies.size, 0);
+      return;
+    }
+    assert.equal(entered.body.welcomeName, row[0]);
+    const response = await routes.catalog.GET(request(undefined, entered.cookies.get("yj_swatches")));
+    assert.equal(response.status, 200);
+    assert.equal(response.body.canViewPrices, showPrice);
+    const variant = response.body.patterns[0].variants[0];
+    if (showPrice) assert.equal(variant.price, 4200);
+    else assert.equal(Object.hasOwn(variant, "price"), false);
+  }
+
+  temporary.forEach(row => { row[16] = "공개"; });
+  for (const row of hidden) await check(row, true, false);
+  for (const row of temporary) await check(row, true, true);
+  temporary.forEach((row, i) => { row[16] = original[10 + i][16]; });
+  for (const row of temporary) await check(row, true, false);
+  assert.deepEqual(external, original);
+  for (const [i, row] of external.entries()) {
+    row[15] = "비활성";
+    row[16] = i < 10 ? "" : "공개";
+    await check(row, false, false);
+  }
+  await check(internal, true, true);
+});
