@@ -2,6 +2,7 @@
 
 import { Fragment_Mono } from "next/font/google";
 import Link from "next/link";
+import { LayoutGroup, motion } from "motion/react";
 import {
   type CSSProperties,
   type ReactNode,
@@ -23,6 +24,85 @@ const fragmentMono = Fragment_Mono({
 });
 
 const MOBILE_VIEWPORT_MAX = 767;
+const facilityFilms = [
+  {id: "daegu-mill", label: "Daegu Mill"},
+  {id: "daegu-warehouse", label: "Daegu Warehouse"},
+  {id: "seoul-warehouse", label: "Seoul Warehouse"},
+] as const;
+
+function FacilityFilm({id,label,reduced,selected,anotherSelected,onSelect,font}:{id:string;label:string;reduced:boolean;selected:boolean;anotherSelected:boolean;onSelect:()=>void;font:string}) {
+  const preview = useRef<HTMLVideoElement>(null);
+  const stills = useRef<HTMLSpanElement>(null);
+  const mill = id==="daegu-mill";
+  const [millCover,setMillCover] = useState<1|6>(1);
+  useEffect(()=>{
+    const target=stills.current;
+    if(!mill||!target||reduced||selected||anotherSelected)return;
+    let visible=false;
+    let timer=0;
+    const pause=()=>window.clearInterval(timer);
+    const sync=()=>{
+      pause();
+      if (visible&&!document.hidden) timer=window.setInterval(()=>setMillCover(i=>i===1?6:1),3100);
+    };
+    const observer=new IntersectionObserver(([entry])=>{
+      visible=entry.isIntersecting&&entry.intersectionRatio>=.5;
+      sync();
+    },{threshold:[.5]});
+    setMillCover(1);
+    observer.observe(target);
+    document.addEventListener("visibilitychange",sync);
+    return()=>{observer.disconnect();pause();document.removeEventListener("visibilitychange",sync);};
+  },[mill,reduced,selected,anotherSelected]);
+  const full = useRef<HTMLVideoElement>(null);
+  const [entered,setEntered] = useState(false);
+  useEffect(() => {
+    const video=preview.current;
+    if (!video || reduced || selected || anotherSelected) return;
+    let visible = false;
+    const sync=()=>{
+      if(visible&&!document.hidden){
+        setEntered(true);
+        if(video.getAttribute("src")) void video.play().catch(()=>{});
+      } else video.pause();
+    };
+    const observer=new IntersectionObserver(([entry])=>{
+      visible=entry.isIntersecting&&entry.intersectionRatio>=.5;
+      sync();
+    },{threshold:[.5]});
+    observer.observe(video);
+    document.addEventListener("visibilitychange",sync);
+    return ()=>{observer.disconnect();document.removeEventListener("visibilitychange",sync); video.pause();};
+  },[reduced,selected,anotherSelected]);
+  useEffect(()=>{
+    const player=full.current;
+    if(!player||selected||!player.getAttribute("src"))return;
+    player.pause();player.removeAttribute("src");player.load();
+  },[selected]);
+  return <div className={styles.filmMedia} data-full-selected={selected||undefined}>
+    <button className={styles.filmCard} type="button" aria-pressed={selected} onClick={()=>{
+      const player=full.current;
+      if(player&&!selected){
+        // Keep playback in the click's user gesture so sound can start.
+        player.muted=false;player.volume=1;
+        player.src=`/films/${id}.mp4`;
+        void player.play().catch(()=>{});
+      }
+      onSelect();
+    }}>
+      {mill ? <span className={styles.millCovers} data-mill-cover={reduced ? 1 : millCover} ref={stills} aria-hidden="true">
+        {/* eslint-disable @next/next/no-img-element */}
+        <img src="/films/mill-cover-1.webp" alt="" />
+        {!reduced && <img src="/films/mill-cover-6.webp" alt="" />}
+        {/* eslint-enable @next/next/no-img-element */}
+      </span> : <video ref={preview} aria-hidden="true" poster={`/films/${id}.webp`}
+        src={entered&&!reduced?`/films/${id}-teaser.mp4`:undefined} preload="none" muted loop autoPlay={entered&&!reduced&&!selected&&!anotherSelected} playsInline />}
+      <span className={`${styles.railText} ${font}`}>{label}</span>
+    </button>
+    <video className={styles.fullFilm} ref={full} hidden={!selected} controls playsInline preload="none"
+      aria-label={label} poster={selected?mill?"/films/mill-cover-1.webp":`/films/${id}.webp`:undefined}/>
+  </div>;
+}
 
 export type FolderVariant = "open-bottom" | "open-center" | "inline";
 
@@ -159,6 +239,9 @@ export default function HomeFolderHub({
   const [activeId, setActiveId] = useState<SectionId | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [railVisible, setRailVisible] = useState(false);
+  const [filmsVisible, setFilmsVisible] = useState(false);
+  const [selectedFilm,setSelectedFilm] = useState<string|null>(null);
+  const originalRailVisible = useRef(false);
   const [mobileRailOpen, setMobileRailOpen] = useState(false);
   const [mobileRailDismissed, setMobileRailDismissed] = useState(false);
   const [hoveredId, setHoveredId] = useState<RailHoverId | null>(null);
@@ -166,6 +249,14 @@ export default function HomeFolderHub({
   const [trustedLaunchStyle, setTrustedLaunchStyle] = useState<CSSProperties | null>(null);
 
   const activeItem = useMemo(() => hubItems.find((item) => item.id === activeId) ?? null, [activeId]);
+  const canShowFilms = railVisible && (!isMobileViewport || mobileRailOpen) && !activeItem;
+  useEffect(() => {
+    if (!canShowFilms) { setFilmsVisible(false); setSelectedFilm(null); return; }
+    // Wait for the last original label flicker/entrance and then 300ms.
+    const delay = 300 + (reducedMotion ? 180 : 960);
+    const timeout = window.setTimeout(() => setFilmsVisible(true), delay);
+    return () => window.clearTimeout(timeout);
+  }, [canShowFilms, reducedMotion]);
   const activeModalItem =
     activeItem?.presentation === "modal" ? activeItem : null;
   const activeInlineItem =
@@ -216,6 +307,8 @@ export default function HomeFolderHub({
       const shouldShow = isMobileViewport
         ? categoryBottomReached || variantProgress >= 0.97
         : seamTop <= revealLine;
+      if (originalRailVisible.current === shouldShow) return;
+      originalRailVisible.current = shouldShow;
       setRailVisible(shouldShow);
 
       if (shouldShow && !reducedMotion && window.innerWidth > MOBILE_VIEWPORT_MAX) {
@@ -238,7 +331,7 @@ export default function HomeFolderHub({
   }, [reducedMotion, verifyMode]);
 
   useEffect(() => {
-    if (!isMobileViewport || verifyMode || reducedMotion || activeItem) {
+    if (!isMobileViewport || verifyMode || activeItem) {
       return;
     }
 
@@ -537,6 +630,24 @@ export default function HomeFolderHub({
             >
               <span className={styles.railText}>View more products</span>
             </Link>
+          </div>
+        </div>
+        <div className={styles.filmReveal} data-films-visible={filmsVisible ? "true" : undefined}>
+          <div className={styles.filmRevealClip}>
+            {filmsVisible && <LayoutGroup><div className={styles.filmGrid} data-film-expanded={selectedFilm || undefined} aria-label="Facility films" onKeyDown={event=>{
+              if(event.key==="Escape"&&selectedFilm){event.preventDefault();event.stopPropagation();setSelectedFilm(null);}
+            }}>
+              {facilityFilms.map(({id,label},i) => {
+                const active = id===selectedFilm;
+                const others = facilityFilms.filter(f=>f.id!==selectedFilm);
+                const order = selectedFilm ? active ? 2 : others[0]?.id===id ? 1 : 3 : i+1;
+                return <motion.div className={styles.filmCell} key={id} layout={!reducedMotion} data-film={id}
+                  style={{order,flex:active?6.25:1}} transition={{layout:{duration:.68,ease:[.16,1,.3,1]}}}>
+                  <FacilityFilm id={id} label={label} reduced={reducedMotion} selected={active} anotherSelected={!!selectedFilm&&!active}
+                    onSelect={()=>setSelectedFilm(active?null:id)} font={fragmentMono.className} />
+                </motion.div>;
+              })}
+            </div></LayoutGroup>}
           </div>
         </div>
       </div>

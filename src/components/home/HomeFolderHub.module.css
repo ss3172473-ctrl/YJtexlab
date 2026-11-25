@@ -171,25 +171,25 @@
   0% {
     opacity: 0;
     filter: blur(2.2px) brightness(1.28);
-    transform: translate3d(-50%, 22px, 0) scale(0.985);
+    transform: translate3d(var(--reveal-anchor-x, -50%), 22px, 0) scale(0.985);
   }
 
   22% {
     opacity: 0.34;
     filter: blur(1.6px) brightness(1.2);
-    transform: translate3d(-50%, 14px, 0) scale(0.992);
+    transform: translate3d(var(--reveal-anchor-x, -50%), 14px, 0) scale(0.992);
   }
 
   58% {
     opacity: 0.94;
     filter: blur(0.48px) brightness(1.1);
-    transform: translate3d(-50%, 4px, 0) scale(1);
+    transform: translate3d(var(--reveal-anchor-x, -50%), 4px, 0) scale(1);
   }
 
   100% {
     opacity: 1;
     filter: blur(0) brightness(1);
-    transform: translate3d(-50%, 0, 0);
+    transform: translate3d(var(--reveal-anchor-x, -50%), 0, 0);
   }
 }
 
@@ -876,4 +876,107 @@
     width: min(100vw - 1.5rem, 18rem);
     padding: 0.85rem 0.85rem 0.95rem;
   }
+}
+
+.filmReveal {
+  display: grid;
+  width: min(100%, 57rem);
+  grid-template-rows: 0fr;
+  transition: grid-template-rows .68s cubic-bezier(.16, 1, .3, 1);
+}
+
+.filmReveal[data-films-visible] { grid-template-rows: 1fr; }
+.filmRevealClip { min-height: 0; overflow: hidden; }
+
+.filmGrid {
+  display: grid;
+  gap: clamp(.35rem, 1.75vw, 1.45rem);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding-top: clamp(.7rem, 2.4vh, 1.6rem);
+  --reveal-anchor-x: 0%;
+  animation: railRevealRise 0.68s cubic-bezier(0.16, 1, 0.3, 1) 1 both;
+}
+
+.filmCard { min-width: 0; margin: 0; }
+.filmCard img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.filmCard figcaption { margin-top: .52rem; text-align: center; }
+.filmGrid .railText { animation: railTextFlicker .96s steps(1, end) 1 both; }
+
+@media (max-width: 767px) {
+  .filmCard figcaption { font-size: clamp(.44rem, 2vw, .65rem); letter-spacing: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .filmReveal { transition: none; }
+  .filmGrid, .filmGrid .railText { animation: none; }
+}
+.filmGrid { display: flex; align-items: center; }
+.filmCell { min-width: 0; flex: 1; }
+.filmCard { width: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: center; color: inherit; }
+.filmCard video { display: block; width: 100%; max-height: 28svh; aspect-ratio: 16 / 9; object-fit: cover; background: #171717; }
+.filmCard > span { margin-top: .52rem; text-transform: uppercase; font-size: clamp(.51rem, 1.5vw, .71rem); white-space: nowrap; }
+.filmCard:focus-visible { outline: 2px solid #bbb; outline-offset: .22rem; }
+.filmReveal { pointer-events: auto; }
+/* The fixed rail sits above the drifting swatches; clear only its own stage,
+   progressively with the media row, so no moving fabric intersects the links. */
+.bottomRail::before {
+  content: "";
+  position: absolute;
+  inset: -2.5rem -1rem -1.25rem;
+  z-index: -1;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, white 2.3rem, white calc(100% - .75rem), transparent);
+  transition: opacity .68s cubic-bezier(.16, 1, .3, 1);
+}
+.bottomRail:has(.filmReveal[data-films-visible])::before { opacity: 1; }
+@media (max-width: 767px) { .bottomRail::before { display: none; } }
+@media (prefers-reduced-motion: reduce) { .bottomRail::before { transition: none; } }
+
+.filmMedia { position: relative; min-width: 0; }
+.filmMedia[data-full-selected] .filmCard video { visibility: hidden; pointer-events: none; max-height: 44svh; }
+.filmMedia .fullFilm { position: absolute; inset: 0 auto auto 0; width: 100%; height: auto; aspect-ratio: 16 / 9; max-height: 44svh; object-fit: contain; background: #111; }
+.filmMedia .fullFilm[hidden] { display: none; }
+/* Match the four-link rail dimming, without replaying the entrance on hover. */
+.filmCell .filmMedia {
+  transition: opacity .28s ease, filter .28s ease;
+}
+.filmGrid[data-film-expanded] .filmCell:not(:has([data-full-selected])) .filmMedia,
+.filmGrid:not([data-film-expanded]):has(.filmCard:focus-visible) .filmCell:not(:has(.filmCard:focus-visible)) .filmMedia {
+  opacity: .28;
+  filter: blur(.8px);
+}
+@media (hover: hover) and (pointer: fine) {
+  .filmGrid:not([data-film-expanded]):not(:has(.filmCard:focus-visible)):has(.filmCard:hover) .filmCell:not(:has(.filmCard:hover)) .filmMedia {
+    opacity: .28;
+    filter: blur(.8px);
+  }
+}
+@media (max-width: 767px) {
+  .filmGrid[data-film-expanded] .filmCell { flex: 1 !important; }
+  .filmGrid[data-film-expanded] .filmCell:has([data-full-selected]) { flex: 3 !important; }
+  .filmGrid[data-film-expanded] .filmCell:not(:has([data-full-selected])) .filmMedia,
+  .filmGrid:not([data-film-expanded]):has(.filmCard:focus-visible) .filmCell:not(:has(.filmCard:focus-visible)) .filmMedia { opacity: .52; }
+  .filmGrid[data-film-expanded] .filmCell:not(:has([data-full-selected])) .railText { white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) { .filmCell .filmMedia { transition: none; } }
+/* The moving thumbnail receives the same one-shot optical entrance as its label. */
+.filmGrid .filmCard video { animation: railTextFlicker .96s steps(1, end) 1 both; }
+@media (prefers-reduced-motion: reduce) { .filmGrid .filmCard video { animation: none; } }
+.filmCard > .millCovers {
+  position: relative;
+  display: block;
+  margin: 0;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 28svh;
+  overflow: hidden;
+  animation: railTextFlicker .96s steps(1, end) 1 both;
+}
+.millCovers img { position:absolute; inset: 0; width:100%; height:100%; object-fit:cover; transition: opacity .62s ease; }
+.millCovers img:nth-child(2) { opacity: 0; }
+.millCovers[data-mill-cover="6"] img:nth-child(2) { opacity: 1; }
+.filmMedia[data-full-selected] .millCovers { visibility:hidden; max-height:44svh; }
+@media (prefers-reduced-motion: reduce) {
+  .filmCard > .millCovers { animation:none; }
+  .millCovers img { transition:none; }
 }
