@@ -20,7 +20,6 @@ const FabricFilm = dynamic(() => import("./fabric-film"));
 const ColorGallery = dynamic(() => import("./color-gallery"));
 const api = "/api/swatches";
 const email = businessContact.email;
-const languagePreference = "swatches-language";
 type TextKey = Parameters<ReturnType<typeof swatchesText>>[0];
 
 function LanguageToggle({ active, onSelect }: { active: Language; onSelect: (language: Language) => void }) {
@@ -34,8 +33,7 @@ type CartEntry = CartLine & { available: boolean };
 type Receipt = "sent" | "saved" | "uncertain";
 
 export default function Swatches({ enablePosters = false }: { enablePosters?: boolean }) {
-  const [language, setLanguage] = useState<Language | null>(null);
-  const [languageReady, setLanguageReady] = useState(false);
+  const [language, pickLanguage] = useState<Language | null>(null);
   const currentLanguage = language ?? "ko";
   const t = swatchesText(currentLanguage);
   const [catalog, setCatalog] = useState<Catalog | null>(null);
@@ -69,22 +67,6 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
   const [sending, setSending] = useState(false);
   const submitting = useRef(false);
   const loadingStock = useRef(false);
-
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(languagePreference);
-      const preference = languages.find(({ id }) => id === saved);
-      if (preference) setLanguage(preference.id);
-    } catch {
-      // The selected language remains available for this visit.
-    }
-    setLanguageReady(true);
-  }, []);
-
-  function pickLanguage(value: Language) {
-    setLanguage(value);
-    try { window.localStorage.setItem(languagePreference, value); } catch {}
-  }
 
   useEffect(() => {
     // A history-cache restore is a new entry, not permission to reveal the old catalog.
@@ -249,12 +231,12 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
 
   if (!language) {
     return <main className={`${styles.shell} ${styles.languageEntry}`}>
-      {languageReady && <section role="dialog" aria-labelledby="swatches-language-title">
+      <section role="dialog" aria-labelledby="swatches-language-title">
         <h1 id="swatches-language-title">Language</h1>
         <div className={styles.entryActions}>
           {languages.map(({ id, name }) => <button key={id} type="button" lang={id} onClick={() => pickLanguage(id)}>{name}</button>)}
         </div>
-      </section>}
+      </section>
     </main>;
   }
 
