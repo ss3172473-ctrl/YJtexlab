@@ -65,10 +65,10 @@ export function createPageMetadata({
       type: "website",
       images: [
         {
-          url: absoluteUrl("/seo/og-home.png"),
-          width: 1440,
-          height: 900,
-          alt: `${siteConfig.name} social preview`,
+          url: absoluteUrl("/seo/og-home-logo.png"),
+          width: 1200,
+          height: 630,
+          alt: `${siteConfig.name} logo`,
         },
       ],
     },
@@ -76,7 +76,7 @@ export function createPageMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: [absoluteUrl("/seo/og-home.png")],
+      images: [absoluteUrl("/seo/og-home-logo.png")],
     },
     robots: noIndex
       ? {
@@ -128,10 +128,10 @@ export const rootMetadata: Metadata = {
     type: "website",
     images: [
       {
-        url: absoluteUrl("/seo/og-home.png"),
-        width: 1440,
-        height: 900,
-        alt: `${siteConfig.name} social preview`,
+        url: absoluteUrl("/seo/og-home-logo.png"),
+        width: 1200,
+        height: 630,
+        alt: `${siteConfig.name} logo`,
       },
     ],
   },
@@ -139,7 +139,7 @@ export const rootMetadata: Metadata = {
     card: "summary_large_image",
     title: siteConfig.defaultTitle,
     description: siteConfig.defaultDescription,
-    images: [absoluteUrl("/seo/og-home.png")],
+    images: [absoluteUrl("/seo/og-home-logo.png")],
   },
   robots: {
     index: true,
