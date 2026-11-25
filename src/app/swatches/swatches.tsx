@@ -1,5 +1,6 @@
 "use client";
 
+import { prepareCovers, resetPreparedCovers } from "./prepared-cover";
 import dynamic from "next/dynamic";
 import { motion, useReducedMotion, useSpring, type MotionStyle } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -95,12 +96,16 @@ export default function Swatches() {
     try { window.localStorage.setItem(languagePreference, value); } catch {}
   }
 
+  useEffect(() => () => resetPreparedCovers(), []);
+
   const loadCatalog = useCallback(async () => {
     if (loadingStock.current) return;
     loadingStock.current = true;
+    prepareCovers();
     try {
       const response = await fetch(`${api}/catalog`, { cache: "no-store" });
       if (response.status === 401) {
+        resetPreparedCovers();
         setStatus("locked");
         setWelcomeName(null);
         setCatalog(null);
@@ -255,6 +260,7 @@ export default function Swatches() {
         cartDialog.current?.close();
         setCatalog(null);
         setCart([]);
+        resetPreparedCovers();
         setStatus("locked");
         setAccessError("codeExpired");
         return;

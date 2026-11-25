@@ -760,3 +760,38 @@ test("CRM and catalog use the dedicated identity while contact inquiries preserv
     }
   }
 });
+
+test("experimental row returns only protected, expected paths, no stock, and respects actual density", async () => {
+  const path = "src/app/api/swatches/first-row/route.ts";
+  const helper = load("src/app/swatches/welcome-covers.ts");
+  let sourceReads = 0, layout = {order:["A","B","C","D","E","F"],covers:{ A:"S1",B:"S2",C:"S3",D:"S4",E:"S5",F:"S6" },sizes:{},columns:5};
+  const photo = (sku,admin,v) => "/api/swatches/photo?sku="+sku+"&v="+v;
+  const deps = {
+    "../active-session":{hasActiveSession: async req => req.signed === true},
+    "../design/drive-list-thumbnails":{listThumbnailUrl: (sku) => ["S2","S4"].includes(sku) ? undefined : "/api/swatches/thumbnail?sku="+sku},
+    "../design/media":{validApprovedSku: sku => /^S[1-6]$/.test(sku), hasApprovedMediaForSku: sku=>sku !== "S6"},
+    "../design/photos":{photoStorageAvailable:false,swatchPhotoUrl:photo},
+    "../design/store":{readSwatchesLayout: async()=>{sourceReads++;return layout;}},
+    "../session":{json:(data,status,extra)=>Response.json(data,{status,headers:{"Cache-Control":"private, no-store",...extra}})},
+    "@/app/swatches/welcome-covers":helper,
+  };
+  const req=(width,dpr,signed=true,site="same-origin")=>({nextUrl:new URL("http://test.invalid/?width="+width+"&dpr="+dpr), signed, headers:new Headers({"sec-fetch-site":site})});
+  const {GET}=load(path,deps);
+  const previous=env.SWATCHES_LAYOUT_JSON;
+  try {
+    delete env.SWATCHES_LAYOUT_JSON;
+    assert.equal((await GET(req(1200,1))).status,404);
+    env.SWATCHES_LAYOUT_JSON="immutable";
+    assert.equal((await GET(req(1200,1,false))).status,401);
+    assert.equal((await GET(req(1200,1,true,"cross-site"))).status,403);
+    assert.deepEqual(await (await GET(req(0,1))).json(),{images:[]});
+    assert.equal(sourceReads,0);
+    const desktop=await GET(req(1200,1)); assert.match(desktop.headers.get("Cache-Control"),/no-store/);
+    assert.deepEqual((await desktop.json()).images, ["/api/swatches/thumbnail?sku=S1",photo("S2",false,1),"/api/swatches/thumbnail?sku=S3",photo("S4",false,1),"/api/swatches/thumbnail?sku=S5"]);
+    assert.deepEqual((await (await GET(req(390,3))).json()).images,[photo("S1",false,1),photo("S2",false,1)]);
+    assert.deepEqual((await (await GET(req(320,2.5))).json()).images,[photo("S2",false,1)]);
+    assert.equal((await load(path,{...deps,"../design/photos":{...deps["../design/photos"],photoStorageAvailable:true}}).GET(req(1200,1))).status,404);
+    layout={...layout,covers:{A:"../../no",B:"S6"}};
+    assert.deepEqual((await (await GET(req(1200,1))).json()).images,[]);
+  } finally { if(previous === undefined)delete env.SWATCHES_LAYOUT_JSON;else env.SWATCHES_LAYOUT_JSON=previous; }
+});
