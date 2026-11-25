@@ -31,7 +31,7 @@ function load(file, dependencies = {}, testFetch = fetch) {
       ? dependencies[name]
       : /^(?:\.\/|\.\.\/)google-credentials$/.test(name) ? googleCredentials : require(name),
     process: { env, cwd: process.cwd },
-    Buffer, URL, fetch: testFetch, Response, Headers, setTimeout, clearTimeout, AbortController, TextDecoder,
+    Buffer, Blob, FormData, ReadableStream, Uint8Array, URL, fetch: testFetch, Response, Headers, setTimeout, clearTimeout, AbortController, TextDecoder, TextEncoder,
     console: { error() {}, warn() {} },
   });
   return exports;
@@ -118,6 +118,9 @@ function setup(companies = crmRows, fixtureNotify) {
     name, load(`src/app/api/swatches/${name}/route.ts`, {
       "../sheets": sheets,
       "./attempt-guard": attemptGuard,
+      "next/server": {},
+      "../first-row/lead": {},
+      "../first-row/plan": { rowImages: async () => [] },
       "../active-session": activeSession,
       "../price-visibility": load("src/app/api/swatches/price-visibility.ts"),
       "../design/photos": { withSwatchPhotos: async (patterns) => patterns },
@@ -880,7 +883,8 @@ test("experimental row returns only protected, expected paths, no stock, and res
     "@/app/swatches/welcome-covers":helper,
   };
   const req=(width,dpr,signed=true,site="same-origin")=>({nextUrl:new URL("http://test.invalid/?width="+width+"&dpr="+dpr), signed, headers:new Headers({"sec-fetch-site":site})});
-  const {GET}=load(path,deps);
+  const routeWith = config => load(path, { ...config, "./plan": load("src/app/api/swatches/first-row/plan.ts", config) });
+  const {GET}=routeWith(deps);
   const previous=env.SWATCHES_LAYOUT_JSON;
   try {
     delete env.SWATCHES_LAYOUT_JSON;
@@ -894,7 +898,7 @@ test("experimental row returns only protected, expected paths, no stock, and res
     assert.deepEqual((await desktop.json()).images, ["/api/swatches/thumbnail?sku=S1",photo("S2",false,1),"/api/swatches/thumbnail?sku=S3",photo("S4",false,1),"/api/swatches/thumbnail?sku=S5"]);
     assert.deepEqual((await (await GET(req(390,3))).json()).images,[photo("S1",false,1),photo("S2",false,1)]);
     assert.deepEqual((await (await GET(req(320,2.5))).json()).images,[photo("S2",false,1)]);
-    assert.equal((await load(path,{...deps,"../design/photos":{...deps["../design/photos"],photoStorageAvailable:true}}).GET(req(1200,1))).status,404);
+    assert.equal((await routeWith({...deps,"../design/photos":{...deps["../design/photos"],photoStorageAvailable:true}}).GET(req(1200,1))).status,404);
     layout={...layout,covers:{A:"../../no",B:"S6"}};
     assert.deepEqual((await (await GET(req(1200,1))).json()).images,[]);
   } finally { if(previous === undefined)delete env.SWATCHES_LAYOUT_JSON;else env.SWATCHES_LAYOUT_JSON=previous; }
@@ -1114,4 +1118,87 @@ test("twenty distinct P/Q fixture companies keep their identity across disclosur
     await check(row, false, false);
   }
   await check(internal, true, true);
+});
+
+test("login metadata can be consumed while the lead provider is still pending", async () => {
+  let finish;
+  const waiting = new Promise(resolve => { finish = resolve; });
+  const lead = load("src/app/api/swatches/first-row/lead.ts", {
+    "../design/drive-list-thumbnails": {}, "../design/photos": { swatchPhotoResponse: () => waiting },
+  });
+  const client = load("src/app/swatches/access-cover.ts");
+  const src = "/api/swatches/photo?sku=S85&v=1";
+  const stream = lead.leadStream({ welcomeName: "Fixture", visitKey: "fixture", images: [src] });
+  const { result, image } = await client.readAccessCover(new Response(stream));
+  assert.equal(result.images[0], src);
+  assert.equal(result.visitKey, "fixture");
+  finish(new Response("lead", { headers: { "Content-Length": "4", "Content-Type": "image/webp" } }));
+  assert.equal(await (await image).text(), "lead");
+
+  for (const frame of ["", "4\nab", "9999999\n", "3\nabcd"]) {
+    const partial = await client.readAccessCover(new Response(JSON.stringify(result) + "\n" + frame));
+    assert.equal(await partial.image, undefined);
+  }
+});
+
+test("tail checks the session before reads and never requests the lead", async () => {
+  const urls = [1,2,3,4,5].map(i => "/api/swatches/photo?sku=S" + i + "&v=1");
+  const called = [];
+  const lead = load("src/app/api/swatches/first-row/lead.ts", {
+    "../design/drive-list-thumbnails": {}, "../design/photos": { swatchPhotoResponse: sku => {
+      called.push(sku);
+      return sku === "S3" ? new Response(null, { status: 503 })
+        : new Response(sku, { headers: { "Content-Length": "2", "Content-Type": "image/webp" } });
+    } },
+  });
+  const route = load("src/app/api/swatches/first-row/rest/route.ts", {
+    "../../active-session": { hasActiveSession: r => r.signed },
+    "../../session": { matchesVisit: r => r.visit },
+    "../../design/drive-list-thumbnails": { thumbnailFailure: status => new Response(null, { status }) },
+    "../plan": { rowImages: () => urls }, "../lead": lead,
+  });
+  const req = (signed, site, visit = true) => ({ signed, visit, headers: new Headers({ "sec-fetch-site": site }), nextUrl: new URL("http://localhost") });
+  assert.equal((await route.GET(req(false, "same-origin"))).status, 401);
+  assert.equal((await route.GET(req(true, "cross-site"))).status, 403);
+  assert.equal((await route.GET(req(true, "same-origin", false))).status, 401);
+  assert.deepEqual(called, []);
+  const delivered = await route.GET(req(true, "same-origin"));
+  assert.match(delivered.headers.get("cache-control"), /private, no-store/);
+  const data = await delivered.formData();
+  assert.deepEqual(called, ["S2","S3","S4","S5"]);
+  assert.equal(data.get(urls[0]), null);
+  assert.equal(data.get(urls[2]), null);
+  assert.equal(await data.get(urls[4]).text(), "S5");
+});
+
+test("split access emits visit binding only after successful fresh CRM check and synchronous audit", async () => {
+  for (const auditSucceeds of [true, false]) {
+    const calls = [];
+    const visitKey = token => "bound:" + token;
+    class StreamResponse extends Response { cookies = new Map(); }
+    const { POST } = load("src/app/api/swatches/access/route.ts", {
+      "next/server": { NextResponse: StreamResponse },
+      "@/app/swatches/customer-code": {customerCode: x => x},
+      "../sheets": {
+        readCompanies: async () => {calls.push("CRM"); return [{code:"8S42",name:"Synthetic"}];},
+        logAccess: async () => {calls.push("audit"); if (!auditSucceeds) throw Error("fixture down");}
+      },
+      "../session": {sameOrigin: () => true, equal: (a,b) => a === b, createSession: () => "fixture-session", visitKey, cookieName:"yj_swatches", sessionSeconds:3600, json: (data,status) => Response.json(data,{status})},
+      "./attempt-guard": {accessAttemptSource: () => "",createAccessAttemptLimiter: () => () => 0,readAccessJson: async () => ({code:"8S42"})},
+      "../first-row/plan": {rowImages: async () => {calls.push("plan"); return ["/api/swatches/photo?sku=S85"];}},
+      "../first-row/lead": {leadStream: data => {calls.push("lead"); return JSON.stringify(data)+"\n";}}
+    });
+    const result = await POST({headers:new Headers({accept:"application/x-swatch-cover"}),nextUrl:new URL("http://localhost/swatches")});
+    if (!auditSucceeds) {
+      assert.equal(result.status,503);
+      assert.deepEqual(calls,["CRM","audit"]);
+      assert.equal(result.headers.get("Content-Type"),"application/json");
+      continue;
+    }
+    assert.deepEqual(calls,["CRM","audit","plan","lead"]);
+    assert.equal(result.headers.get("Content-Type"),"application/x-swatch-cover");
+    assert.match(result.headers.get("Cache-Control"),/private, no-store/);
+    assert.deepEqual(await result.json(),{welcomeName:"Synthetic",visitKey:"bound:fixture-session",images:["/api/swatches/photo?sku=S85"]});
+    assert.equal(result.cookies.get("yj_swatches"),"fixture-session");
+  }
 });

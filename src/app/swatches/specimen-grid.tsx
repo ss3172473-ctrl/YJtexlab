@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { firstRowCanary, PreparedCover } from "./prepared-cover";
+import { firstRowCanary, matchesCover, PreparedCover } from "./prepared-cover";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowUpRight, Pause, Play } from "lucide-react";
@@ -154,7 +154,7 @@ function SpecimenPhoto({ variant, variants, hero, cycle, index, manualSku, group
       };
       // Next Image can rewrite a relative src attribute as an absolute URL.
       const isCurrentImage = (image: HTMLImageElement) => image.isConnected
-        && image.src === new URL(src, image.baseURI).href;
+        && matchesCover(image, src);
       const Cover = firstRowCanary() ? PreparedCover : Image;
       return <Cover key={src} src={src} alt="" fill unoptimized loading="eager"
         className={styles.rotatingCover} data-cover-sku={entry.sku} data-visible={Boolean(loaded[entry.sku]) && shown === entry.sku} aria-hidden="true"

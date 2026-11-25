@@ -2,5 +2,5 @@
 // use the ordinary authenticated gallery, permitting a like-for-like rollback.
 export function firstRowEnabled(search: string): boolean {
   const modes = new URLSearchParams(search).getAll("swatchPerf");
-  return modes.length === 0 || (modes.length === 1 && modes[0] === "firstrow");
+  return modes.length === 0 || (modes.length === 1 && ["firstrow", "split"].includes(modes[0]));
 }

@@ -1,5 +1,7 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { customerCode } from "@/app/swatches/customer-code";
+import { leadStream } from "../first-row/lead";
+import { rowImages } from "../first-row/plan";
 import { logAccess, readCompanies } from "../sheets";
 import { cookieName, createSession, equal, json, sameOrigin, sessionSeconds, visitKey } from "../session";
 import { accessAttemptSource, createAccessAttemptLimiter, readAccessJson } from "./attempt-guard";
@@ -24,7 +26,18 @@ export async function POST(request: NextRequest) {
     if (matches.length !== 1) return json({ error: "메일로 받은 고객 코드를 확인해 주세요." }, 401);
     const token = createSession(matches[0].code);
     await logAccess(matches[0], campaign);
-    const response = json({ ok: true, visitKey: visitKey(token), welcomeName: matches[0].name.slice(0, 100) });
+    const key = visitKey(token);
+    const welcomeName = matches[0].name.slice(0, 100);
+    const images = request.headers.get("accept") === "application/x-swatch-cover"
+      ? await rowImages(request.nextUrl.searchParams).catch(() => []) : [];
+    const response = images.length
+      ? new NextResponse(leadStream({ welcomeName, visitKey: key, images }), { headers: {
+        "Content-Type": "application/x-swatch-cover",
+        "Cache-Control": "private, no-store, no-transform", "CDN-Cache-Control": "no-store",
+        "Vercel-CDN-Cache-Control": "no-store", "Cross-Origin-Resource-Policy": "same-origin",
+        "X-Content-Type-Options": "nosniff", "X-Robots-Tag": "noindex, nofollow",
+      } })
+      : json({ ok: true, visitKey: key, welcomeName });
     response.cookies.set(cookieName, token, {
       httpOnly: true,
       sameSite: "strict",

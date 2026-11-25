@@ -1,7 +1,8 @@
 "use client";
 
 import PosterLift from "./poster-lift";
-import { prepareCovers, resetPreparedCovers } from "./prepared-cover";
+import { readAccessCover } from "./access-cover";
+import { prepareCovers, resetPreparedCovers, preparedOriginal, splitViewport, prepareSplitRow } from "./prepared-cover";
 import dynamic from "next/dynamic";
 import { motion, useReducedMotion, useSpring, type MotionStyle } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -34,6 +35,8 @@ type Receipt = "sent" | "saved" | "uncertain";
 
 export default function Swatches({ enablePosters = false }: { enablePosters?: boolean }) {
   const [language, pickLanguage] = useState<Language | null>(null);
+  const [preparedGrid, setPreparedGrid] = useState<typeof SpecimenGrid>();
+  const Grid = preparedGrid ?? SpecimenGrid;
   const currentLanguage = language ?? "ko";
   const t = swatchesText(currentLanguage);
   const [catalog, setCatalog] = useState<Catalog | null>(null);
@@ -122,17 +125,27 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
     setAccessError("");
     setReceipt(null);
     try {
-      const response = await fetch(`${api}/access`, {
+      const viewport = splitViewport();
+      const response = await fetch(`${api}/access${viewport ? "?" + viewport : ""}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(viewport && { Accept: "application/x-swatch-cover" }) },
         body: JSON.stringify({ code: validated, campaign: campaignParams().campaign_name }),
       });
       if (!response.ok) {
         setAccessError(response.status === 429 ? "codeSlow" : response.status === 401 ? "codeInvalid" : "codeUnavailable");
         return;
       }
-      const result = await response.json();
+      const framed = response.headers.get("content-type") === "application/x-swatch-cover";
+      const cover = framed ? await readAccessCover(response).catch(() => undefined) : undefined;
+      const result = framed ? cover?.result : await response.json();
+      if (!result || typeof result.visitKey !== "string" || !result.visitKey) {
+        cover?.cancel();
+        throw new Error("Missing swatch visit key");
+      }
       visit.current = result.visitKey;
+      performance.mark("swatches-access-accepted");
+      if (cover && viewport && viewport === splitViewport()) prepareSplitRow(viewport, result.images, cover, result.visitKey);
+      else cover?.cancel();
       void import("./specimen-grid").catch(() => {});
       setFirstCoverReady(false);
       setWelcomeName(typeof result.welcomeName === "string" ? result.welcomeName : "");
@@ -150,6 +163,13 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
 
   const patterns = catalog?.patterns;
   const pattern = patterns?.find((group) => group.name === patternName);
+  // Both the gallery and the film placeholder use the same approved original.
+  // Keep canonical catalog URLs for authorization, poster eligibility and edits.
+  const detailVariants = useMemo(() => pattern?.variants.map(entry => {
+    if (!entry.image) return entry;
+    const image = preparedOriginal(entry.image);
+    return image === entry.image ? entry : { ...entry, image };
+  }), [pattern]);
   const active = pattern ? Math.max(0, pattern.variants.findIndex((variant) => variant.sku === sku)) : 0;
   const variant = pattern?.variants[active];
   const specs = variant ? localizedFabricSpecs(variant.composition, variant.width, currentLanguage) : null;
@@ -241,7 +261,11 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
       <section role="dialog" aria-labelledby="swatches-language-title">
         <h1 id="swatches-language-title">Language</h1>
         <div className={styles.entryActions}>
-          {languages.map(({ id, name }) => <button key={id} type="button" lang={id} onClick={() => pickLanguage(id)}>{name}</button>)}
+          {languages.map(({ id, name }) => <button key={id} type="button" lang={id} onClick={() => {
+            pickLanguage(id);
+            // This chunk contains UI code only. Private media starts after login.
+            if (splitViewport()) void import("./specimen-grid").then(m => setPreparedGrid(() => m.default)).catch(() => {});
+          }}>{name}</button>)}
         </div>
       </section>
     </main>;
@@ -283,8 +307,8 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
 
     {pattern && variant ? <><motion.article className={styles.detail} data-original-film={variant.video ? "" : undefined} style={{ "--film-progress": filmProgress } as MotionStyle}>
       <div className={styles.detailMedia} data-with-film={variant.video ? "" : undefined}>
-        <ColorGallery key={pattern.name} variants={pattern.variants} active={active} onSelect={selectColor} language={language} sampleImages={catalog?.sampleImages} />
-        {variant.video && <FabricFilm key={variant.sku} variant={variant} language={language} onExpanded={updateFilmLayout} />}
+        <ColorGallery key={pattern.name} variants={detailVariants ?? pattern.variants} active={active} onSelect={selectColor} language={language} sampleImages={catalog?.sampleImages} />
+        {variant.video && <FabricFilm key={variant.sku} variant={detailVariants?.[active] ?? variant} language={language} onExpanded={updateFilmLayout} />}
       </div>
       <section className={styles.info} aria-label={t("details")}>
         <header>
@@ -328,7 +352,7 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
         && Number(variant.sku.slice(1)) <= (variant.sku.startsWith("S") ? 108 : 128)
         && variant.image === `/api/swatches/photo?sku=${variant.sku}&v=1`
         && <PosterLift key={variant.sku} sku={variant.sku} />}
-    </> : catalog && <SpecimenGrid patterns={visiblePatterns} language={language}
+    </> : catalog && <Grid patterns={visiblePatterns} language={language}
       query={query} onQuery={setQuery} onOpen={openPattern} layout={catalog.layout}
       warmBehindWelcome={welcomePreparing}
       onFirstCoverReady={welcomePreparing ? markFirstCoverReady : undefined} />}
