@@ -1,9 +1,7 @@
 "use client";
 
-import Script from "next/script";
 import { useEffect } from "react";
 
-type EventFields = Record<string, unknown>;
 type AnalyticsWindow = Window & { dataLayer?: unknown[] };
 
 function tag(...commands: unknown[]): void;
@@ -28,34 +26,50 @@ export function campaignParams() {
   };
 }
 
-function pageReferrer() {
-  try {
-    const origin = new URL(document.referrer).origin;
-    return origin === "null" ? "" : origin;
-  } catch { return ""; }
-}
+const ORIGIN = "https://yjtexlab.com";
+const PAGE_LOCATION = `${ORIGIN}/swatches`;
+let measurementId = "";
+let loadingId = "";
 
-export function track(name: string, fields: EventFields = {}) {
-  tag("event", name, { ...fields, page_location: `${window.location.origin}/swatches`, page_referrer: pageReferrer() });
-}
-
-const configured = new Set<string>();
-
-export default function SwatchesAnalytics({ id }: { id: string }) {
-  const enabled = /^G-[A-Z0-9]+$/.test(id);
-  useEffect(() => {
-    if (!enabled || configured.has(id)) return;
-    configured.add(id);
+export function trackConfirmedLead(rollCount: number) {
+  if (!measurementId || !Number.isInteger(rollCount) || rollCount < 1 || rollCount > 100) return;
+  if (loadingId !== measurementId) {
+    loadingId = measurementId;
     tag("js", new Date());
-    tag("config", id, {
+    tag("config", measurementId, {
       send_page_view: false,
       allow_google_signals: false,
       allow_ad_personalization_signals: false,
-      page_referrer: pageReferrer(),
-      page_location: `${window.location.origin}/swatches`,
-      ...campaignParams(),
+      page_referrer: "",
+      ignore_referrer: true,
+      page_location: PAGE_LOCATION,
     });
-    track("page_view", { page_title: "Swatches | YJ TexLab" });
-  }, [enabled, id]);
-  return enabled ? <Script src={`https://www.googletagmanager.com/gtag/js?id=${id}`} strategy="afterInteractive" /> : null;
+    const script = document.createElement("script");
+    script.async = true;
+    script.referrerPolicy = "no-referrer";
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+    script.onerror = () => { loadingId = ""; script.remove(); };
+    document.head.append(script);
+  }
+  tag("event", "generate_lead", {
+    send_to: measurementId,
+    source: "swatches",
+    page_location: PAGE_LOCATION,
+    page_referrer: "",
+    ignore_referrer: true,
+    roll_count: rollCount,
+  });
+}
+
+export default function SwatchesAnalytics({ id }: { id: string }) {
+  useEffect(() => {
+    if (!/^G-[A-Z0-9]+$/.test(id) || window.location.origin !== ORIGIN) return;
+    measurementId = id;
+    document.documentElement.dataset.swatchesLeadAnalytics = "ready";
+    return () => {
+      measurementId = "";
+      delete document.documentElement.dataset.swatchesLeadAnalytics;
+    };
+  }, [id]);
+  return null;
 }

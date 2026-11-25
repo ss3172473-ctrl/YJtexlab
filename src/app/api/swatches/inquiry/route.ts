@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const notification = await recordInquiry(company, inquiryText(lines));
     const sent = notification === "sent" || notification === "already_sent";
     if (!sent) console.warn("swatches_notification_not_confirmed", { status: notification });
-    return json({ ok: true, sent });
+    return json({ ok: true, sent, newlySent: notification === "sent" });
   } catch {
     console.error("swatches_inquiry_result_uncertain");
     return json({

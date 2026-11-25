@@ -6,7 +6,7 @@ import { motion, useReducedMotion, useSpring, type MotionStyle } from "motion/re
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Plus, ShoppingBag, X } from "lucide-react";
 import { businessContact } from "@/lib/business-contact";
-import { campaignParams, track } from "./analytics";
+import { campaignParams, trackConfirmedLead } from "./analytics";
 import { lineTotal, money, selectRolls, yardage, type CartLine, type Catalog, type Pattern, type Variant } from "./catalog";
 import { AccessGate, Welcome } from "./entry";
 import { customerCode } from "./customer-code";
@@ -27,16 +27,6 @@ function LanguageToggle({ active, onSelect }: { active: Language; onSelect: (lan
     {languages.map(({ id, name, short }) => <button key={id} type="button" lang={id}
       aria-label={name} aria-pressed={active === id} onClick={() => onSelect(id)}>{short}</button>)}
   </div>;
-}
-
-function item(pattern: string, variant: Variant) {
-  return {
-    item_id: variant.sku,
-    item_name: pattern,
-    item_variant: variant.color,
-    item_category: "Fabric",
-    ...(variant.price === null ? {} : { price: variant.price }),
-  };
 }
 
 type CartEntry = CartLine & { available: boolean };
@@ -78,7 +68,6 @@ export default function Swatches() {
   const [sending, setSending] = useState(false);
   const submitting = useRef(false);
   const loadingStock = useRef(false);
-  const listTracked = useRef(false);
 
   useEffect(() => {
     try {
@@ -119,10 +108,6 @@ export default function Swatches() {
       setStatus("ready");
       setStockError("");
       setAccessError("");
-      if (!listTracked.current) {
-        track("view_item_list", { item_list_id: "swatches", items: live.patterns.slice(0, 40).map((group) => item(group.name, group.variants[0])) });
-        listTracked.current = true;
-      }
     } catch {
       setStockError("stockUnavailable");
       setStatus((previous) => previous === "initial" ? "locked" : previous);
@@ -170,7 +155,6 @@ export default function Swatches() {
       setWelcomeName(typeof result.welcomeName === "string" ? result.welcomeName : "");
       setCode("");
       setStatus("ready");
-      track("swatches_access_granted", campaignParams());
       await loadCatalog();
     } catch {
       setAccessError("codeUnavailable");
@@ -203,9 +187,6 @@ export default function Swatches() {
     const initial = selectedVariant ?? group.variants.find((entry) => entry.rolls.length > 0) ?? group.variants[0];
     setPatternName(group.name);
     setSku(initial.sku);
-    const selected = item(group.name, initial);
-    track("select_item", { item_list_id: "swatches", items: [selected] });
-    track("view_item", { currency: "KRW", items: [selected] });
     window.scrollTo({ top: 0 });
     void loadCatalog();
   }, [loadCatalog]);
@@ -214,8 +195,6 @@ export default function Swatches() {
     if (!pattern || index === active) return;
     const selected = pattern.variants[index];
     setSku(selected.sku);
-    track("swatches_select_color", { items: [item(pattern.name, selected)] });
-    track("view_item", { currency: "KRW", items: [item(pattern.name, selected)] });
     void loadCatalog();
   }
 
@@ -226,21 +205,10 @@ export default function Swatches() {
     setCart((entries) => entries.some((entry) => entry.id === id) ? entries : [...entries, line]);
     if (receipt !== "uncertain") setReceipt(null);
     setInquiryError("");
-    track("add_to_cart", {
-      currency: "KRW", value: lineTotal(line.yards, line.price),
-      items: [{ item_id: line.sku, item_name: line.pattern, item_variant: line.color, roll_yards: line.yards, price: lineTotal(line.yards, line.price), quantity: 1 }],
-    });
   }
 
   function showCart() {
     cartDialog.current?.showModal();
-    track("view_cart", {
-      currency: "KRW", value: total,
-      items: cartEntries.filter((entry) => entry.available).map((line) => ({
-        item_id: line.sku, item_name: line.pattern, item_variant: line.color,
-        price: lineTotal(line.yards, line.price), roll_yards: line.yards, quantity: 1,
-      })),
-    });
     void loadCatalog();
   }
 
@@ -278,9 +246,7 @@ export default function Swatches() {
         return;
       }
       setReceipt(result.sent ? "sent" : "saved");
-      track("generate_lead", { currency: "KRW", value: total, roll_count: cartEntries.length,
-        items: cartEntries.map((line) => ({ item_id: line.sku, item_name: line.pattern, item_variant: line.color, roll_yards: line.yards, quantity: 1 })),
-      });
+      if (result.ok === true && result.newlySent === true) trackConfirmedLead(cartEntries.length);
       setCart([]);
     } catch {
       setReceipt("uncertain");
