@@ -863,3 +863,48 @@ test("experimental row returns only protected, expected paths, no stock, and res
     assert.deepEqual((await (await GET(req(1200,1))).json()).images,[]);
   } finally { if(previous === undefined)delete env.SWATCHES_LAYOUT_JSON;else env.SWATCHES_LAYOUT_JSON=previous; }
 });
+
+test("private poster route checks login first, only accepts same-origin exact SKU query", async () => {
+  const requests = [];
+  let active = false;
+  const failure = status => new Response(null, { status, headers: { "Cache-Control": "private, no-store" } });
+  const route = load("src/app/api/swatches/poster/route.ts", {
+    "../active-session": { hasActiveSession: async () => active },
+    "../design/drive-posters": { posterFailure: failure, drivePoster: async (...args) => {
+      requests.push(args); return args[0] === "S84" ? new Response("fixture-poster") : failure(404);
+    } },
+  });
+  const request = (query, site = "same-origin") => ({ headers: new Headers({ "sec-fetch-site": site }), nextUrl: new URL("https://test.invalid/api/swatches/poster?" + query) });
+  assert.equal((await route.GET(request("sku=S84"))).status, 401);
+  assert.deepEqual(requests, []);
+  active = true;
+  assert.equal((await route.GET(request("sku=S84", "cross-site"))).status, 403);
+  assert.equal((await route.GET(request("sku=S84&sku=S85"))).status, 404);
+  assert.equal((await route.GET(request("sku=S84&url=evil"))).status, 404);
+  assert.deepEqual(requests, []);
+  assert.equal(await (await route.GET(request("sku=S84"))).text(), "fixture-poster");
+  assert.equal((await route.GET(request("sku=S85"))).status, 404);
+  assert.deepEqual(requests, [["S84"], ["S85"]]);
+});
+
+test("poster registry requires 236 unique bounded assets, exact set and matching SHA", () => {
+  const { createHash } = require("node:crypto");
+  const valid = v => /^[ST][1-9][0-9]{0,2}$/.test(v) && Number(v.slice(1)) <= (v.startsWith("S") ? 108 : 128);
+  const io = load("src/app/api/swatches/design/drive-posters.ts", {
+    "server-only": {}, "./drive-video": {}, "./drive-list-thumbnails": {
+      parseListThumbnailLocator: () => undefined, validListThumbnailSku: valid,
+    },
+  });
+  const assets = [...Array.from({ length: 108 }, (_, i) => "S" + (i+1)), ...Array.from({ length: 128 }, (_, i) => "T" + (i+1))]
+    .map(sku => ({ sku, fileId: "fixture_poster_" + sku, bytes: 50, sha256: "a".repeat(64) }));
+  const parse = (rows, hash) => {
+    const bytes = Buffer.from(JSON.stringify({version:1,assets: rows}));
+    return io.parsePosterRegistry(bytes, hash || createHash("sha256").update(bytes).digest("hex"), ["fixture_manifest"]);
+  };
+  assert.equal(parse(assets).size, 236);
+  assert.equal(parse(assets).get("S84").fileId, "fixture_poster_S84");
+  assert.throws(() => parse(assets.slice(1)), /236/);
+  assert.throws(() => parse([...assets.slice(1), assets[1]]), /duplicate/);
+  assert.throws(() => parse(assets, "0".repeat(64)), /digest/);
+  assert.throws(() => parse([...assets.slice(1), {...assets[0], fileId:"fixture_manifest"}]), /duplicate/);
+});

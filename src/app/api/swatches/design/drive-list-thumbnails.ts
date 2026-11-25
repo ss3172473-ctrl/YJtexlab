@@ -84,7 +84,7 @@ async function bytesWithin(response: Response, limit: number): Promise<Buffer> {
   } finally { await reader.cancel().catch(() => undefined); }
 }
 
-async function readDriveFile(
+export async function readDriveFile(
   token: string, folderId: string, fileId: string, name: string, mimeType: string,
   checksum: string, limit: number, exact?: number,
 ): Promise<Buffer> {

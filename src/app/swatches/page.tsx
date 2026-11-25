@@ -3,6 +3,7 @@ import Image from "next/image";
 import experience from "./experience.module.css";
 import SwatchesAnalytics from "./analytics";
 import Swatches from "./swatches";
+import { postersEnabled } from "../api/swatches/design/drive-posters";
 
 export const metadata: Metadata = {
   title: "Swatches",
@@ -17,7 +18,7 @@ export default function SwatchesPage() {
       <header className={experience.masthead} aria-label="YJ TexLab Swatches">
         <Image src="/brand/yjtexlab-logo.png" alt="YJ TexLab" width={405} height={200} priority />
       </header>
-      <Swatches />
+      <Swatches enablePosters={postersEnabled} />
       <SwatchesAnalytics id={process.env.GA4_MEASUREMENT_ID || process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || ""} />
     </>
   );

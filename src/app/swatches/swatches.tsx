@@ -1,5 +1,6 @@
 "use client";
 
+import PosterLift from "./poster-lift";
 import { prepareCovers, resetPreparedCovers } from "./prepared-cover";
 import dynamic from "next/dynamic";
 import { motion, useReducedMotion, useSpring, type MotionStyle } from "motion/react";
@@ -32,7 +33,7 @@ function LanguageToggle({ active, onSelect }: { active: Language; onSelect: (lan
 type CartEntry = CartLine & { available: boolean };
 type Receipt = "sent" | "saved" | "uncertain";
 
-export default function Swatches() {
+export default function Swatches({ enablePosters = false }: { enablePosters?: boolean }) {
   const [language, setLanguage] = useState<Language | null>(null);
   const [languageReady, setLanguageReady] = useState(false);
   const currentLanguage = language ?? "ko";
@@ -301,7 +302,7 @@ export default function Swatches() {
     {stockError && <p className={styles.error} role="status">{t(stockError)} <button type="button" onClick={() => void loadCatalog()}>{t("retry")}</button></p>}
     {!catalog && !stockError && <p role="status">{t("stockLoading")}</p>}
 
-    {pattern && variant ? <motion.article className={styles.detail} data-original-film={variant.video ? "" : undefined} style={{ "--film-progress": filmProgress } as MotionStyle}>
+    {pattern && variant ? <><motion.article className={styles.detail} data-original-film={variant.video ? "" : undefined} style={{ "--film-progress": filmProgress } as MotionStyle}>
       <div className={styles.detailMedia} data-with-film={variant.video ? "" : undefined}>
         <ColorGallery key={pattern.name} variants={pattern.variants} active={active} onSelect={selectColor} language={language} sampleImages={catalog?.sampleImages} />
         {variant.video && <FabricFilm key={variant.sku} variant={variant} language={language} onExpanded={updateFilmLayout} />}
@@ -343,7 +344,12 @@ export default function Swatches() {
           <p className={styles.note}>{t("fullRoll")}</p>
         </> : <div className={styles.soldOut} role="status">{t("soldOutLabel")}</div>}
       </section>
-    </motion.article> : catalog && <SpecimenGrid patterns={visiblePatterns} language={language}
+    </motion.article>
+      {enablePosters && /^[ST][1-9][0-9]{0,2}$/.test(variant.sku)
+        && Number(variant.sku.slice(1)) <= (variant.sku.startsWith("S") ? 108 : 128)
+        && variant.image === `/api/swatches/photo?sku=${variant.sku}&v=1`
+        && <PosterLift key={variant.sku} sku={variant.sku} />}
+    </> : catalog && <SpecimenGrid patterns={visiblePatterns} language={language}
       query={query} onQuery={setQuery} onOpen={openPattern} layout={catalog.layout}
       warmBehindWelcome={welcomePreparing}
       onFirstCoverReady={welcomePreparing ? markFirstCoverReady : undefined} />}
