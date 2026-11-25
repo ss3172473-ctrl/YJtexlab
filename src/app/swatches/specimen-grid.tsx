@@ -218,8 +218,7 @@ export default function SpecimenGrid({ patterns, language, query, onQuery, onOpe
   const [drag, setDrag] = useState<{ from: string; over: string }>();
   const reducedMotion = useReducedMotion();
   const [cyclePaused, setCyclePaused] = useState(false);
-  const cycleLabel = language === "ko" ? ["색상 자동 전환 일시 정지", "색상 자동 전환 재생"]
-    : language === "zh-CN" ? ["暂停颜色轮换", "继续颜色轮换"] : ["Pause color rotation", "Play color rotation"];
+  const cycleLabel = [t("pauseRotation"), t("playRotation")];
   const list = useRef<HTMLUListElement>(null);
   const openTimer = useRef<number | undefined>(undefined);
   const closeTimer = useRef<number | undefined>(undefined);

@@ -11,9 +11,14 @@
 
 .gate {
   display: grid;
+  grid-template-rows: auto 1fr;
   place-items: center;
   position: relative;
   padding-bottom: 12vh;
+}
+.gateStockNote {
+  text-align: center;
+  text-wrap: balance;
 }
 .gateLanguages {
   position: absolute;

@@ -60,6 +60,7 @@ export function AccessGate({
 
   return <main className={`${styles.shell} ${experience.gate}`} lang={language}>
     <div className={experience.gateLanguages}>{languageToggle}</div>
+    <p className={`${styles.rollStockNote} ${experience.gateStockNote}`}>{t("rollStockNote")}</p>
     <div className={experience.lockPanel} aria-busy={pending}>
       <div className={experience.lockIcon} aria-hidden="true"><LockKeyhole size={26} strokeWidth={1.35} /></div>
       <label htmlFor="customer-code">{t("code")}</label>

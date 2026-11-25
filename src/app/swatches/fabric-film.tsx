@@ -11,6 +11,7 @@ const words = {
   ko: { title: "원단 움직임", play: "영상 재생", pause: "영상 일시 정지", expand: "영상 확대", collapse: "영상 축소" },
   en: { title: "Fabric in motion", play: "Play film", pause: "Pause film", expand: "Enlarge film", collapse: "Shrink film" },
   "zh-CN": { title: "面料动态", play: "播放视频", pause: "暂停视频", expand: "放大视频", collapse: "缩小视频" },
+  ja: { title: "生地の動画", play: "動画を再生", pause: "動画を一時停止", expand: "動画を拡大", collapse: "動画を縮小" },
 };
 
 export default function FabricFilm({ variant, language, onExpanded }: { variant: Variant; language: Language; onExpanded: (expanded: boolean) => void }) {

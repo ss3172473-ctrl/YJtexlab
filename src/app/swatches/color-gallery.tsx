@@ -156,7 +156,7 @@ export default function ColorGallery({
                 fill unoptimized loading="eager" fetchPriority={relative === 0 ? "high" : "low"} decoding="async" draggable={false} referrerPolicy="no-referrer" />}
               {direction === "center" && variant.sku === currentSku && validFoldSku(variant.sku) && variant.image && variant.reverse &&
                 <FoldCorner sku={variant.sku} frontSrc={variant.image} reverseSrc={variant.reverse} introAvailable={introAvailable} markIntroSeen={markIntroSeen}
-                  label={language === "ko" ? `${variant.sku} 원단 뒷면 보기` : language === "zh-CN" ? `查看 ${variant.sku} 面料背面` : `Show reverse of ${variant.sku}`} />}
+                  label={t("reverse").replace("{sku}", variant.sku)} />}
               <span className={styles.edge} style={{ "--panel-color": chip(variant.color) } as CSSProperties} aria-hidden="true" />
             </SwiperSlide>;
           })}

@@ -327,6 +327,7 @@ export default function Swatches() {
         <button type="button" className={styles.textButton} onClick={showCart}><ShoppingBag size={17} /> {t("cart")} <strong>{cart.length}</strong></button>
       </div>
     </div>
+    {!pattern && <p className={styles.rollStockNote}>{t("rollStockNote")}</p>}
     {stockError && <p className={styles.error} role="status">{t(stockError)} <button type="button" onClick={() => void loadCatalog()}>{t("retry")}</button></p>}
     {!catalog && !stockError && <p role="status">{t("stockLoading")}</p>}
 
