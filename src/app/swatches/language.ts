@@ -11,7 +11,7 @@ const strings = {
   catalog: ["원단 목록", "Fabric catalog", "面料目录", "生地一覧"],
   rollStockNote: [
     "자체 공장 생산 · A급 미사용 정상품 · 생산 후 개별 랩 포장 · 보유 롤 단위 구매",
-    "Made in our own mill · First-quality, unused fabric · Individually wrapped after production · In-stock full rolls",
+    "Made in our mill · First-quality unused fabric · Individually wrapped · Full rolls in stock",
     "自有工厂生产 · A级全新面料 · 生产后逐卷包膜存放 · 现货整卷采购",
     "自社工場で生産 · A級の未使用生地 · 生産後にフィルムで個包装 · 在庫品は反単位で販売",
   ],
