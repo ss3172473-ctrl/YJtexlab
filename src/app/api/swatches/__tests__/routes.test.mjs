@@ -31,7 +31,7 @@ function load(file, dependencies = {}, testFetch = fetch) {
       ? dependencies[name]
       : /^(?:\.\/|\.\.\/)google-credentials$/.test(name) ? googleCredentials : require(name),
     process: { env, cwd: process.cwd },
-    Buffer, URL, fetch: testFetch, Response, Headers, setTimeout, clearTimeout, AbortController,
+    Buffer, URL, fetch: testFetch, Response, Headers, setTimeout, clearTimeout, AbortController, TextDecoder,
     console: { error() {}, warn() {} },
   });
   return exports;
@@ -44,6 +44,7 @@ const loadDrive = (dependencies, testFetch) => load("src/app/api/swatches/design
 }, testFetch);
 const packed = (data) => `gzip1:${gzipSync(data).toString("base64url")}`;
 
+const attemptGuard = load("src/app/api/swatches/access/attempt-guard.ts");
 const catalog = load("src/app/swatches/catalog.ts");
 const codes = load("src/app/swatches/customer-code.ts");
 const contact = load("src/lib/contact.ts");
@@ -69,7 +70,7 @@ const crmRows = [
 ];
 const origin = "https://catalog.example.invalid";
 
-function setup() {
+function setup(companies = crmRows) {
   const market = { products: productRows.map((x) => [...x]), stock: rollRows.map((x) => [...x]) };
   const writes = [];
   const reads = [];
@@ -85,7 +86,7 @@ function setup() {
         },
         get: async () => {
           reads.push("crm");
-          return { data: { values: crmRows } };
+          return { data: { values: companies } };
         },
         append: async (request) => {
           writes.push(request);
@@ -115,6 +116,7 @@ function setup() {
   const routes = Object.fromEntries(["access", "catalog", "inquiry"].map((name) => [
     name, load(`src/app/api/swatches/${name}/route.ts`, {
       "../sheets": sheets,
+      "./attempt-guard": attemptGuard,
       "../active-session": activeSession,
       "../design/photos": { withSwatchPhotos: async (patterns) => patterns },
       "../design/drive-list-thumbnails": { listThumbnailUrl: () => undefined },
@@ -131,6 +133,7 @@ function request(body, token, requestOrigin = origin) {
   return {
     nextUrl: new URL(origin),
     headers: new Headers({ origin: requestOrigin }),
+    body: body === undefined ? null : new Response(JSON.stringify(body)).body,
     cookies: { get: () => token ? { value: token } : undefined },
     json: async () => body,
   };
@@ -193,21 +196,86 @@ test("inquiry checks live prices, stock and duplicates before recording and noti
   assert.deepEqual(emails, [2]);
 });
 
-test("requires four digits and limits repeated attempts", async () => {
-  const { routes, reads } = setup();
-  assert.equal(codes.customerCode("5"), null);
-  assert.equal(codes.customerCode("0005"), "0005");
-  assert.equal(codes.customerCode("00450"), null);
-  assert.equal(codes.customerCode("AB12"), null);
-  assert.equal((await routes.access.POST(request({ code: "00450" }))).status, 401);
-  assert.deepEqual(reads, []);
-  for (let i = 0; i < 5; i++) {
-    assert.equal((await routes.access.POST(request({ code: "9999" }))).status, 401);
+test("four-character input normalizes only ASCII letters and outer whitespace", () => {
+  assert.equal(codes.customerCodeInput(""), "");
+  assert.equal(codes.customerCodeInput(" az "), "AZ");
+  assert.equal(codes.customerCodeInput("aBcD"), "ABCD");
+  for (const [raw, expected] of [["0005", "0005"], [" ab12 ", "AB12"], ["1ab2", "1AB2"], ["0z00", "0Z00"]])
+    assert.equal(codes.customerCode(raw), expected);
+  for (const raw of ["", "5", "ABCD", "00450", "aB12c", "A B1", "A-12", "ＡB12", "АB12", "AB١2", "ẞ123", "A\u0000B1", " ".repeat(130)+"AB12", 1234, null])
+    assert.equal(codes.customerCode(raw), null);
+});
+
+test("accepts active mixed and legacy codes, without exposing either in API results", async () => {
+  const companies = [...crmRows, ["Mixed Fixture", "mixed@example.invalid", "q9r4", "활성"]];
+  const { routes, writes } = setup(companies);
+  for (const [value, expected] of [["  Q9r4 ", "Mixed Fixture"], ["0358", "Fixture Company"]]) {
+    const entered = await routes.access.POST(request({ code: value }));
+    assert.equal(entered.status, 200);
+    assert.equal(entered.body.welcomeName, expected);
+    const token = entered.cookies.get("yj_swatches");
+    assert.equal((await routes.catalog.GET(request(undefined, token))).status, 200);
+    assert.doesNotMatch(JSON.stringify(entered.body), /Q9R4|0358/i);
   }
+  assert.equal(writes.length, 2);
+  assert.doesNotMatch(JSON.stringify(writes), /Q9R4|0358/i);
+});
+
+test("prepared mixed codes do not grant access while the CRM row remains inactive", async () => {
+  const companies = [...crmRows, ["New Fixture", "new-fixture@example.invalid", "q9r4", ""]];
+  const { routes, writes } = setup(companies);
+  assert.equal((await routes.access.POST(request({ code: "Q9R4" }))).status, 401);
+  assert.equal(writes.length, 0);
+  const session = load(sessionPath, { "next/server": {} });
+  assert.equal((await routes.catalog.GET(request(undefined, session.createSession("Q9R4")))).status, 401);
+});
+
+test("managed-address guard preserves one local budget and recovers after the window", () => {
+  const headers = new Headers({
+    "x-vercel-forwarded-for": "2001:0db8:0000:0000::1",
+    "x-forwarded-for": "192.0.2.34",
+    "x-real-ip": "198.51.100.2",
+  });
+  assert.equal(attemptGuard.accessAttemptSource(headers, true), "2001:db8::1");
+  assert.equal(attemptGuard.accessAttemptSource(headers, false), "198.51.100.2");
+  headers.set("x-vercel-forwarded-for", "198.51.100.2, 192.0.2.34");
+  assert.equal(attemptGuard.accessAttemptSource(headers, true), "unknown");
+  let t = 1000;
+  const limit = attemptGuard.createAccessAttemptLimiter({ now: () => t, limit: 2, windowMs: 2000, capacity: 1 });
+  assert.equal(limit("local-test-source"), 0);
+  assert.equal(limit("local-test-source"), 0);
+  assert.equal(limit("local-test-source"), 2);
+  assert.equal(limit("one-other-source"), 2);
+  t = 3000;
+  assert.equal(limit("one-other-source"), 0);
+});
+
+test("case-colliding active rows fail closed for access and existing sessions", async () => {
+  const companies = [...crmRows, ["Fixture One", "one@example.invalid", "a0b2", "활성"],
+    ["Fixture Two", "two@example.invalid", "A0B2", "활성"]];
+  const { routes, writes } = setup(companies);
+  assert.equal((await routes.access.POST(request({ code: "A0b2" }))).status, 401);
+  assert.equal(writes.length, 0);
+  const session = load(sessionPath, { "next/server": {} });
+  assert.equal((await routes.catalog.GET(request(undefined, session.createSession("A0B2")))).status, 401);
+});
+
+test("the access backstop runs before JSON or CRM and keeps the existing budget", async () => {
+  const { routes, reads } = setup();
+  const invalidOrigin = request({ code: "00450" }, undefined, "https://other.example.invalid");
+  assert.equal((await routes.access.POST(invalidOrigin)).status, 403);
+  for (const value of ["00450", "ABCD", "AB12c"]) {
+    assert.equal((await routes.access.POST(request({ code: value }))).status, 401);
+  }
+  assert.deepEqual(reads, []);
+  const oversized = request({ code: "Z".repeat(2048) });
+  assert.equal((await routes.access.POST(oversized)).status, 401);
+  assert.deepEqual(reads, []);
+  assert.equal((await routes.access.POST(request({ code: "9999" }))).status, 401);
   const throttled = await routes.access.POST(request({ code: "0358" }));
   assert.equal(throttled.status, 429);
   assert.ok(Number(throttled.headers["Retry-After"]) > 0);
-  assert.equal(reads.length, 5);
+  assert.deepEqual(reads, ["crm"]);
 });
 
 test("a selected SKU streams only its variant, requires a session, and supports browser byte ranges", async () => {

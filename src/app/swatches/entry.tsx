@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { LockKeyhole, LockKeyholeOpen } from "lucide-react";
-import { customerCodeMaxLength, customerCodePattern } from "./customer-code";
+import { customerCodeInput, customerCodeMaxLength, customerCodePattern } from "./customer-code";
 import { swatchesText, type Language } from "./language";
 import styles from "./swatches.module.css";
 import experience from "./experience.module.css";
@@ -43,19 +43,20 @@ export function AccessGate({
 
   useEffect(() => {
     if (pending || disabled) return;
-    function handleDigit(event: KeyboardEvent) {
-      if (!/^[0-9]$/.test(event.key) || event.defaultPrevented || event.repeat ||
+    function handleCharacter(event: KeyboardEvent) {
+      if (!/^[A-Za-z0-9]$/.test(event.key) || event.defaultPrevented || event.repeat ||
           event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target;
-      if (target instanceof HTMLElement && (target.isContentEditable || target.matches("input, textarea, select"))) return;
+      if (target instanceof HTMLElement && (target.isContentEditable || target.matches("input, textarea, select, button, a"))) return;
       const field = input.current;
-      if (!field) return;
+      const next = customerCodeInput(code + event.key);
+      if (!field || next === null) return;
       event.preventDefault();
       field.focus({ preventScroll: true });
-      onCode((code + event.key).slice(0, customerCodeMaxLength));
+      onCode(next);
     }
-    window.addEventListener("keydown", handleDigit, true);
-    return () => window.removeEventListener("keydown", handleDigit, true);
+    window.addEventListener("keydown", handleCharacter, true);
+    return () => window.removeEventListener("keydown", handleCharacter, true);
   }, [code, disabled, onCode, pending]);
 
   return <main className={`${styles.shell} ${experience.gate}`} lang={language}>
@@ -67,10 +68,13 @@ export function AccessGate({
       <p id="code-instruction">{t("codeHint")}</p>
       <div className={experience.digits}>
         <input ref={input} id="customer-code" type="password" value={code}
-          onChange={(event) => onCode(event.target.value.replace(/[^0-9]/g, "").slice(0, customerCodeMaxLength))}
+          onChange={(event) => {
+            const next = customerCodeInput(event.target.value);
+            if (next !== null) onCode(next);
+          }}
           aria-describedby={error ? "code-instruction code-error" : "code-instruction"}
-          aria-invalid={Boolean(error)} autoComplete="off" inputMode="numeric" pattern={customerCodePattern}
-          maxLength={customerCodeMaxLength} readOnly={pending || disabled} />
+          aria-invalid={Boolean(error)} autoComplete="off" autoCapitalize="characters" spellCheck={false}
+          inputMode="text" pattern={customerCodePattern} readOnly={pending || disabled} />
         {Array.from({ length: customerCodeMaxLength }, (_, index) => <span
           key={index} aria-hidden="true" data-filled={index < code.length} data-active={index === code.length}
         ><i /></span>)}

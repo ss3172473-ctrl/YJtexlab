@@ -2,37 +2,20 @@ import { type NextRequest } from "next/server";
 import { customerCode } from "@/app/swatches/customer-code";
 import { logAccess, readCompanies } from "../sheets";
 import { cookieName, createSession, equal, json, sameOrigin, sessionSeconds } from "../session";
+import { accessAttemptSource, createAccessAttemptLimiter, readAccessJson } from "./attempt-guard";
 
-const limit = 5;
-const windowMs = 15 * 60 * 1000;
-const attempts = new Map<string, { count: number; expires: number }>();
-
-function retryAfter(request: NextRequest) {
-  const key = request.headers.get("x-real-ip")?.trim() || "unknown";
-  const now = Date.now();
-  const current = attempts.get(key);
-  if (current && current.expires > now) {
-    if (current.count >= limit) return Math.ceil((current.expires - now) / 1000);
-    current.count++;
-    return 0;
-  }
-  if (attempts.size >= 4096) {
-    attempts.forEach((entry, address) => { if (entry.expires <= now) attempts.delete(address); });
-    if (attempts.size >= 4096) return Math.ceil(windowMs / 1000);
-  }
-  attempts.set(key, { count: 1, expires: now + windowMs });
-  return 0;
-}
+const consumeAttempt = createAccessAttemptLimiter();
+const hostedByVercel = process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV || process.env.VERCEL_TARGET_ENV);
 
 export async function POST(request: NextRequest) {
   if (!sameOrigin(request)) return json({ error: "접근할 수 없습니다." }, 403);
-  const body = await request.json().catch(() => null);
-  const code = customerCode(body?.code);
-  if (!code) return json({ error: "메일로 받은 숫자 고객 코드를 확인해 주세요." }, 401);
-  const wait = retryAfter(request);
+  const wait = consumeAttempt(accessAttemptSource(request.headers, hostedByVercel));
   if (wait) {
     return json({ error: "입력 시도가 많습니다. 잠시 후 다시 시도해 주세요." }, 429, { "Retry-After": String(wait) });
   }
+  const body = await readAccessJson(request);
+  const code = customerCode(body?.code);
+  if (!code) return json({ error: "메일로 받은 고객 코드를 확인해 주세요." }, 401);
   const campaign = typeof body?.campaign === "string" && /^[a-zA-Z0-9_.-]{1,80}$/.test(body.campaign)
     ? body.campaign : "";
 

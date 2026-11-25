@@ -9,7 +9,7 @@ import { businessContact } from "@/lib/business-contact";
 import { campaignParams, trackConfirmedLead } from "./analytics";
 import { lineTotal, money, selectRolls, yardage, type CartLine, type Catalog, type Pattern, type Variant } from "./catalog";
 import { AccessGate, Welcome } from "./entry";
-import { customerCode } from "./customer-code";
+import { customerCode, customerCodeMaxLength } from "./customer-code";
 import { colorName, countLabel, fabricName, languages, swatchesText, type Language } from "./language";
 import styles from "./swatches.module.css";
 import { localizedFabricSpecs } from "./specifications";
@@ -271,6 +271,10 @@ export default function Swatches() {
     const gateError = accessError || stockError;
     return <AccessGate language={language} code={code} onCode={(value) => {
       setCode(value);
+      if (value.length === customerCodeMaxLength && !customerCode(value)) {
+        setAccessError("codeInvalid");
+        return;
+      }
       if (accessError) setAccessError("");
       void enter(value);
     }}
