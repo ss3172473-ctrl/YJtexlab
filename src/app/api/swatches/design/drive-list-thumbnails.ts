@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { createInFlightReads } from "./thumbnail-inflight";
 import { driveToken } from "./drive-video";
 
 type Locator = { folderId: string; manifestId: string; sha256: string; skus?: ReadonlySet<string> };
@@ -143,13 +144,16 @@ const headers = {
 };
 export function thumbnailFailure(status: number) { return new Response(null, { status, headers }); }
 
+const verifiedRead = createInFlightReads<string, Buffer>();
+
 export async function driveListThumbnail(sku: unknown) {
   if (!locator || !validListThumbnailSku(sku) || (locator.skus && !locator.skus.has(sku))) return thumbnailFailure(404);
   try {
     const e = (await getRegistry(locator)).get(sku);
     if (!e) return thumbnailFailure(404);
-    const bytes = await readDriveFile(await driveToken(), locator.folderId, e.fileId, sku + ".webp",
-      "image/webp", e.sha256, imageLimit, e.bytes);
+    const folderId = locator.folderId;
+    const bytes = await verifiedRead(sku, async () => readDriveFile(await driveToken(), folderId, e.fileId, sku + ".webp",
+      "image/webp", e.sha256, imageLimit, e.bytes));
     if (bytes.length < 20 || bytes.toString("ascii", 0, 4) !== "RIFF" || bytes.toString("ascii", 8, 12) !== "WEBP"
       || bytes.readUInt32LE(4) + 8 !== bytes.length) return thumbnailFailure(503);
     return new Response(new Uint8Array(bytes), { headers: {
