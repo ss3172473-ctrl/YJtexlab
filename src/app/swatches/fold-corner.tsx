@@ -9,12 +9,12 @@ type Props = {
   frontSrc: string;
   reverseSrc: string;
   label: string;
-  /** Reserves the one automatic cycle for the current detail entry. */
-  claimIntro: (sku: string) => boolean;
+  introAvailable: () => boolean;
+  markIntroSeen: () => void;
 };
 
 type IntroPhase = "idle" | "opening" | "hold" | "returning" | "complete" | "interrupted";
-const INTRO_WAIT = 240, OPEN_TIME = 1130, HOLD_TIME = 420, RETURN_TIME = 920;
+const OPEN_TIME = 460, HOLD_TIME = 420, RETURN_TIME = 650;
 
 // A key discards late image completions on colour changes without showing a stale reverse.
 export function FoldCorner(props: Props) {
@@ -22,11 +22,11 @@ export function FoldCorner(props: Props) {
 }
 export default FoldCorner;
 
-function Corner({sku, frontSrc, reverseSrc, label, claimIntro}: Props) {
+function Corner({sku, frontSrc, reverseSrc, label, introAvailable, markIntroSeen}: Props) {
   const canvas = useRef<HTMLCanvasElement>(null), host = useRef<HTMLDivElement>(null);
   const info = useRef({w: 0, h: 0, paper: "#fff"});
   const images = useRef<[HTMLImageElement, HTMLImageElement] | null>(null);
-  const amount = useRef(0), introFrame = useRef(0), introTimer = useRef(0);
+  const amount = useRef(0), introFrame = useRef(0);
   const intro = useRef<IntroPhase>("idle");
   // Read manual intent synchronously if visibility changes in the same event batch.
   const intent = useRef({hover: false, pin: false});
@@ -48,9 +48,8 @@ function Corner({sku, frontSrc, reverseSrc, label, claimIntro}: Props) {
     if (host.current) host.current.dataset.foldPhase = next;
   }, []);
   const stopIntro = useCallback(() => {
-    window.clearTimeout(introTimer.current);
     window.cancelAnimationFrame(introFrame.current);
-    introTimer.current = introFrame.current = 0;
+    introFrame.current = 0;
     if (intro.current === "opening" || intro.current === "hold" || intro.current === "returning") {
       phase("interrupted");
       return true;
@@ -58,9 +57,9 @@ function Corner({sku, frontSrc, reverseSrc, label, claimIntro}: Props) {
     return false;
   }, [phase]);
   const interruptForUser = useCallback((close: boolean) => {
-    claimIntro(sku); // An intentional input wins even during the initial delay.
+    markIntroSeen(); // Manual interaction owns the reverse from now on.
     if (stopIntro() && close) paint(intent.current.hover || intent.current.pin ? 1 : 0);
-  }, [claimIntro, sku, stopIntro, paint]);
+  }, [markIntroSeen, stopIntro, paint]);
   const hoverAt = (v: boolean) => { intent.current.hover = v; setHover(v); };
   const pinAt = (v: boolean) => { intent.current.pin = v; setPin(v); };
 
@@ -120,27 +119,33 @@ function Corner({sku, frontSrc, reverseSrc, label, claimIntro}: Props) {
   }, [paint, stopIntro]);
 
   useEffect(() => {
-    if (!ready || !visible || reduceMotion || open || intro.current !== "idle") return;
-    introTimer.current = window.setTimeout(() => {
-      introTimer.current = 0;
-      if (!claimIntro(sku)) return;
-      const birth = performance.now();
-      phase("opening");
-      const tick = (now: number) => {
-        const t = Math.max(0, now - birth);
-        if (t < OPEN_TIME) paint(foldEase(t / OPEN_TIME));
-        else if (t < OPEN_TIME + HOLD_TIME) {
-          if (intro.current !== "hold") { phase("hold"); paint(1); }
-        } else if (t < OPEN_TIME + HOLD_TIME + RETURN_TIME) {
-          if (intro.current !== "returning") phase("returning");
-          paint(1 - foldEase((t - OPEN_TIME - HOLD_TIME) / RETURN_TIME));
-        } else { phase("complete"); paint(0); introFrame.current = 0; return; }
-        introFrame.current = window.requestAnimationFrame(tick);
-      };
+    if (!ready || !visible || reduceMotion || open || intro.current !== "idle" || !introAvailable()) return;
+    const birth = performance.now();
+    phase("opening");
+    const tick = (now: number) => {
+      const t = Math.max(0, now - birth);
+      if (t < OPEN_TIME) paint(foldEase(t / OPEN_TIME));
+      else if (t < OPEN_TIME + HOLD_TIME) {
+        if (intro.current !== "hold") {
+          paint(1);
+          phase("hold");
+        } else {
+          // Only spend the single intro after the full rear survived a paint.
+          markIntroSeen();
+        }
+      } else if (t < OPEN_TIME + HOLD_TIME + RETURN_TIME) {
+        if (intro.current !== "returning") phase("returning");
+        paint(1 - foldEase((t - OPEN_TIME - HOLD_TIME) / RETURN_TIME));
+      } else { phase("complete"); paint(0); introFrame.current = 0; return; }
       introFrame.current = window.requestAnimationFrame(tick);
-    }, INTRO_WAIT);
-    return () => window.clearTimeout(introTimer.current);
-  }, [ready, visible, reduceMotion, open, claimIntro, sku, phase, paint]);
+    };
+    introFrame.current = window.requestAnimationFrame(tick);
+    return () => {
+      window.cancelAnimationFrame(introFrame.current);
+      introFrame.current = 0;
+      if (intro.current === "opening" || intro.current === "hold" || intro.current === "returning") phase("idle");
+    };
+  }, [ready, visible, reduceMotion, open, introAvailable, markIntroSeen, phase, paint]);
 
   useEffect(() => {
     if (!ready) return;

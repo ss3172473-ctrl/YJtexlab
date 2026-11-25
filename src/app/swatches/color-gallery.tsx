@@ -37,15 +37,11 @@ export default function ColorGallery({
   const stage = useRef<HTMLDivElement>(null);
   const resizeCorrecting = useRef(false);
   const currentSku = variants[active]?.sku;
-  const intro = useRef({ sku: currentSku, consumed: false });
-  const claimIntro = useCallback((sku: string) => {
-    if (intro.current.consumed || intro.current.sku !== sku) return false;
-    intro.current.consumed = true;
-    return true;
-  }, []);
-  useEffect(() => {
-    if (currentSku !== intro.current.sku) intro.current.consumed = true;
-  }, [currentSku]);
+  // Per detail visit, not per colour: navigating before a meaningful reveal
+  // transfers the unspent intro to the newly centered, authenticated pair.
+  const introSeen = useRef(false);
+  const introAvailable = useCallback(() => !introSeen.current, []);
+  const markIntroSeen = useCallback(() => { introSeen.current = true; }, []);
   const selected = useRef(active);
   const [center, setCenter] = useState(active + Number(canRotate));
   const slots = canRotate ? [variants[count - 1], ...variants, variants[0]] : variants;
@@ -159,7 +155,7 @@ export default function ColorGallery({
               {Math.abs(relative) <= 2 && variant.image && <Image src={variant.image} alt={direction === "center" ? colorLabel(variant) : ""}
                 fill unoptimized loading="eager" fetchPriority={relative === 0 ? "high" : "low"} decoding="async" draggable={false} referrerPolicy="no-referrer" />}
               {direction === "center" && variant.sku === currentSku && validFoldSku(variant.sku) && variant.image && variant.reverse &&
-                <FoldCorner sku={variant.sku} frontSrc={variant.image} reverseSrc={variant.reverse} claimIntro={claimIntro}
+                <FoldCorner sku={variant.sku} frontSrc={variant.image} reverseSrc={variant.reverse} introAvailable={introAvailable} markIntroSeen={markIntroSeen}
                   label={language === "ko" ? `${variant.sku} 원단 뒷면 보기` : language === "zh-CN" ? `查看 ${variant.sku} 面料背面` : `Show reverse of ${variant.sku}`} />}
               <span className={styles.edge} style={{ "--panel-color": chip(variant.color) } as CSSProperties} aria-hidden="true" />
             </SwiperSlide>;
