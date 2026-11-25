@@ -32,38 +32,21 @@ const facilityFilms = [
 
 function FacilityFilm({id,label,reduced,selected,anotherSelected,onSelect,font}:{id:string;label:string;reduced:boolean;selected:boolean;anotherSelected:boolean;onSelect:()=>void;font:string}) {
   const preview = useRef<HTMLVideoElement>(null);
-  const stills = useRef<HTMLSpanElement>(null);
-  const mill = id==="daegu-mill";
-  const [millCover,setMillCover] = useState<1|6>(1);
-  useEffect(()=>{
-    const target=stills.current;
-    if(!mill||!target||reduced||selected||anotherSelected)return;
-    let visible=false;
-    let timer=0;
-    const pause=()=>window.clearInterval(timer);
-    const sync=()=>{
-      pause();
-      if (visible&&!document.hidden) timer=window.setInterval(()=>setMillCover(i=>i===1?6:1),3100);
-    };
-    const observer=new IntersectionObserver(([entry])=>{
-      visible=entry.isIntersecting&&entry.intersectionRatio>=.5;
-      sync();
-    },{threshold:[.5]});
-    setMillCover(1);
-    observer.observe(target);
-    document.addEventListener("visibilitychange",sync);
-    return()=>{observer.disconnect();pause();document.removeEventListener("visibilitychange",sync);};
-  },[mill,reduced,selected,anotherSelected]);
+  const poster = id === "daegu-mill" ? "/films/mill-cover-1.webp" : `/films/${id}.webp`;
   const full = useRef<HTMLVideoElement>(null);
   const [entered,setEntered] = useState(false);
   useEffect(() => {
     const video=preview.current;
-    if (!video || reduced || selected || anotherSelected) return;
+    if (!video || reduced) return;
+    if (selected || anotherSelected) {
+      if (video.readyState > 0) video.currentTime = 0;
+      return;
+    }
     let visible = false;
     const sync=()=>{
       if(visible&&!document.hidden){
-        setEntered(true);
-        if(video.getAttribute("src")) void video.play().catch(()=>{});
+        if (entered) void video.play().catch(()=>{});
+        else setEntered(true);
       } else video.pause();
     };
     const observer=new IntersectionObserver(([entry])=>{
@@ -73,7 +56,7 @@ function FacilityFilm({id,label,reduced,selected,anotherSelected,onSelect,font}:
     observer.observe(video);
     document.addEventListener("visibilitychange",sync);
     return ()=>{observer.disconnect();document.removeEventListener("visibilitychange",sync); video.pause();};
-  },[reduced,selected,anotherSelected]);
+  },[entered,reduced,selected,anotherSelected]);
   useEffect(()=>{
     const player=full.current;
     if(!player||selected||!player.getAttribute("src"))return;
@@ -90,17 +73,12 @@ function FacilityFilm({id,label,reduced,selected,anotherSelected,onSelect,font}:
       }
       onSelect();
     }}>
-      {mill ? <span className={styles.millCovers} data-mill-cover={reduced ? 1 : millCover} ref={stills} aria-hidden="true">
-        {/* eslint-disable @next/next/no-img-element */}
-        <img src="/films/mill-cover-1.webp" alt="" />
-        {!reduced && <img src="/films/mill-cover-6.webp" alt="" />}
-        {/* eslint-enable @next/next/no-img-element */}
-      </span> : <video ref={preview} aria-hidden="true" poster={`/films/${id}.webp`}
-        src={entered&&!reduced?`/films/${id}-teaser.mp4`:undefined} preload="none" muted loop autoPlay={entered&&!reduced&&!selected&&!anotherSelected} playsInline />}
+      <video ref={preview} aria-hidden="true" poster={poster}
+        src={entered&&!reduced?`/films/${id}-teaser.mp4`:undefined} preload="none" muted loop playsInline />
       <span className={`${styles.railText} ${font}`}>{label}</span>
     </button>
     <video className={styles.fullFilm} ref={full} hidden={!selected} controls playsInline preload="none"
-      aria-label={label} poster={selected?mill?"/films/mill-cover-1.webp":`/films/${id}.webp`:undefined}/>
+      aria-label={label} poster={selected ? poster : undefined}/>
   </div>;
 }
 
@@ -226,6 +204,7 @@ export default function HomeFolderHub({
   folderVariant?: FolderVariant;
 }) {
   const rootRef = useRef<HTMLElement | null>(null);
+  const filmGridRef = useRef<HTMLDivElement | null>(null);
   const railDockRef = useRef<HTMLDivElement | null>(null);
   const trustedTriggerRef = useRef<HTMLButtonElement | null>(null);
   const burstRef = useRef<HTMLDivElement | null>(null);
@@ -257,6 +236,16 @@ export default function HomeFolderHub({
     const timeout = window.setTimeout(() => setFilmsVisible(true), delay);
     return () => window.clearTimeout(timeout);
   }, [canShowFilms, reducedMotion]);
+  useEffect(() => {
+    if (!selectedFilm) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element) || filmGridRef.current?.contains(target)) return;
+      setSelectedFilm(null);
+    };
+    document.addEventListener("click", closeOnOutsideClick, true);
+    return () => document.removeEventListener("click", closeOnOutsideClick, true);
+  }, [selectedFilm]);
   const activeModalItem =
     activeItem?.presentation === "modal" ? activeItem : null;
   const activeInlineItem =
@@ -634,7 +623,7 @@ export default function HomeFolderHub({
         </div>
         <div className={styles.filmReveal} data-films-visible={filmsVisible ? "true" : undefined}>
           <div className={styles.filmRevealClip}>
-            {filmsVisible && <LayoutGroup><div className={styles.filmGrid} data-film-expanded={selectedFilm || undefined} aria-label="Facility films" onKeyDown={event=>{
+            {filmsVisible && <LayoutGroup><div ref={filmGridRef} className={styles.filmGrid} data-film-expanded={selectedFilm || undefined} aria-label="Facility films" onKeyDown={event=>{
               if(event.key==="Escape"&&selectedFilm){event.preventDefault();event.stopPropagation();setSelectedFilm(null);}
             }}>
               {facilityFilms.map(({id,label},i) => {
@@ -714,12 +703,12 @@ export default function HomeFolderHub({
       {activeInlineItem || activeModalItem || (isMobileViewport && mobileRailOpen) ? (
         <>
           <button
-            aria-label={activeModalItem ? "Close panel" : activeInlineItem ? "Close clients focus" : "Close menu"}
+            aria-label={selectedFilm ? "Close expanded film" : activeModalItem ? "Close panel" : activeInlineItem ? "Close clients focus" : "Close menu"}
             className={styles.overlayDismiss}
-            onClick={dismissHubOverlay}
+            onClick={() => selectedFilm ? setSelectedFilm(null) : dismissHubOverlay()}
             onPointerDown={(event) => {
               event.preventDefault();
-              dismissIntentAtRef.current = performance.now();
+              if (!selectedFilm) dismissIntentAtRef.current = performance.now();
             }}
             type="button"
           />
