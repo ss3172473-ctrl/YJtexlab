@@ -1,0 +1,35 @@
+begin;
+set local role service_role;
+do $$
+declare b jsonb;r jsonb;first_received text;observed jsonb;
+begin
+ assert not has_table_privilege('anon','crm_role_health_receipts','SELECT');
+ assert not has_table_privilege('service_role','crm_role_health_config','UPDATE');
+ assert not has_table_privilege('service_role','crm_role_health_receipts','UPDATE');
+ assert not has_function_privilege('authenticated','crm_role_health_record(jsonb)','EXECUTE');
+ observed=public.crm_role_health_read();
+ assert observed->'roles'->'collection'->'configuration'->>'state'='unknown';
+ assert observed->'roles'->'send'->'configuration'->>'state'='configured';
+ assert observed->'roles'->'send'->'configuration'->'schedule'->>'startTime'='10:00';
+ assert not (observed->'roles'->'send'->'configuration'->>'producerConnected')::boolean;
+ assert observed->'roles'->'crm'->'configuration'->>'state'='not_configured';
+ assert observed->'roles'->'check'->'latestTerminal'='null'::jsonb;
+ b='{"role":"send","runId":"fixture:20261126","phase":"started","emittedAt":null,"counts":{},"evidence":null,"codeSha":null}';
+ r=public.crm_role_health_record(b||'{"phase":"failed"}');assert r->>'error'='health_start_required';
+ r=public.crm_role_health_record(b);first_received=r->>'receivedAt';assert first_received is not null;
+ r=public.crm_role_health_record(b);assert (r->>'duplicate')::boolean;assert r->>'receivedAt'=first_received;
+ r=public.crm_role_health_record(b||'{"counts":{"accepted":1}}');assert r->>'error'='health_receipt_conflict';
+ r=public.crm_role_health_record(b||'{"phase":"completed"}');assert r->>'error'='evidence_required';
+ r=public.crm_role_health_record(b||'{"phase":"failed","counts":{"customerEmail":123}}');assert r->>'error'='invalid_count';
+ r=public.crm_role_health_record(b||'{"phase":"failed","evidence":{"kind":"sender_day","ref":"buyer@example.com"}}');assert r->>'error'='invalid_evidence';
+ b=b||'{"phase":"shortfall","counts":{"accepted":30,"confirmedBounces":1,"netAccepted":29},"evidence":{"kind":"sender_day","ref":"2026-11-26"}}';
+ r=public.crm_role_health_record(b);assert r->>'phase'='shortfall';first_received=r->>'receivedAt';
+ r=public.crm_role_health_record(b);assert (r->>'duplicate')::boolean;assert r->>'receivedAt'=first_received;
+ r=public.crm_role_health_record(b||'{"phase":"completed"}');assert r->>'error'='health_receipt_conflict';
+ observed=public.crm_role_health_read();assert observed->'roles'->'send'->'latestTerminal'->>'phase'='shortfall';
+ assert (observed->'roles'->'send'->'latestTerminal'->'counts'->>'netAccepted')::integer=29;
+ assert not (observed ? 'healthy');assert observed->'roles'->'crm'->'latestTerminal'='null'::jsonb;
+ assert not (observed->'roles'->'send'->'configuration'->>'producerConnected')::boolean;
+ assert (select count(*)=2 from public.crm_role_health_receipts);
+end $$;
+rollback;
