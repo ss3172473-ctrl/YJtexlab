@@ -42,8 +42,13 @@ grant all on public.crm_mail_sync,public.crm_inbound_messages to service_role;
 create function public.crm_inbox_state() returns jsonb language sql stable security invoker set search_path='' as $$
  select coalesce((select jsonb_build_object('mailbox',mailbox,'historyId',history_id,'leaseExpiresAt',lease_expires_at,'lastCompletedAt',last_completed_at) from public.crm_mail_sync where mailbox='hello@yjtexlab.com'),jsonb_build_object('mailbox','hello@yjtexlab.com','historyId',null,'leaseExpiresAt',null,'lastCompletedAt',null))
 $$;
+-- Includes unfinished operations so a Gmail send cannot disappear between
+-- inventory discovery and cursor advancement merely because its receipt is late.
+create function public.crm_inbox_inventory_revision() returns text language sql stable security invoker set search_path='' as $$
+ select md5(coalesce(jsonb_agg(jsonb_build_array(operation_id,state,provider_message_id,provider_thread_id,message_id,email,updated_at) order by operation_id),'[]'::jsonb)::text) from public.crm_sender_operations
+$$;
 create function public.crm_inbox_threads() returns jsonb language sql stable security invoker set search_path='' as $$
- select jsonb_build_object('mailbox','hello@yjtexlab.com','complete',true,'threads',coalesce(jsonb_agg(jsonb_build_object('providerThreadId',provider_thread_id,'providerMessageId',provider_message_id,'rfcMessageId',message_id,'recipientEmail',email) order by created_at,operation_id),'[]'::jsonb))
+ select jsonb_build_object('mailbox','hello@yjtexlab.com','complete',true,'inventoryRevision',public.crm_inbox_inventory_revision(),'threads',coalesce(jsonb_agg(jsonb_build_object('providerThreadId',provider_thread_id,'providerMessageId',provider_message_id,'rfcMessageId',message_id,'rfcMessageIdSource','submitted','providerRfcMessageId',null,'recipientEmail',email) order by created_at,operation_id),'[]'::jsonb))
  from public.crm_sender_operations where state='sent' and provider_message_id is not null
 $$;
 
@@ -70,6 +75,13 @@ begin
  elsif action='release' then
   update public.crm_mail_sync set lease_token=null,lease_run_id=null,lease_expires_at=null,updated_at=clock_at where mailbox=sync.mailbox returning * into sync;
  elsif action='checkpoint' then
+  -- SHARE conflicts with sender INSERT/UPDATE row-exclusive table locks. Hold it
+  -- through this transaction's cursor update; a concurrent accepted receipt
+  -- either appears in this revision or forces the checkpoint to fail.
+  lock table public.crm_sender_operations in share mode;
+  if coalesce(p_body->>'expectedInventoryRevision','') !~ '^[a-f0-9]{32}$'
+   or public.crm_inbox_inventory_revision()<>p_body->>'expectedInventoryRevision' then return jsonb_build_object('error','inbox_inventory_changed'); end if;
+  if exists(select 1 from public.crm_sender_operations where state<>'sent') then return jsonb_build_object('error','inbox_outreach_unresolved'); end if;
   if sync.history_id is distinct from p_body->>'expectedHistoryId' then return jsonb_build_object('error','inbox_cursor_conflict'); end if;
   if coalesce(p_body->>'historyId','') !~ '^[0-9]{1,40}$' then return jsonb_build_object('error','invalid_history_id'); end if;
   if sync.history_id is not null and (p_body->>'historyId')::numeric<sync.history_id::numeric then return jsonb_build_object('error','inbox_cursor_regression'); end if;
@@ -120,5 +132,5 @@ begin
  end if;
  return jsonb_build_object('mailbox',sync.mailbox,'historyId',sync.history_id,'leaseToken',sync.lease_token,'leaseExpiresAt',sync.lease_expires_at,'lastCompletedAt',sync.last_completed_at);
 end $$;
-revoke all on function public.crm_inbox_state(),public.crm_inbox_threads(),public.crm_inbox_transition(jsonb) from public,anon,authenticated;
-grant execute on function public.crm_inbox_state(),public.crm_inbox_threads(),public.crm_inbox_transition(jsonb) to service_role;
+revoke all on function public.crm_inbox_state(),public.crm_inbox_threads(),public.crm_inbox_inventory_revision(),public.crm_inbox_transition(jsonb) from public,anon,authenticated;
+grant execute on function public.crm_inbox_state(),public.crm_inbox_threads(),public.crm_inbox_inventory_revision(),public.crm_inbox_transition(jsonb) to service_role;

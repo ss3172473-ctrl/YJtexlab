@@ -20,8 +20,9 @@ test('inbox accepts only dedicated token with configured Supabase mode',()=>{
  assert.throws(()=>load({CRM_MACHINE_TOKEN:key}).requireInbox(new Headers({authorization:`Bearer ${key}`})),e=>e.status===503);
 });
 test('history cursor is an exact decimal string and no client identity or price fields accepted',()=>{
- const module=load();const body={action:'checkpoint',leaseToken:token,expectedHistoryId:null,historyId:'90071992547409931'};
+ const module=load();const body={action:'checkpoint',leaseToken:token,expectedHistoryId:null,historyId:'90071992547409931',expectedInventoryRevision:'a'.repeat(32)};
  assert.equal(module.inboxInput(body).historyId,body.historyId);
+ assert.throws(()=>module.inboxInput({...body,expectedInventoryRevision:undefined}),e=>e.status===400);
  assert.throws(()=>module.inboxInput({...body,historyId:90071992547409930}),e=>e.status===400);
  assert.throws(()=>module.inboxInput({action:'ingest',leaseToken:token,messages:[{...fixture(),companyId:'forced'}]}),e=>e.status===400);
  assert.throws(()=>module.inboxInput({action:'price_release',leaseToken:token}),e=>e.status===400);

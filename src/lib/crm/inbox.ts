@@ -57,7 +57,7 @@ export function inboxMessage(value: unknown) {
 export function inboxInput(value: unknown) {
   const body=object(value);
   const action=String(body.action);
-  const fields: Record<string,string[]>={acquire:['action','runId'],renew:['action','leaseToken'],release:['action','leaseToken'],ingest:['action','leaseToken','messages'],checkpoint:['action','leaseToken','expectedHistoryId','historyId']};
+  const fields: Record<string,string[]>={acquire:['action','runId'],renew:['action','leaseToken'],release:['action','leaseToken'],ingest:['action','leaseToken','messages'],checkpoint:['action','leaseToken','expectedHistoryId','historyId','expectedInventoryRevision']};
   if(!fields[action]) throw new CrmError(400,'Invalid inbox action.');
   only(body,fields[action]);
   if(action==='acquire') return {action,runId:string(body.runId,'runId',128,/^[A-Za-z0-9][A-Za-z0-9_.:-]{7,127}$/)};
@@ -66,7 +66,7 @@ export function inboxInput(value: unknown) {
     if(!Array.isArray(body.messages) || body.messages.length<1 || body.messages.length>20) throw new CrmError(400,'Expected1–20 inbox messages.');
     return {action,leaseToken,messages:body.messages.map(inboxMessage)};
   }
-  if(action==='checkpoint') return {action,leaseToken,expectedHistoryId:body.expectedHistoryId===null?null:string(body.expectedHistoryId,'expectedHistoryId',40,history),historyId:string(body.historyId,'historyId',40,history)};
+  if(action==='checkpoint') return {action,leaseToken,expectedInventoryRevision:string(body.expectedInventoryRevision,'expectedInventoryRevision',32,/^[a-f0-9]{32}$/),expectedHistoryId:body.expectedHistoryId===null?null:string(body.expectedHistoryId,'expectedHistoryId',40,history),historyId:string(body.historyId,'historyId',40,history)};
   return {action,leaseToken};
 }
 export async function inboxBody(request: NextRequest) {
