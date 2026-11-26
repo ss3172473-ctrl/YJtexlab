@@ -24,13 +24,13 @@ export function emailInput(value: unknown) {
   return value.trim().toLowerCase();
 }
 type OutreachState = 'sent' | 'bounced' | 'pending' | 'unknown';
-type DirectoryRow = Row & { outreach_state: OutreachState; code_issued: boolean };
+type DirectoryRow = Row & { outreach_state: OutreachState; code_issued: boolean; has_verified_reply: boolean };
 export async function listCompanies(query = '', offset = 0, status = 'all') {
-  if (!['all','sent','bounced','pending','unknown'].includes(status)) throw new CrmError(400, '지원하지 않는 영업 상태입니다.');
+  if (!['all','sent','bounced','pending','unknown','replied'].includes(status)) throw new CrmError(400, '지원하지 않는 영업 상태입니다.');
   const result = await rpc<{ total: number; matched: number; companies: DirectoryRow[] }>('crm_company_directory',
     { p_query: query.trim().slice(0,200), p_state: status, p_offset: offset, p_limit: 100 });
-  return { total: result.total, matched: result.matched, replyTracking: 'not_connected',
-    companies: result.companies.map(row => ({ ...companyDto(row), codeIssued: row.code_issued, outreachState: row.outreach_state })),
+  return { total: result.total, matched: result.matched, replyTracking: 'verified_only',
+    companies: result.companies.map(row => ({ ...companyDto(row), codeIssued: row.code_issued, outreachState: row.outreach_state, hasVerifiedReply: row.has_verified_reply === true })),
     nextOffset: offset + 100 < result.matched ? offset + 100 : null };
 }
 export async function getCompany(id: string) {
