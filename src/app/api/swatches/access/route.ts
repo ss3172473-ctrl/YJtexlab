@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { customerWelcomeName } from "@/app/swatches/welcome-name";
 import { customerCode } from "@/app/swatches/customer-code";
 import { leadStream } from "../first-row/lead";
 import { rowImages } from "../first-row/plan";
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
     const token = crmFingerprint ? createFingerprintSession(crmFingerprint) : createSession(code);
     await logAccess(matches[0], campaign);
     const key = visitKey(token);
-    const welcomeName = matches[0].name.slice(0, 100);
+    const welcomeName = customerWelcomeName(matches[0].name);
     const images = request.headers.get("accept") === "application/x-swatch-cover"
       ? await rowImages(request.nextUrl.searchParams).catch(() => []) : [];
     const response = images.length

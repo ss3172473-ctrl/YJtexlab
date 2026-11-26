@@ -29,6 +29,7 @@ function load(file, dependencies = {}, testFetch = fetch, testClock = performanc
     exports,
     require: (name) => Object.hasOwn(dependencies, name)
       ? dependencies[name]
+      : name === "@/app/swatches/welcome-name" ? load("src/app/swatches/welcome-name.ts")
       : /^(?:\.\/|\.\.\/)google-credentials$/.test(name) ? googleCredentials : require(name),
     process: { env, cwd: process.cwd },
     performance: testClock,
