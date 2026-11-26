@@ -20,7 +20,7 @@ jobs:
   deploy:
     if: github.repository == 'ss3172473-ctrl/YJtexlab' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 26
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
@@ -37,6 +37,8 @@ jobs:
         shell: bash
         env:
           VERCEL_TOKEN: ${{ secrets.YJ_VERCEL_DEPLOY_TOKEN }}
+          AUTO_RELEASE: ${{ vars.YJ_VERCEL_AUTO_PRODUCTION }}
+          GH_TOKEN: ${{ github.token }}
           REVIEWED_PREVIEW: ${{ inputs.promote_reviewed_preview }}
           PROJECT_ID: prj_OsXUaLMXMpD9syk6enT3ON0Zvumi
           PROJECT_NAME: yjtexlab
@@ -53,6 +55,55 @@ jobs:
           before=$(project)
           jq -e --arg id "$PROJECT_ID" --arg name "$PROJECT_NAME" '.id==$id and .name==$name and (.ssoProtection.deploymentType == "preview" or .ssoProtection.deploymentType == "prod_deployment_urls_and_all_previews" or .ssoProtection.deploymentType == "all_except_custom_domains")' <<<"$before" >/dev/null
           prior=$(jq -er '.targets.production.id' <<<"$before")
+          check_status() {
+            local path=$1 expected=$2 actual
+            actual=$(curl -sS --max-time 12 -o /dev/null -w '%{http_code}' "$PROD_URL$path") || return 1
+            printf '%s expected=%s received=%s\n' "$path" "$expected" "$actual"
+            [[ "$actual" = "$expected" ]]
+          }
+          smoke() {
+            check_status / 200 && check_status /products 200 && check_status /swatches 200 && check_status /contact 200 && check_status /admin/crm 200 && check_status /api/swatches/catalog 401 && check_status /api/crm/companies 401 && check_status /api/crm/machine/health 401
+          }
+          current_main() {
+            printf 'Authorization: Bearer %s\n' "$GH_TOKEN" |
+              curl -fsS --max-time 12 -H @- "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/git/ref/heads/main" |
+              jq -er '.object.sha'
+          }
+          promote_and_wait() {
+            local preview=$1 previous=$2 receipt candidate production current object
+            receipt="$RUNNER_TEMP/yj-promote.log"
+            if ! "$v" promote "$preview" --scope hello-52989247 --yes --token "$VERCEL_TOKEN" >"$receipt" 2>&1; then
+              cat "$receipt" >&2
+              echo "Promotion result must be reconciled in Vercel; do not blindly rerun." >&2
+              return 1
+            fi
+            cat "$receipt" >&2
+            candidate=$(sed -nE "s#.*Successfully created new deployment .*https://vercel\.com/hello-52989247/$PROJECT_NAME/([A-Za-z0-9]+).*#dpl_\1#p" "$receipt" | sort -u)
+            [[ "$candidate" =~ ^dpl_[A-Za-z0-9]+$ && "$candidate" != "$previous" ]] || {
+              echo "Unable to identify a unique production deployment from the promotion receipt." >&2
+              return 1
+            }
+            for attempt in $(seq 1 75); do
+              object=$(dep "$candidate") || { sleep 10; continue; }
+              if jq -e '.readyState=="ERROR" or .readyState=="CANCELED"' <<<"$object" >/dev/null; then
+                echo "Production rebuild failed or was canceled: $candidate" >&2
+                return 1
+              fi
+              current=$(project | jq -r '.targets.production.id // ""') || { sleep 10; continue; }
+              if [[ "$current" == "$candidate" ]] &&
+                 jq -e --arg id "$PROJECT_ID" '.projectId==$id and .target=="production" and .readyState=="READY" and .aliasAssigned==true' <<<"$object" >/dev/null; then
+                printf '%s\n' "$candidate"
+                return 0
+              fi
+              if [[ -n "$current" && "$current" != "$previous" && "$current" != "$candidate" ]]; then
+                echo "Production moved to another deployment; stop without retry." >&2
+                return 1
+              fi
+              sleep 10
+            done
+            echo "Production rebuild or its domain assignment is not proven Ready: $candidate" >&2
+            return 1
+          }
           cd "$RUNNER_TEMP/yj-src"
           mkdir -p .vercel
           printf '{"orgId":"%s","projectId":"%s","projectName":"%s"}\n' "$TEAM_ID" "$PROJECT_ID" "$PROJECT_NAME" > .vercel/project.json
@@ -64,13 +115,37 @@ jobs:
             curl -sS --max-time 12 -D "$RUNNER_TEMP/yj-headers" -o /dev/null "$url/"
             grep -Eiq '^location: https://vercel\.com/sso-api([?]|$)' "$RUNNER_TEMP/yj-headers"
             test "$(project | jq -er '.targets.production.id')" = "$prior"
+            if [[ "$GITHUB_EVENT_NAME" == push && "$AUTO_RELEASE" == true ]]; then
+              test "$(current_main)" = "$GITHUB_SHA"
+              smoke
+              test "$(project | jq -er '.targets.production.id')" = "$prior"
+              preview_id=$(jq -er '.id' <<<"$result")
+              [[ "$preview_id" =~ ^dpl_[a-zA-Z0-9]+$ ]]
+              echo "Prior production deployment for rollback: $prior"
+              active=$(promote_and_wait "$preview_id" "$prior")
+              info=$(dep "$active")
+              jq -e --arg id "$PROJECT_ID" '.projectId==$id and .readyState=="READY" and .target=="production"' <<<"$info" >/dev/null
+              if ! smoke; then
+                for i in 1 2; do sleep 4; if smoke; then exit 0; fi; done
+                if [[ "$(project | jq -er '.targets.production.id')" = "$active" ]] &&
+                   [[ "$(current_main)" = "$GITHUB_SHA" ]]; then
+                  "$v" rollback "$prior" --scope hello-52989247 --yes --token "$VERCEL_TOKEN"
+                  test "$(project | jq -er '.targets.production.id')" = "$prior"
+                  smoke || true
+                else
+                  echo "Cannot prove ownership of the promoted deployment; leave it untouched for manual review."
+                fi
+                exit 1
+              fi
+              echo "Production promotion verified: $active"
+            fi
           else
             test "$GITHUB_EVENT_NAME" = workflow_dispatch
             [[ "$REVIEWED_PREVIEW" =~ ^dpl_[a-zA-Z0-9]+$ ]]
             result=$(dep "$REVIEWED_PREVIEW")
             jq -e --arg id "$PROJECT_ID" --arg sha "$GITHUB_SHA" '.projectId==$id and .meta.yjSourceSha==$sha and .readyState=="READY" and .target!="production"' <<<"$result" >/dev/null
             echo "Prior production deployment: $prior"
-            "$v" promote "$REVIEWED_PREVIEW" --scope hello-52989247 --yes --token "$VERCEL_TOKEN"
-            curl -fsS --max-time 20 -o /dev/null "$PROD_URL/"
-            project | jq -e '{production:.targets.production.id,state:.targets.production.readyState} | select(.production and .state=="READY")'
+            active=$(promote_and_wait "$REVIEWED_PREVIEW" "$prior")
+            smoke
+            echo "Verified production deployment: $active"
           fi
