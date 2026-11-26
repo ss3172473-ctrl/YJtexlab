@@ -40,3 +40,7 @@ Feature threads must not run production deploys directly. The integration thread
 - Check `yjtexlab.vercel.app`
 - Smoke test `/`, `/about`, `/contact`, `/milestones`, `/product`, `/products`, `/privacy`, `/terms`
 - If deploy input verification fails, do not deploy until the forbidden root artifacts are removed
+
+## CRM 단계적 전환
+
+CRM 코드 배포와 실제 데이터 원본 전환은 분리합니다. `CRM_BACKEND=supabase`는 회사 계정 확인, 백업·이관, 실접속·가격·폐기 검증이 모두 끝난 뒤 설정합니다. 변수 미설정 상태는 기존 Sheets 경로를 유지하며 Supabase 선택 이후 장애 시 Sheets로 자동 fallback하지 않습니다. 상세: [CRM_BACKEND.md](CRM_BACKEND.md).

@@ -45,3 +45,11 @@
 - Experimental or legacy product work must not remain in the deployable tree unless it is actively used by `/products`.
 - Homepage media-art must remain home-owned and must not be swapped with a product preview component.
 - `src/components/home/Categories.tsx` and `src/components/home/FabricMotionLab.tsx` are protected baseline files unless the user explicitly requests a Categories change.
+
+## 고객 CRM
+
+- `src/app/admin/crm`: 회사 관리자 로그인과 업체 관리 UI.
+- `src/app/api/crm`: 인증·업체 관리·코드 관리 API.
+- `src/lib/crm`: 서버 전용 DB 연결·권한·코드 처리.
+- `supabase/migrations`: 고객 데이터 스키마 및 접근 제약.
+- `docs/CRM_BACKEND.md`: 이관·검증·운영 절차.

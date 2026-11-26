@@ -24,3 +24,7 @@ This structure was chosen after cross-validating the production baseline and off
 - https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap
 - https://www.w3.org/WAI/ARIA/apg/practices/landmark-regions/
 - https://vercel.com/docs/monorepos
+
+## CRM 결정 · 2026-11-26
+
+사용자 승인: GitHub 기존 계정 유지, Supabase 회사 계정 사용, 발급 즉시 사용 가능한 입장 코드, 관리자 화면, Dots 인계. 시트의 별도 활성 칸 때문에 발급된 코드가 접속 불가한 상태를 제거합니다. 서버에서 업체 ID와 가격 권한을 확인하며 상품·재고 원본 이전은 이번 범위에 포함하지 않습니다.

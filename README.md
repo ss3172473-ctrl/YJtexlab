@@ -66,3 +66,7 @@ npm run deploy:production
 - [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)
 - [`docs/RESEARCH_NOTES.md`](./docs/RESEARCH_NOTES.md)
 - [`docs/AI_HANDOFF.md`](./docs/AI_HANDOFF.md)
+
+## 고객 CRM 전환
+
+`/admin/crm`은 업체·연락처·입장 코드·가격 공개 권한을 관리하는 전용 화면입니다. 기존 `/swatches/admin` 디자인 편집기는 별도로 유지합니다. 전환 절차와 검증 상태는 [CRM 운영 문서](docs/CRM_BACKEND.md)를 확인하세요.

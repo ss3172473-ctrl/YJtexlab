@@ -35,3 +35,7 @@
 - If shell links change, update `route-matrix.ts`, regenerate `docs/baselines/home/20260326/route-matrix.json`, and update the baseline docs together.
 - If metadata or canonical URLs change, update `src/lib/seo.ts`, `public/robots.txt`, `public/sitemap.xml`, and `public/site.webmanifest` together.
 - If you touch the homepage structure, create a new `.omx/context/*.md` snapshot first.
+
+## CRM 인계 우선순위
+
+[CRM_BACKEND.md](CRM_BACKEND.md)와 영업봇 저장소 `handoff/START_HERE.md`, `handoff/CRM_CUTOVER.md`를 먼저 확인하세요. 코드 발급=접속 가능이며 발송 허가·가격 공개를 뜻하지 않습니다. 실데이터 원본은 완료 증거가 있는 cutover 기록을 기준으로 판단하고, 코드 구현만으로 Supabase 운영 전환이 끝났다고 해석하지 마세요. 기존 시트 쓰기와 DB 쓰기를 동시에 운영하지 않습니다.
