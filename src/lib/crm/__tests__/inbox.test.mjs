@@ -14,43 +14,43 @@ function load(env={},rpc=async()=>({})) {
 const fixture=()=>({providerMessageId:'message01',providerThreadId:'thread01',rfcMessageId:'<reply@example.test>',fromEmail:'buyer@example.test',toEmails:['hello@yjtexlab.com'],inReplyTo:'<original@yjtexlab.com>',references:['<original@yjtexlab.com>'],receivedAt:'2026-01-01T12:00:00Z',subject:'Details',textBody:'Please send details.',classification:'reply',classificationEvidence:'No automation headers'});
 const token='11111111-1111-4111-8111-111111111111';
 test('inbox accepts only dedicated token with configured Supabase mode',()=>{
- const key='dedicated-inbox-key-at-least-thirty-two-characters';const module=load({CRM_BACKEND:'supabase',CRM_MACHINE_TOKEN:key});
- module.requireInbox(new Headers({authorization:`Bearer ${key}`}));
- assert.throws(()=>module.requireInbox(new Headers({authorization:'Bearer collector-token'})),e=>e.status===401);
+ const key='dedicated-inbox-key-at-least-thirty-two-characters';const inbox=load({CRM_BACKEND:'supabase',CRM_MACHINE_TOKEN:key});
+ inbox.requireInbox(new Headers({authorization:`Bearer ${key}`}));
+ assert.throws(()=>inbox.requireInbox(new Headers({authorization:'Bearer collector-token'})),e=>e.status===401);
  assert.throws(()=>load({CRM_MACHINE_TOKEN:key}).requireInbox(new Headers({authorization:`Bearer ${key}`})),e=>e.status===503);
 });
 test('history cursor is an exact decimal string and no client identity or price fields accepted',()=>{
- const module=load();const body={action:'checkpoint',leaseToken:token,expectedHistoryId:null,historyId:'90071992547409931',expectedInventoryRevision:'a'.repeat(32)};
- assert.equal(module.inboxInput(body).historyId,body.historyId);
- assert.throws(()=>module.inboxInput({...body,expectedInventoryRevision:undefined}),e=>e.status===400);
- assert.throws(()=>module.inboxInput({...body,historyId:90071992547409930}),e=>e.status===400);
- assert.throws(()=>module.inboxInput({action:'ingest',leaseToken:token,messages:[{...fixture(),companyId:'forced'}]}),e=>e.status===400);
- assert.throws(()=>module.inboxInput({action:'price_release',leaseToken:token}),e=>e.status===400);
+ const inbox=load();const body={action:'checkpoint',leaseToken:token,expectedHistoryId:null,historyId:'90071992547409931',expectedInventoryRevision:'a'.repeat(32)};
+ assert.equal(inbox.inboxInput(body).historyId,body.historyId);
+ assert.throws(()=>inbox.inboxInput({...body,expectedInventoryRevision:undefined}),e=>e.status===400);
+ assert.throws(()=>inbox.inboxInput({...body,historyId:90071992547409930}),e=>e.status===400);
+ assert.throws(()=>inbox.inboxInput({action:'ingest',leaseToken:token,messages:[{...fixture(),companyId:'forced'}]}),e=>e.status===400);
+ assert.throws(()=>inbox.inboxInput({action:'price_release',leaseToken:token}),e=>e.status===400);
 });
 test('immutable message digest changes with content/classification, not recipient order',()=>{
- const module=load();const m=fixture();
- const a=module.inboxMessage({...m,toEmails:['copy@example.test','hello@yjtexlab.com']});
- const b=module.inboxMessage({...m,toEmails:['hello@yjtexlab.com','copy@example.test']});
- assert.equal(a.digest,b.digest);assert.notEqual(a.digest,module.inboxMessage({...m,textBody:'Changed'}).digest);
- assert.notEqual(module.inboxMessage(m).digest,module.inboxMessage({...m,classification:'auto_response'}).digest);
- assert.equal(module.inboxMessage({...m,rfcMessageId:null}).rfcMessageId,null);
+ const inbox=load();const m=fixture();
+ const a=inbox.inboxMessage({...m,toEmails:['copy@example.test','hello@yjtexlab.com']});
+ const b=inbox.inboxMessage({...m,toEmails:['hello@yjtexlab.com','copy@example.test']});
+ assert.equal(a.digest,b.digest);assert.notEqual(a.digest,inbox.inboxMessage({...m,textBody:'Changed'}).digest);
+ assert.notEqual(inbox.inboxMessage(m).digest,inbox.inboxMessage({...m,classification:'auto_response'}).digest);
+ assert.equal(inbox.inboxMessage({...m,rfcMessageId:null}).rfcMessageId,null);
 });
 test('inbound parser rejects outgoing, foreign mailbox, display names, bad references and oversized input',()=>{
- const module=load();
- for(const patch of [{fromEmail:'hello@yjtexlab.com'},{toEmails:['elsewhere@example.test']},{fromEmail:'Name <buyer@example.test>'},{references:['missing-angle-id']},{textBody:'x'.repeat(16001)},{classification:'execute'}])assert.throws(()=>module.inboxMessage({...fixture(),...patch}),e=>e.status===400);
- assert.throws(()=>module.inboxInput({action:'ingest',leaseToken:token,messages:Array(21).fill(fixture())}),e=>e.status===400);
+ const inbox=load();
+ for(const patch of [{fromEmail:'hello@yjtexlab.com'},{toEmails:['elsewhere@example.test']},{fromEmail:'Name <buyer@example.test>'},{references:['missing-angle-id']},{textBody:'x'.repeat(16001)},{classification:'execute'}])assert.throws(()=>inbox.inboxMessage({...fixture(),...patch}),e=>e.status===400);
+ assert.throws(()=>inbox.inboxInput({action:'ingest',leaseToken:token,messages:Array(21).fill(fixture())}),e=>e.status===400);
 });
 test('all classifications are stored as suggestions without an execution action',()=>{
- const module=load();for(const classification of ['reply','auto_response','optout','bounce','other'])assert.equal(module.inboxMessage({...fixture(),classification}).classification,classification);
+ const inbox=load();for(const classification of ['reply','auto_response','optout','bounce','other'])assert.equal(inbox.inboxMessage({...fixture(),classification}).classification,classification);
 });
 test('RPC conflicts are explicit409 and digest is generated by server',async()=>{
- let received;const module=load({},async(name,args)=>{received={name,args};return{error:'inbox_receipt_conflict'};});
- await assert.rejects(module.inboxTransition({action:'ingest',leaseToken:token,messages:[fixture()]}),e=>e.status===409);
+ let received;const inbox=load({},async(name,args)=>{received={name,args};return{error:'inbox_receipt_conflict'};});
+ await assert.rejects(inbox.inboxTransition({action:'ingest',leaseToken:token,messages:[fixture()]}),e=>e.status===409);
  assert.equal(received.name,'crm_inbox_transition');assert.match(received.args.p_body.messages[0].digest,/^[a-f0-9]{64}$/);
 });
 test('bounded JSON streaming refuses oversized bodies and always cancels reader',async()=>{
- const module=load();const good=new Request('https://example.test',{method:'POST',body:JSON.stringify({action:'acquire',runId:'run:fixture'})});
- assert.equal((await module.inboxBody(good)).runId,'run:fixture');
+ const inbox=load();const good=new Request('https://example.test',{method:'POST',body:JSON.stringify({action:'acquire',runId:'run:fixture'})});
+ assert.equal((await inbox.inboxBody(good)).runId,'run:fixture');
  const large=new Request('https://example.test',{method:'POST',body:'x'.repeat(262145)});
- await assert.rejects(module.inboxBody(large),e=>e.status===413);
+ await assert.rejects(inbox.inboxBody(large),e=>e.status===413);
 });
