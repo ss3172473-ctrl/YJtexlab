@@ -59,7 +59,7 @@
 .settingTitle { display: flex; align-items: center; gap: 9px; color: #58705b; }
 .settingTitle h3 { color: #253b2d; font-weight: 700; font-size: 14px; margin: 0 3px 0 0; }
 .setting > p { color: #7c887b; font-size: 12px; margin: 10px 0 18px; }
-.actions { display: flex; align-items: center; gap: 8px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .codeBox { padding: 18px; margin: 18px 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #f2f6ee; border: 1px solid #dae6d4; border-radius: 8px; }
 .codeBox span { display: block; font-size: 10px; color: #7a8a71; }
 .codeBox code { display: block; font-size: 24px; letter-spacing: .12em; color: #2f5036; overflow-wrap: anywhere; }
