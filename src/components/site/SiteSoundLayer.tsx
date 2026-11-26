@@ -422,10 +422,11 @@ export default function SiteSoundLayer() {
           <span id={visualizerDescriptionId} className="sr-only">
             Stop the soundtrack.
           </span>
+          {/* The bars can reset on audio changes; only the stable button receives input. */}
           <span className="pointer-events-none flex items-end gap-[4px]" aria-hidden="true">
             {levels.map((level, index) => (
               <span
-                key={index}
+                key={`${index}-${level.toFixed(2)}`}
                 className="block rounded-full transition-[height,opacity,background-color] duration-75"
                 style={{
                   width: "4px",

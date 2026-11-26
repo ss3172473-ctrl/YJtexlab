@@ -43,8 +43,12 @@ assert(soundtrackStat.size > 0, "Soundtrack asset is empty.");
 
 console.log("Site soundtrack contract is intact.");
 
-assert(soundLayerSource.includes('key={index}'), "Visualizer bars need stable keys during pointer presses.");
-assert(!soundLayerSource.includes('key={`${index}-${level.toFixed(2)}`}'), "Audio-level keys destroy pointer targets each animation frame.");
-assert(soundLayerSource.includes('className="pointer-events-none flex items-end gap-[4px]" aria-hidden="true"'), "Visual-only bars must not intercept stop clicks.");
-assert(soundLayerSource.includes('min-h-11 min-w-11'), "Stop soundtrack requires a stable 44px minimum target.");
+const stopButton = soundLayerSource.match(/<button\s[\s\S]*?<\/button>/)?.[0];
+assert(stopButton, "Missing shared soundtrack stop button.");
+const visualizer = stopButton.indexOf('className="pointer-events-none flex items-end gap-[4px]" aria-hidden="true"');
+assert(visualizer > 0, "Visual-only bars must not intercept stop clicks.");
+assert(stopButton.slice(0, visualizer).includes('min-h-11 min-w-11'), "Stop soundtrack requires a stable 44px minimum target.");
+assert(stopButton.slice(0, visualizer).includes('onClick={stopAudio}'), "Stop must be handled by the persistent button.");
+assert(!stopButton.slice(0, visualizer).includes('key='), "Animated levels must not recreate the interactive button.");
+assert(stopButton.slice(visualizer).includes('key={`${index}-${level.toFixed(2)}`}'), "Restore the original reactive motion only inside the decorative bars.");
 console.log("Soundtrack stop-target regression checks passed.");
