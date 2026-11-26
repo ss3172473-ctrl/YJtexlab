@@ -81,7 +81,7 @@ test('Session magic-link exchange requires same origin, validates token, sets bo
   class CrmError extends Error {constructor(status,message){super(message);this.status=status;}}
   let origin=true,validated=0; const calls=[];
   const response=(body,status=200)=>({body,status,cookies:{set(...args){this.value=args;}}});
-  const auth={adminEmail:'yjtexlab@gmail.com',adminCookie:'yj_crm_admin',assertOrigin(){if(!origin)throw new CrmError(403,'denied');},bodyObject:async req=>req.body,requireAdmin:async()=>({email:'yjtexlab@gmail.com'}),verifiedAdminToken:async token=>{validated++;if(token==='bad')throw new CrmError(401,'bad');},verifiedTokenLifetime:()=>123};
+  const auth={allowedAdminEmail:value=>value==='yjtexlab@gmail.com'?value:null,adminCookie:'yj_crm_admin',assertOrigin(){if(!origin)throw new CrmError(403,'denied');},bodyObject:async req=>req.body,requireAdmin:async()=>({email:'yjtexlab@gmail.com'}),verifiedAdminToken:async token=>{validated++;if(token==='bad')throw new CrmError(401,'bad');return {id:'owner',email:'yjtexlab@gmail.com'};},verifiedTokenLifetime:()=>123};
   const route=load('../../app/api/crm/session/route',{NODE_ENV:'production'},{'@/lib/crm/auth':auth,'@/lib/crm/client':{CrmError,supabase:async(...args)=>{calls.push(args);return{};}},'@/lib/crm/http':{failure:e=>response({error:e.message},e.status)},'@/app/api/swatches/session':{json:response},'@/app/api/swatches/access/attempt-guard':{accessAttemptSource:()=>'',createAccessAttemptLimiter:()=>()=>0}});
   const request={body:{accessToken:'validated-jwt'},headers:{}};
   let result=await route.PUT(request);assert.equal(result.body.authenticated,true);assert.equal(validated,1);
@@ -96,4 +96,46 @@ test('Session magic-link exchange requires same origin, validates token, sets bo
 test('PostgREST return=minimal accepts successful 201 empty bodies',async()=>{
   const client=load('client',{SUPABASE_URL:'https://fixture.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'secret',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_test'},{},async()=>new Response(null,{status:201}));
   assert.equal(await client.supabase('/rest/v1/crm_access_events',{method:'POST',headers:{Prefer:'return=minimal'},body:'{}'}),undefined);
+});
+test('Both normalized administrator emails retain their verified user identity; lookalikes rejected',async()=>{
+  class CrmError extends Error {constructor(status,message){super(message);this.status=status;}}
+  let user;
+  const auth=load('auth',{}, {'./client':{CrmError,supabase:async()=>user},'@/app/api/swatches/session':{sameOrigin:()=>true}});
+  for(const [id,email] of [['gmail-owner','yjtexlab@gmail.com'],['workspace-owner','hello@yjtexlab.com']]) {
+    user={id,email:` ${email.toUpperCase()} `,email_confirmed_at:'2026-01-01'};
+    const actual=await auth.verifiedAdminToken('header.payload.signature');
+    assert.equal(actual.id,id);assert.equal(actual.email,email);
+    assert.equal(auth.allowedAdminEmail(user.email),email);
+  }
+  for(const email of ['hello@yjtexlab.com.attacker.example','yjtexlab+other@gmail.com','yjtexlab.com@gmail.com','other@yjtexlab.com']) {
+    user={id:'bad',email,email_confirmed_at:'2026-01-01'};
+    assert.equal(auth.allowedAdminEmail(email),null);
+    await assert.rejects(auth.verifiedAdminToken('header.payload.signature'),e=>e.status===403);
+  }
+});
+test('Session requests send to selected allowlisted email and report verified account rather than fixed Gmail',async()=>{
+  class CrmError extends Error {constructor(status,message){super(message);this.status=status;}}
+  let user={id:'workspace-owner',email:'hello@yjtexlab.com',email_confirmed_at:'2026-01-01'};
+  const sends=[];
+  const response=(body,status=200)=>({body,status,cookies:{set(...args){this.value=args;}}});
+  const token=`header.${Buffer.from(JSON.stringify({exp:Math.floor(Date.now()/1000)+1000})).toString('base64url')}.signature`;
+  const client={CrmError,supabase:async(path,options)=>{
+    if(path==='/auth/v1/user')return user;
+    if(path==='/auth/v1/verify')return {access_token:token};
+    sends.push(JSON.parse(options.body));return{};
+  }};
+  const auth=load('auth',{}, {'./client':client,'@/app/api/swatches/session':{sameOrigin:()=>true}});
+  const route=load('../../app/api/crm/session/route',{}, {'@/lib/crm/auth':auth,'@/lib/crm/client':client,'@/lib/crm/http':{failure:e=>response({error:e.message},e.status)},'@/app/api/swatches/session':{json:response},'@/app/api/swatches/access/attempt-guard':{accessAttemptSource:()=>'',createAccessAttemptLimiter:()=>()=>0}});
+  const request=body=>({text:async()=>JSON.stringify(body),headers:new Headers(),cookies:{get:()=>({value:token})}});
+  for(const email of ['hello@yjtexlab.com','yjtexlab@gmail.com']) {
+    const result=await route.POST(request({email:` ${email.toUpperCase()} `}));assert.equal(result.status,200);assert.equal(sends.at(-1).email,email);assert.equal(sends.at(-1).create_user,false);
+    user={id:email,email,email_confirmed_at:'2026-01-01'};
+    assert.equal((await route.PUT(request({accessToken:token}))).body.email,email);
+    assert.equal((await route.PUT(request({email,token:'123456'}))).body.email,email);
+    assert.equal((await route.GET(request({}))).body.email,email);
+  }
+  const before=sends.length;
+  assert.equal((await route.POST(request({email:'attacker@example.com'}))).status,403);assert.equal(sends.length,before);
+  user={id:'attacker',email:'attacker@example.com',email_confirmed_at:'2026-01-01'};
+  const result=await route.PUT(request({accessToken:token}));assert.equal(result.status,403);assert.equal(result.cookies.value,undefined);
 });

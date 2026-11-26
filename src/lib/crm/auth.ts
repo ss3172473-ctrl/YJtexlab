@@ -2,7 +2,12 @@ import 'server-only';
 import type { NextRequest } from 'next/server';
 import { CrmError, supabase } from './client';
 import { sameOrigin } from '@/app/api/swatches/session';
-export const adminEmail = 'yjtexlab@gmail.com';
+export const adminEmails = ['yjtexlab@gmail.com', 'hello@yjtexlab.com'] as const;
+export function allowedAdminEmail(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const email = value.trim().toLowerCase();
+  return adminEmails.some(allowed => allowed === email) ? email : null;
+}
 export const adminCookie = 'yj_crm_admin';
 type User = { id: string; email?: string; email_confirmed_at?: string; is_anonymous?: boolean };
 export function assertOrigin(request: NextRequest) {
@@ -12,9 +17,10 @@ export async function verifiedAdminToken(token: unknown) {
   if (typeof token !== 'string' || token.length > 7000 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token))
     throw new CrmError(401, '로그인이 필요합니다.');
   const user = await supabase<User>('/auth/v1/user', {}, token);
-  if (user.email?.toLowerCase() !== adminEmail || !user.email_confirmed_at || user.is_anonymous)
+  const email = allowedAdminEmail(user.email);
+  if (!email || !user.email_confirmed_at || user.is_anonymous)
     throw new CrmError(403, '관리 권한이 없습니다.');
-  return { id: user.id, email: adminEmail };
+  return { id: user.id, email };
 }
 export async function requireAdmin(request: NextRequest) {
   return verifiedAdminToken(request.cookies.get(adminCookie)?.value);
