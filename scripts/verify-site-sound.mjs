@@ -52,3 +52,6 @@ assert(stopButton.slice(0, visualizer).includes('onClick={stopAudio}'), "Stop mu
 assert(!stopButton.slice(0, visualizer).includes('key='), "Animated levels must not recreate the interactive button.");
 assert(stopButton.slice(visualizer).includes('key={`${index}-${level.toFixed(2)}`}'), "Restore the original reactive motion only inside the decorative bars.");
 console.log("Soundtrack stop-target regression checks passed.");
+
+assert(/usePathname\(\);\s*if \(!pathname \|\| pathname === "\/admin\/crm" \|\| pathname.startsWith\("\/admin\/crm\/"\)\) \{\s*return null;\s*\}\s*return <Soundtrack \/>;/.test(soundLayerSource), "CRM must not mount the public soundtrack; non-CRM routes still use it.");
+console.log("CRM soundtrack exclusion contract passed.");

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { ArrowUpRight, Check, Copy, KeyRound, LogOut, Plus, RefreshCw, Search, ShieldCheck, Users, X } from "lucide-react";
 import styles from "./crm.module.css";
 import Link from "next/link";
+import Image from "next/image";
 import { createSessionBootstrap } from "./magic-link";
 
 type Contact = { id: string; email: string; isPrimary: boolean; suppressed: boolean };
@@ -159,7 +160,7 @@ export default function CrmAdmin() {
 
   return <main className={styles.app}>
     <header className={styles.header}>
-      <Link href="/" className={styles.brand} aria-label="YJ TexLab 홈">YJ TEXLAB<span>OPERATIONS</span></Link>
+      <Link href="/" className={styles.brand} aria-label="YJ TexLab 홈"><Image src="/brand/yjtexlab-logo.png" alt="" width={405} height={200} unoptimized className={styles.brandLogo} /><span>OPERATIONS</span></Link>
       <div className={styles.headerRight}><span className={styles.privateLabel}><ShieldCheck size={14} />관리자 전용</span>
         {session?.authenticated && <button className={styles.logout} disabled={busy} onClick={() => run(async () => { await api("/session", "DELETE"); setSession({ authenticated: false }); setCompanies([]); setSelectedId(null); setIssued(null); setCreating(false); setName(""); setEmail(""); setLinkSent(false); })}><LogOut size={15} />로그아웃</button>}
       </div>

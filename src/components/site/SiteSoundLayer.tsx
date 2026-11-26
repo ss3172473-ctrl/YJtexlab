@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Fragment_Mono } from "next/font/google";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const fragmentMono = Fragment_Mono({
   subsets: ["latin"],
@@ -55,6 +55,14 @@ function isInteractiveTarget(target: EventTarget | null) {
 }
 
 export default function SiteSoundLayer() {
+  const pathname = usePathname();
+  if (!pathname || pathname === "/admin/crm" || pathname.startsWith("/admin/crm/")) {
+    return null;
+  }
+  return <Soundtrack />;
+}
+
+function Soundtrack() {
   const searchParams = useSearchParams();
   const promptRef = useRef<HTMLSpanElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
