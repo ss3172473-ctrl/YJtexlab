@@ -9,7 +9,7 @@ import { createSessionBootstrap } from "./magic-link";
 type Contact = { id: string; email: string; isPrimary: boolean; suppressed: boolean };
 type Company = { id: string; name: string; contacts: Contact[]; codeIssued: boolean; canViewPrices: boolean; updatedAt: string };
 type Session = { authenticated: boolean; email?: string };
-const adminEmail = "yjtexlab@gmail.com";
+const adminEmails = ["yjtexlab@gmail.com", "hello@yjtexlab.com"] as const;
 const primaryEmail = (company: Company) => (company.contacts.find((contact) => contact.isPrimary) ?? company.contacts[0])?.email ?? "";
 
 class ApiError extends Error {
@@ -29,6 +29,7 @@ async function api<T>(path: string, method = "GET", body?: unknown, signal?: Abo
 export default function CrmAdmin() {
   const [session, setSession] = useState<Session | null>(null);
   const [linkSent, setLinkSent] = useState(false);
+  const [adminEmail, setAdminEmail] = useState<string>(adminEmails[0]);
   const bootstrap = useRef<ReturnType<typeof createSessionBootstrap> | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [query, setQuery] = useState("");
@@ -169,7 +170,7 @@ export default function CrmAdmin() {
       <p className={styles.muted}>회사와 입장 코드, 가격 공개 권한을<br />한곳에서 관리하세요.</p>
       {messages}
       <form onSubmit={authenticate}>
-        <label className={styles.label}>관리자 이메일<input type="email" value={adminEmail} readOnly autoComplete="username" /></label>
+        <label className={styles.label}>관리자 이메일<select value={adminEmail} onChange={(event) => { setAdminEmail(event.target.value); setLinkSent(false); setNotice(""); setError(""); }} disabled={busy} autoComplete="username">{adminEmails.map((address) => <option key={address} value={address}>{address}</option>)}</select></label>
         <button className={styles.primary} disabled={busy}>{busy ? "처리 중…" : linkSent ? "로그인 링크 다시 받기" : "이메일로 로그인 링크 받기"}<ArrowUpRight size={17} /></button>
       </form>
 
