@@ -11,11 +11,10 @@ test("welcome cannot hide or disable the authorized catalog", () => {
   assert.match(page, /finishWelcome = useCallback\(\(\) => setWelcomePreparing\(false\)/);
   assert.match(page, /if \(status !== "ready"\)/);
   assert.match(page, /: catalog && <Grid/);
-  assert.match(read("swatches.module.css"), /\.welcomeSlot \{ min-height: 96px; \}/);
   const welcome = entry.slice(entry.indexOf("export function Welcome"));
   assert.equal((welcome.match(/role="status"/g) ?? []).length, 1);
   assert.doesNotMatch(welcome, /role="dialog"|\.focus\(/);
-  assert.match(read("experience.module.css"), /prefers-reduced-motion: reduce/);
+  assert.match(welcome, /prefers-reduced-motion: reduce/);
 });
 
 test("warming timer clears on departure and unmount, including error removal", () => {
@@ -46,28 +45,23 @@ test("warming timer clears on departure and unmount, including error removal", (
 });
 
 
-test("detail hides the mounted welcome without gating its timer or catalog", () => {
-  assert.match(page, /<div className={styles.welcomeSlot} hidden={Boolean\(pattern && variant\)}>/);
-  assert.match(page, /{welcomeName !== null && <Welcome/);
+test("detail hides the company name without unmounting the warming effect", () => {
+  assert.match(page, /firstCoverReady=\{firstCoverReady\} hidden=\{Boolean\(pattern && variant\)\}/);
   const welcome = entry.slice(entry.indexOf("export function Welcome"));
   assert.match(welcome, /\[onDone, firstCoverReady\]/);
-  assert.doesNotMatch(welcome, /pattern|variant/);
-  assert.match(read("swatches.module.css"), /\.welcomeSlot\[hidden\] { display: none; }/);
+  assert.match(welcome, /className=\{experience.companyIdentity\} lang=\{language\} hidden=\{hidden\}/);
+  assert.match(read("experience.module.css"), /\.companyIdentity\[hidden\] \{ display: none; \}/);
 });
 
-test("short and mobile welcome reserves 64px and grows for full localized identity", () => {
-  for (const [file, selector] of [["swatches.module.css", "welcomeSlot"], ["experience.module.css", "welcome"]]) {
-    const css = read(file);
-    assert.ok(css.includes(`@media (max-width: 640px), (max-height: 700px) {\n  .${selector} { min-height: 64px; }`));
-    const rule = css.match(new RegExp(`\\.${selector} \\{([^}]+)`))[1];
-    assert.doesNotMatch(rule, /overflow: hidden|(?<!min-)height:|position:|visibility:|animation:/);
-  }
+test("company identity uses the masthead line without a welcome banner or full-page focus frame", () => {
   const css = read("experience.module.css");
-  const heading = css.match(/\.welcome h1 \{([^}]+)/)[1];
-  assert.match(heading, /overflow-wrap: anywhere/);
-  assert.doesNotMatch(heading, /nowrap|overflow: hidden|text-overflow/);
-  assert.match(entry, /<p>{t\("welcome"\)}<\/p>/);
-  assert.match(entry, /<h1 title={name}>{name}<\/h1>/);
+  const shell = read("swatches.module.css");
+  assert.match(css, /\.companyIdentity \{[^}]*position: absolute;[^}]*justify-content: flex-end;/s);
+  assert.match(css, /\.companyIdentity strong \{[^}]*font-weight: 700;[^}]*text-overflow: ellipsis;/s);
+  assert.match(entry, /<strong title=\{name\}>\{name\}<\/strong>/);
+  assert.doesNotMatch(page + entry + css + shell, /welcomeSlot|lockAfter/);
+  assert.match(shell, /\.shell\[tabindex="-1"\]:focus \{ outline: none; \}/);
+  assert.match(shell, /\.shell button:focus-visible, \.shell input:focus-visible, \.shell a:focus-visible/);
 });
 
 test("quick detail open and return do not restart warming, including cover-ready updates", () => {

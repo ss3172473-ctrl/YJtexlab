@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { LockKeyhole, LockKeyholeOpen } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import { customerCodeInput, customerCodeMaxLength, customerCodePattern } from "./customer-code";
 import { swatchesText, type Language } from "./language";
 import styles from "./swatches.module.css";
@@ -87,10 +87,9 @@ export function AccessGate({
   </main>;
 }
 
-export function Welcome({ name, language, onDone, firstCoverReady }: {
-  name: string; language: Language; onDone: () => void; firstCoverReady: boolean;
+export function Welcome({ name, language, onDone, firstCoverReady, hidden }: {
+  name: string; language: Language; onDone: () => void; firstCoverReady: boolean; hidden: boolean;
 }) {
-  const t = swatchesText(language);
   const startedAt = useRef<number>();
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -106,14 +105,7 @@ export function Welcome({ name, language, onDone, firstCoverReady }: {
       window.removeEventListener("pagehide", cancel);
     };
   }, [onDone, firstCoverReady]);
-  return <div className={experience.welcome} lang={language}>
-    <div role="status" aria-atomic="true">
-      <div className={experience.unlockIcon} aria-hidden="true">
-        <LockKeyhole size={31} strokeWidth={1.3} className={experience.lockBefore} />
-        <LockKeyholeOpen size={33} strokeWidth={1.3} className={experience.lockAfter} />
-      </div>
-      <p>{t("welcome")}</p>
-      {name && <h1 title={name}>{name}</h1>}
-    </div>
-  </div>;
+  return name ? <div className={experience.companyIdentity} lang={language} hidden={hidden}>
+    <div role="status" aria-atomic="true"><strong title={name}>{name}</strong></div>
+  </div> : null;
 }

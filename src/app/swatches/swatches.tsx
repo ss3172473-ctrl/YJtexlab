@@ -295,10 +295,8 @@ export default function Swatches({ enablePosters = false }: { enablePosters?: bo
 
   return <>
     <main className={styles.shell} lang={language} ref={collectionElement} tabIndex={-1}>
-    <div className={styles.welcomeSlot} hidden={Boolean(pattern && variant)}>
-      {welcomeName !== null && <Welcome name={welcomeName} language={language} onDone={finishWelcome}
-        firstCoverReady={firstCoverReady} />}
-    </div>
+    {welcomeName !== null && <Welcome name={welcomeName} language={language} onDone={finishWelcome}
+      firstCoverReady={firstCoverReady} hidden={Boolean(pattern && variant)} />}
     <div className={styles.collectionBar}>
       {pattern ? <button type="button" className={styles.textButton} onClick={() => {
         setPatternName("");
