@@ -43,7 +43,7 @@ test('Admin allows only verified fixed owner and never trusts user metadata',asy
   class CrmError extends Error {constructor(status,message){super(message);this.status=status;}}
   let user={id:'owner',email:'yjtexlab@gmail.com',email_confirmed_at:'2026-01-01'};
   const auth=load('auth',{}, {'./client':{CrmError,supabase:async()=>user},'@/app/api/swatches/session':{sameOrigin:()=>true}});
-  const request={cookies:{get:()=>({value:'jwt'})}};
+  const request={cookies:{get:()=>({value:'header.payload.signature'})}};
   assert.equal((await auth.requireAdmin(request)).id,'owner');
   user={id:'bad',email:'bad@example.com',email_confirmed_at:'2026-01-01',user_metadata:{role:'admin'}};
   await assert.rejects(auth.requireAdmin(request),e=>e.status===403);
@@ -57,4 +57,38 @@ test('Credential lookup queries only requested fingerprint and returns bound ide
   assert.equal(result.id,'company');assert.equal(result.name,'A');assert.equal(result.email,'a@example.com');assert.equal(result.code,'');assert.equal(result.canViewPrices,false);
   assert.ok(path.includes('revoked_at=is.null'));assert.ok(path.includes('code_hash=eq.'));
   results=[];assert.equal(await companies.resolveFingerprint('a'.repeat(43)),null);
+});
+
+test('Magic-link token validates owner remotely before accepting expiry; invalid, anonymous, unconfirmed tokens rejected',async()=>{
+  class CrmError extends Error {constructor(status,message){super(message);this.status=status;}}
+  let calls=0;
+  let user={id:'owner',email:'yjtexlab@gmail.com',email_confirmed_at:'2026-01-01'};
+  const auth=load('auth',{}, {'./client':{CrmError,supabase:async()=>{calls++;return user;}},'@/app/api/swatches/session':{sameOrigin:()=>true}});
+  const make=exp=>`header.${Buffer.from(JSON.stringify({exp})).toString('base64url')}.signature`;
+  const token=make(Math.floor(Date.now()/1000)+7200);
+  await auth.verifiedAdminToken(token);assert.equal(calls,1);assert.equal(auth.verifiedTokenLifetime(token),3600);
+  assert.throws(()=>auth.verifiedTokenLifetime(make(1)),e=>e.status===401);
+  assert.throws(()=>auth.verifiedTokenLifetime('header.e30.signature'),e=>e.status===401);
+  await assert.rejects(auth.verifiedAdminToken('invalid'),e=>e.status===401);assert.equal(calls,1);
+  user={id:'other',email:'attacker@example.com',email_confirmed_at:'2026-01-01',user_metadata:{role:'admin'}};
+  await assert.rejects(auth.verifiedAdminToken(token),e=>e.status===403);
+  user={id:'owner',email:'yjtexlab@gmail.com'};
+  await assert.rejects(auth.verifiedAdminToken(token),e=>e.status===403);
+  user={id:'owner',email:'yjtexlab@gmail.com',email_confirmed_at:'2026-01-01',is_anonymous:true};
+  await assert.rejects(auth.verifiedAdminToken(token),e=>e.status===403);
+});
+test('Session magic-link exchange requires same origin, validates token, sets bounded HttpOnly cookie, never returns it',async()=>{
+  class CrmError extends Error {constructor(status,message){super(message);this.status=status;}}
+  let origin=true,validated=0; const calls=[];
+  const response=(body,status=200)=>({body,status,cookies:{set(...args){this.value=args;}}});
+  const auth={adminEmail:'yjtexlab@gmail.com',adminCookie:'yj_crm_admin',assertOrigin(){if(!origin)throw new CrmError(403,'denied');},bodyObject:async req=>req.body,requireAdmin:async()=>({email:'yjtexlab@gmail.com'}),verifiedAdminToken:async token=>{validated++;if(token==='bad')throw new CrmError(401,'bad');},verifiedTokenLifetime:()=>123};
+  const route=load('../../app/api/crm/session/route',{NODE_ENV:'production'},{'@/lib/crm/auth':auth,'@/lib/crm/client':{CrmError,supabase:async(...args)=>{calls.push(args);return{};}},'@/lib/crm/http':{failure:e=>response({error:e.message},e.status)},'@/app/api/swatches/session':{json:response},'@/app/api/swatches/access/attempt-guard':{accessAttemptSource:()=>'',createAccessAttemptLimiter:()=>()=>0}});
+  const request={body:{accessToken:'validated-jwt'},headers:{}};
+  let result=await route.PUT(request);assert.equal(result.body.authenticated,true);assert.equal(validated,1);
+  assert.equal(result.cookies.value[1],'validated-jwt');assert.equal(result.cookies.value[2].httpOnly,true);assert.equal(result.cookies.value[2].maxAge,123);assert.equal(result.cookies.value[2].secure,true);
+  assert.ok(!JSON.stringify(result.body).includes('validated-jwt'));
+  origin=false;result=await route.PUT(request);assert.equal(result.status,403);assert.equal(validated,1);
+  origin=true;result=await route.PUT({body:{accessToken:'bad'},headers:{}});assert.equal(result.status,401);assert.equal(result.cookies.value,undefined);
+  await route.POST({body:{email:'yjtexlab@gmail.com'},headers:{}});
+  assert.equal(calls[0][0],'/auth/v1/otp?redirect_to=https%3A%2F%2Fyjtexlab.com%2Fadmin%2Fcrm');assert.equal(JSON.parse(calls[0][1].body).create_user,false);
 });

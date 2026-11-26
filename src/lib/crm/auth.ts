@@ -8,13 +8,27 @@ type User = { id: string; email?: string; email_confirmed_at?: string; is_anonym
 export function assertOrigin(request: NextRequest) {
   if (!sameOrigin(request)) throw new CrmError(403, '허용되지 않은 요청입니다.');
 }
-export async function requireAdmin(request: NextRequest) {
-  const token = request.cookies.get(adminCookie)?.value;
-  if (!token) throw new CrmError(401, '로그인이 필요합니다.');
+export async function verifiedAdminToken(token: unknown) {
+  if (typeof token !== 'string' || token.length > 7000 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token))
+    throw new CrmError(401, '로그인이 필요합니다.');
   const user = await supabase<User>('/auth/v1/user', {}, token);
   if (user.email?.toLowerCase() !== adminEmail || !user.email_confirmed_at || user.is_anonymous)
     throw new CrmError(403, '관리 권한이 없습니다.');
   return { id: user.id, email: adminEmail };
+}
+export async function requireAdmin(request: NextRequest) {
+  return verifiedAdminToken(request.cookies.get(adminCookie)?.value);
+}
+// Decode expiry only after /user has authenticated the same token. Identity and
+// authorization never come from unverified claims or user_metadata.
+export function verifiedTokenLifetime(token: string) {
+  try {
+    const { exp } = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
+    if (!Number.isSafeInteger(exp)) throw new Error();
+    const remaining = exp - Math.floor(Date.now() / 1000);
+    if (remaining <= 0) throw new Error();
+    return Math.min(remaining, 3600);
+  } catch { throw new CrmError(401, '로그인 링크가 만료되었습니다. 새 링크를 요청해 주세요.'); }
 }
 export async function bodyObject(request: NextRequest) {
   if (Number(request.headers.get('content-length') || 0) > 10_000) throw new CrmError(413, '요청이 너무 큽니다.');

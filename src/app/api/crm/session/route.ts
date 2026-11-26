@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { adminCookie, adminEmail, assertOrigin, bodyObject, requireAdmin } from '@/lib/crm/auth';
+import { adminCookie, adminEmail, assertOrigin, bodyObject, requireAdmin, verifiedAdminToken, verifiedTokenLifetime } from '@/lib/crm/auth';
 import { CrmError, supabase } from '@/lib/crm/client';
 import { failure } from '@/lib/crm/http';
 import { json } from '@/app/api/swatches/session';
@@ -19,13 +19,20 @@ export async function POST(request: NextRequest) {
   try {
     assertOrigin(request); limit(request, sendLimit); const body = await bodyObject(request);
     if (body.email !== adminEmail) throw new CrmError(403, '등록된 관리자 이메일을 사용해 주세요.');
-    await supabase('/auth/v1/otp', { method: 'POST', body: JSON.stringify({ email: adminEmail, create_user: false }) });
+    await supabase('/auth/v1/otp?redirect_to=' + encodeURIComponent('https://yjtexlab.com/admin/crm'), { method: 'POST', body: JSON.stringify({ email: adminEmail, create_user: false }) });
     return json({ ok: true });
   } catch (error) { return failure(error); }
 }
 export async function PUT(request: NextRequest) {
   try {
     assertOrigin(request); limit(request, verifyLimit); const body = await bodyObject(request);
+    if (body.accessToken !== undefined) {
+      await verifiedAdminToken(body.accessToken);
+      const token = body.accessToken as string;
+      const response = json({ authenticated: true, email: adminEmail });
+      response.cookies.set(adminCookie, token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', path: '/api/crm', maxAge: verifiedTokenLifetime(token) });
+      return response;
+    }
     if (body.email !== adminEmail || typeof body.token !== 'string' || !/^\d{6,10}$/.test(body.token)) throw new CrmError(400, '이메일과 인증번호를 확인해 주세요.');
     const result = await supabase<{ access_token: string; expires_in: number; user: {email?: string; email_confirmed_at?: string; is_anonymous?: boolean} }>('/auth/v1/verify', { method: 'POST', body: JSON.stringify({ email: adminEmail, token: body.token, type: 'email' }) });
     if (result.user.email?.toLowerCase() !== adminEmail || !result.user.email_confirmed_at || result.user.is_anonymous) throw new CrmError(403, '관리 권한이 없습니다.');
