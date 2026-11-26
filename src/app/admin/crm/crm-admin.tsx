@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { ArrowUpRight, Check, Copy, KeyRound, LogOut, Plus, RefreshCw, Search, ShieldCheck, Users, X } from "lucide-react";
 import styles from "./crm.module.css";
 import Link from "next/link";
+import { createSessionBootstrap } from "./magic-link";
 
 type Contact = { id: string; email: string; isPrimary: boolean; suppressed: boolean };
 type Company = { id: string; name: string; contacts: Contact[]; codeIssued: boolean; canViewPrices: boolean; updatedAt: string };
@@ -27,8 +28,8 @@ async function api<T>(path: string, method = "GET", body?: unknown, signal?: Abo
 
 export default function CrmAdmin() {
   const [session, setSession] = useState<Session | null>(null);
-  const [otpSent, setOtpSent] = useState(false);
-  const [token, setToken] = useState("");
+  const [linkSent, setLinkSent] = useState(false);
+  const bootstrap = useRef<ReturnType<typeof createSessionBootstrap> | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [query, setQuery] = useState("");
   const [offset, setOffset] = useState(0);
@@ -49,7 +50,7 @@ export default function CrmAdmin() {
 
   const handleError = useCallback((failure: unknown) => {
     if (failure instanceof ApiError && failure.status === 401) {
-      setSession({ authenticated: false }); setIssued(null); setCompanies([]); setSelectedId(null); setOtpSent(false); setToken("");
+      setSession({ authenticated: false }); setIssued(null); setCompanies([]); setSelectedId(null); setLinkSent(false);
     }
     setError(failure instanceof Error ? failure.message : "요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.");
   }, []);
@@ -65,11 +66,17 @@ export default function CrmAdmin() {
   }, [offset]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    api<Session>("/session", "GET", undefined, controller.signal).then(setSession).catch((failure) => {
-      if (!controller.signal.aborted) { setSession({ authenticated: false }); handleError(failure); }
+    let active = true;
+    bootstrap.current ??= createSessionBootstrap({
+      location: window.location,
+      replaceUrl: (url) => window.history.replaceState(window.history.state, "", url),
+      exchange: (accessToken) => api("/session", "PUT", { accessToken }),
+      readSession: () => api<Session>("/session"),
     });
-    return () => controller.abort();
+    bootstrap.current().then((current) => { if (active) setSession(current); }).catch((failure) => {
+      if (active) { setSession({ authenticated: false }); handleError(failure); }
+    });
+    return () => { active = false; };
   }, [handleError]);
 
   useEffect(() => {
@@ -95,14 +102,9 @@ export default function CrmAdmin() {
   async function authenticate(event: FormEvent) {
     event.preventDefault();
     await run(async () => {
-      if (!otpSent) {
-        await api("/session", "POST", { email: adminEmail }); setOtpSent(true); setNotice("이메일로 받은 인증번호를 입력해 주세요.");
-      } else {
-        await api("/session", "PUT", { email: adminEmail, token: token.trim() });
-        const current = await api<Session>("/session");
-        if (!current.authenticated) throw new Error("로그인을 확인하지 못했어요. 인증번호를 다시 요청해 주세요.");
-        setSession(current); setToken(""); setNotice("");
-      }
+      await api("/session", "POST", { email: adminEmail });
+      setLinkSent(true);
+      setNotice(`${adminEmail}으로 로그인 링크를 보냈어요. 이메일에서 가장 최근 로그인 링크를 눌러 주세요.`);
     });
   }
   async function saveCompany(event: FormEvent) {
@@ -158,7 +160,7 @@ export default function CrmAdmin() {
     <header className={styles.header}>
       <Link href="/" className={styles.brand} aria-label="YJ TexLab 홈">YJ TEXLAB<span>OPERATIONS</span></Link>
       <div className={styles.headerRight}><span className={styles.privateLabel}><ShieldCheck size={14} />관리자 전용</span>
-        {session?.authenticated && <button className={styles.logout} disabled={busy} onClick={() => run(async () => { await api("/session", "DELETE"); setSession({ authenticated: false }); setCompanies([]); setSelectedId(null); setIssued(null); setCreating(false); setName(""); setEmail(""); setOtpSent(false); })}><LogOut size={15} />로그아웃</button>}
+        {session?.authenticated && <button className={styles.logout} disabled={busy} onClick={() => run(async () => { await api("/session", "DELETE"); setSession({ authenticated: false }); setCompanies([]); setSelectedId(null); setIssued(null); setCreating(false); setName(""); setEmail(""); setLinkSent(false); })}><LogOut size={15} />로그아웃</button>}
       </div>
     </header>
     {!session ? <div className={styles.center} role="status">로그인 상태를 확인하고 있어요…</div> : !session.authenticated ? <section className={styles.login}>
@@ -168,10 +170,9 @@ export default function CrmAdmin() {
       {messages}
       <form onSubmit={authenticate}>
         <label className={styles.label}>관리자 이메일<input type="email" value={adminEmail} readOnly autoComplete="username" /></label>
-        {otpSent && <label className={styles.label}>이메일 인증번호<input autoFocus required value={token} onChange={(event) => setToken(event.target.value)} autoComplete="one-time-code" inputMode="numeric" maxLength={12} placeholder="받은 인증번호 입력" /></label>}
-        <button className={styles.primary} disabled={busy || (otpSent && !token.trim())}>{busy ? "처리 중…" : otpSent ? "로그인" : "이메일로 인증번호 받기"}<ArrowUpRight size={17} /></button>
+        <button className={styles.primary} disabled={busy}>{busy ? "처리 중…" : linkSent ? "로그인 링크 다시 받기" : "이메일로 로그인 링크 받기"}<ArrowUpRight size={17} /></button>
       </form>
-      {otpSent && <button className={styles.textButton} disabled={busy} onClick={() => run(async () => { await api("/session", "POST", { email: adminEmail }); setNotice("인증번호를 다시 보냈어요. 가장 최근 번호를 입력하세요."); })}>인증번호 다시 받기</button>}
+
       <p className={styles.small}>등록된 관리자만 접근할 수 있습니다.</p>
     </section> : <div className={styles.workspace}>
       <section className={styles.intro}><div><p className={styles.eyebrow}>CUSTOMER WORKSPACE</p><h1>고객 관리<span>.</span></h1><p className={styles.muted}>업체 정보부터 입장 코드, 가격 공개까지.</p></div><button className={styles.primary} disabled={busy} onClick={startCreate}><Plus size={17} />업체 등록</button></section>
