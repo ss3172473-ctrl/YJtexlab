@@ -5,7 +5,9 @@ do $$
 declare cid uuid; s jsonb; b jsonb; r jsonb; token text;
 begin
  r=public.crm_register_collected_company('sender:fixture:1',repeat('1',64),'Sender Fixture','send@example.test','https://example.test','public contact',repeat('x',43),'cipher');
- cid=(r->>'companyId')::uuid; s=public.crm_sender_snapshot(cid);
+ cid=(r->>'companyId')::uuid;
+ perform public.crm_collector_verify_access(cid,r->>'operationId',public.crm_collector_access_snapshot(cid));
+ s=public.crm_sender_snapshot(cid);
  assert s is not null;
  b=(s-'encryptedCode'-'codeHash')||jsonb_build_object('action','claim','operationId','sender:operation:1','messageId','<fixture@yjtexlab.com>','mimeSha256',repeat('a',64),'inboundCheckedAt',clock_timestamp());
  r=public.crm_sender_transition(b); assert r->>'state'='claimed'; token=r->>'leaseToken';
@@ -37,7 +39,9 @@ begin
  assert public.crm_sender_snapshot(cid) is null;
  -- New fixture covers stale versions, freshness, expired leases, and duplicate claims.
  r=public.crm_register_collected_company('sender:fixture:2',repeat('2',64),'Second Fixture','second@example.test','https://example.test','public contact',repeat('y',43),'cipher2');
- cid=(r->>'companyId')::uuid; s=public.crm_sender_snapshot(cid);
+ cid=(r->>'companyId')::uuid;
+ perform public.crm_collector_verify_access(cid,r->>'operationId',public.crm_collector_access_snapshot(cid));
+ s=public.crm_sender_snapshot(cid);
  b=(s-'encryptedCode'-'codeHash')||jsonb_build_object('action','claim','operationId','sender:operation:2','messageId','<second@yjtexlab.com>','mimeSha256',repeat('b',64),'inboundCheckedAt',clock_timestamp());
  assert public.crm_sender_transition(b||jsonb_build_object('companyUpdatedAt',now()-interval '1 day'))->>'error'='ineligible_or_stale';
  assert public.crm_sender_transition(b||jsonb_build_object('inboundCheckedAt',now()-interval '1 day'))->>'error'='inbound_check_expired';
