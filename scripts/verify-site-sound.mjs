@@ -42,3 +42,9 @@ const soundtrackStat = fs.statSync(soundtrackPath);
 assert(soundtrackStat.size > 0, "Soundtrack asset is empty.");
 
 console.log("Site soundtrack contract is intact.");
+
+assert(soundLayerSource.includes('key={index}'), "Visualizer bars need stable keys during pointer presses.");
+assert(!soundLayerSource.includes('key={`${index}-${level.toFixed(2)}`}'), "Audio-level keys destroy pointer targets each animation frame.");
+assert(soundLayerSource.includes('className="pointer-events-none flex items-end gap-[4px]" aria-hidden="true"'), "Visual-only bars must not intercept stop clicks.");
+assert(soundLayerSource.includes('min-h-11 min-w-11'), "Stop soundtrack requires a stable 44px minimum target.");
+console.log("Soundtrack stop-target regression checks passed.");

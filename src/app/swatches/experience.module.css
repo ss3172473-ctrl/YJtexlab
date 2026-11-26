@@ -94,6 +94,7 @@
   color: #222;
   font-size: clamp(15px, 1.7vw, 19px);
   font-weight: 700;
+  -webkit-text-stroke: 0.25px currentColor;
   line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;

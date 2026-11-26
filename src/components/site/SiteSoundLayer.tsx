@@ -406,7 +406,7 @@ export default function SiteSoundLayer() {
       {isPlaying ? (
         <button
           type="button"
-          className="fixed right-6 top-[calc(env(safe-area-inset-top)+5.75rem)] z-40 flex items-end justify-center p-2 transition-transform duration-200 hover:scale-[1.02] md:right-10 md:top-[calc(env(safe-area-inset-top)+7rem)] lg:right-16"
+          className="fixed right-6 top-[calc(env(safe-area-inset-top)+5.75rem)] z-40 flex min-h-11 min-w-11 items-end justify-center p-2 transition-transform duration-200 hover:scale-[1.02] md:right-10 md:top-[calc(env(safe-area-inset-top)+7rem)] lg:right-16"
           style={{
             backgroundColor: "transparent",
             border: "0",
@@ -422,10 +422,10 @@ export default function SiteSoundLayer() {
           <span id={visualizerDescriptionId} className="sr-only">
             Stop the soundtrack.
           </span>
-          <span className="flex items-end gap-[4px]" aria-hidden="true">
+          <span className="pointer-events-none flex items-end gap-[4px]" aria-hidden="true">
             {levels.map((level, index) => (
               <span
-                key={`${index}-${level.toFixed(2)}`}
+                key={index}
                 className="block rounded-full transition-[height,opacity,background-color] duration-75"
                 style={{
                   width: "4px",

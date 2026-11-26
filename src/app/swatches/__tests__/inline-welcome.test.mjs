@@ -96,3 +96,7 @@ test("quick detail open and return do not restart warming, including cover-ready
     cleanup();
   }
 });
+
+test("company name gains subtle weight without another font download", () => {
+  assert.match(read("experience.module.css"), /\.companyIdentity strong \{[^}]*font-weight: 700;[^}]*-webkit-text-stroke: 0\.25px currentColor;/s);
+});
