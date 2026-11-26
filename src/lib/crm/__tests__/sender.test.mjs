@@ -29,3 +29,9 @@ test('candidate code integrity checked and encrypted material removed',async()=>
 test('DB stale/uncertain guards surfaced without retry',async()=>{
  let calls=0;const m=load(async()=>{calls++;return {error:'already_started_no_retry'};});await assert.rejects(m.senderTransition({action:'begin',operationId:'sender:fixture:1',leaseToken:id}),e=>e.status===409);assert.equal(calls,1);
 });
+test('bounce requires exact message identities and permanent DSN status, no lease needed',async()=>{
+ const b={action:'bounce',operationId:'sender:fixture:1',providerMessageId:'gmailOriginal',messageId:'<fixture@yjtexlab.com>',email:'buyer@example.test',bounceMessageId:'gmailDSN',originalMessageId:'<gmailRewritten@mail.gmail.com>',bouncedAt:'2026-11-26T07:00:00Z',statusCode:'5.1.1'};
+ const m=load(async(name,p)=>{assert.equal(name,'crm_sender_record_bounce');assert.equal(p.p_body.bounceMessageId,'gmailDSN');return {deliveryState:'bounced'};});
+ m.senderInput(b); for(const extra of [{statusCode:'4.2.2'},{messageId:undefined},{providerMessageId:undefined},{bounceMessageId:undefined},{bouncedAt:'yesterday'},{leaseToken:id}]) assert.throws(()=>m.senderInput({...b,...extra}));
+ assert.equal((await m.senderTransition(b)).deliveryState,'bounced');
+});

@@ -20,12 +20,22 @@ export function senderInput(body: Record<string, unknown>) {
   const fields: Record<string, string[]> = {
     claim: ['action','operationId','companyId','contactId','credentialId','companyUpdatedAt','name','email','messageId','mimeSha256','inboundCheckedAt'],
     begin: ['action','operationId','leaseToken'],
+    bounce: ['action','operationId','providerMessageId','messageId','email','bounceMessageId','bouncedAt','statusCode','originalMessageId'],
     receipt: ['action','operationId','leaseToken','outcome','providerMessageId','providerThreadId'],
   };
   const action = String(body.action), allowed = fields[action];
   if (!allowed || Object.keys(body).some(k => !allowed.includes(k))) throw new CrmError(400, 'Unsupported sender fields.');
   required(body,'operationId',/^[A-Za-z0-9][A-Za-z0-9_.:-]{7,127}$/);
-  if (action === 'claim') {
+  if (action === 'bounce') {
+    required(body,'originalMessageId',/^<[^\s<>]+@[^\s<>]+>$/);
+    for (const k of ['providerMessageId','bounceMessageId']) required(body,k,/^[A-Za-z0-9_-]{1,200}$/);
+    required(body,'messageId',/^<[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+>$/);
+    required(body,'email',/^[^\s@;,<>]+@[^\s@;,<>]+\.[^\s@;,<>]+$/,254);
+    if (body.email !== String(body.email).toLowerCase()) throw new CrmError(400,'Email must be normalized.');
+    required(body,'statusCode',/^5\.\d{1,3}\.\d{1,3}$/);
+    required(body,'bouncedAt',/^\d{4}-\d\d-\d\dT.+(?:Z|[+-]\d\d:\d\d)$/);
+    if (!Number.isFinite(Date.parse(String(body.bouncedAt)))) throw new CrmError(400,'Invalid bouncedAt.');
+  } else if (action === 'claim') {
     for (const k of ['companyId','contactId','credentialId']) required(body,k,uuid);
     required(body,'name',/^[^\r\n\x00]{1,200}$/);
     required(body,'email',/^[^\s@;,<>]+@[^\s@;,<>]+\.[^\s@;,<>]+$/,254);
@@ -58,8 +68,13 @@ export async function senderCandidates() {
   return (await rpc<Snapshot[]>('crm_sender_candidates', {})).map(reveal);
 }
 export async function senderTransition(body: Record<string, unknown>) {
-  const result = await rpc<Record<string, unknown>>('crm_sender_transition', { p_body: senderInput(body) });
+  const input = senderInput(body);
+  const result = await rpc<Record<string, unknown>>(input.action === 'bounce' ? 'crm_sender_record_bounce' : 'crm_sender_transition', { p_body: input });
   if (typeof result.error === 'string') throw new CrmError(409, result.error);
   const { snapshot, ...receipt } = result;
   return { ...receipt, ...(snapshot ? { snapshot: reveal(snapshot as Snapshot) } : {}) };
+}
+
+export async function senderDeliveryReceipts() {
+  return rpc<Record<string, unknown>[]>('crm_sender_delivery_receipts', {});
 }

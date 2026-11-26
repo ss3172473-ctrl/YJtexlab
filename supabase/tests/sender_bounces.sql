@@ -1,0 +1,31 @@
+begin;
+set local role service_role;
+do $$
+declare cid uuid; t uuid; a uuid; b jsonb; r jsonb; accepted_at timestamptz;
+begin
+ r=public.crm_register_collected_company('bounce:fixture:1',repeat('3',64),'Bounce Fixture','bounce@example.test','https://example.test','public contact',repeat('z',43),'cipher');
+ cid=(r->>'companyId')::uuid; a=(r->>'credentialId')::uuid;
+ select id into t from public.crm_contacts where company_id=cid;
+ insert into public.crm_sender_operations(operation_id,company_id,contact_id,email,credential_id,snapshot,message_id,mime_sha256,inbound_checked_at,state) values('bounce:operation:1',cid,t,'bounce@example.test',a,'{}','<bounce@yjtexlab.com>',repeat('a',64),now(),'sending');
+ update public.crm_sender_operations set state='sent',provider_message_id='gmailOriginal' where operation_id='bounce:operation:1';
+ select sent_at into accepted_at from public.crm_sender_operations where operation_id='bounce:operation:1';
+ assert accepted_at is not null;
+ b=jsonb_build_object('operationId','bounce:operation:1','providerMessageId','gmailOriginal','messageId','<bounce@yjtexlab.com>','email','bounce@example.test','bounceMessageId','gmailDSN','originalMessageId','<rewritten@mail.gmail.com>','bouncedAt',clock_timestamp(),'statusCode','5.1.1');
+ assert public.crm_sender_record_bounce(b||'{"email":"other@example.test"}')->>'error'='bounce_identity_mismatch';
+ assert public.crm_sender_record_bounce(b||'{"messageId":"<other@yjtexlab.com>"}')->>'error'='bounce_identity_mismatch';
+ assert public.crm_sender_record_bounce(b||'{"providerMessageId":"other"}')->>'error'='bounce_identity_mismatch';
+ assert public.crm_sender_record_bounce(b||'{"statusCode":"4.2.2"}')->>'error'='invalid_bounce';
+ assert public.crm_sender_record_bounce(b||jsonb_build_object('bouncedAt',now()-interval '1 day'))->>'error'='invalid_bounce_time';
+ assert not (select suppressed from public.crm_contacts where id=t);
+ r=public.crm_sender_record_bounce(b); assert r->>'deliveryState'='bounced';
+ assert public.crm_sender_record_bounce(b)=r;
+ assert public.crm_sender_record_bounce(b||'{"bounceMessageId":"otherDSN"}')->>'error'='bounce_receipt_conflict';
+ assert (select count(*)=1 from public.crm_audit_events where company_id=cid and action='mail_bounced');
+ assert (select suppressed from public.crm_contacts where id=t);
+ assert (select state='sent' and provider_message_id='gmailOriginal' and sent_at=accepted_at from public.crm_sender_operations where operation_id='bounce:operation:1');
+ assert (public.crm_sender_delivery_receipts()->0->>'sentAt')::timestamptz=accepted_at;
+ assert public.crm_sender_delivery_receipts()->0->>'bounceMessageId'='gmailDSN';
+ assert not has_table_privilege('anon','public.crm_sender_bounces','SELECT');
+ assert not has_function_privilege('authenticated','public.crm_sender_record_bounce(jsonb)','EXECUTE');
+end $$;
+rollback;
