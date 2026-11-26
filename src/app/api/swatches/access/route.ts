@@ -3,7 +3,7 @@ import { customerCode } from "@/app/swatches/customer-code";
 import { leadStream } from "../first-row/lead";
 import { rowImages } from "../first-row/plan";
 import { logAccess, readCompanies } from "../sheets";
-import { cookieName, createSession, equal, json, sameOrigin, sessionSeconds, visitKey } from "../session";
+import { cookieName, createFingerprintSession, createSession, equal, json, sameOrigin, sessionSeconds, visitKey } from "../session";
 import { accessAttemptSource, createAccessAttemptLimiter, readAccessJson } from "./attempt-guard";
 
 const consumeAttempt = createAccessAttemptLimiter();
@@ -22,9 +22,13 @@ export async function POST(request: NextRequest) {
     ? body.campaign : "";
 
   try {
-    const matches = (await readCompanies()).filter((company) => equal(company.code, code));
+    const crmFingerprint = process.env.CRM_BACKEND === "supabase"
+      ? (await import("@/lib/crm/crypto")).crmFingerprint(code) : null;
+    const matches = crmFingerprint
+      ? [await (await import("@/lib/crm/companies")).resolveFingerprint(crmFingerprint)].filter((company) => company !== null)
+      : (await readCompanies()).filter((company) => equal(company.code, code));
     if (matches.length !== 1) return json({ error: "메일로 받은 고객 코드를 확인해 주세요." }, 401);
-    const token = createSession(matches[0].code);
+    const token = crmFingerprint ? createFingerprintSession(crmFingerprint) : createSession(code);
     await logAccess(matches[0], campaign);
     const key = visitKey(token);
     const welcomeName = matches[0].name.slice(0, 100);

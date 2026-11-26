@@ -32,7 +32,11 @@ export function matchesVisit(request: NextRequest) {
 }
 
 export function createSession(code: string) {
-  const payload = `${codeFingerprint(code)}.${Math.floor(Date.now() / 1000) + sessionSeconds}`;
+  return createFingerprintSession(codeFingerprint(code));
+}
+
+export function createFingerprintSession(fingerprint: string) {
+  const payload = `${fingerprint}.${Math.floor(Date.now() / 1000) + sessionSeconds}`;
   return `${payload}.${sign("swatches-session", payload)}`;
 }
 

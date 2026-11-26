@@ -114,7 +114,7 @@ export async function readCatalog() {
   return parseCatalog(products?.values ?? [], stock?.values ?? []);
 }
 
-export type Company = { name: string; email: string; code: string; canViewPrices: boolean };
+export type Company = { id?: string; name: string; email: string; code: string; canViewPrices: boolean };
 
 export async function readCompanies(): Promise<Company[]> {
   const client = await sheets();
@@ -149,6 +149,10 @@ function sheetTimeInKorea() {
 }
 
 export async function logAccess(company: Company, campaign: string) {
+  if (process.env.CRM_BACKEND === "supabase") {
+    const { logCrmAccess } = await import("@/lib/crm/companies");
+    return logCrmAccess(company, campaign);
+  }
   const client = await sheets();
   await client.spreadsheets.values.append({
     spreadsheetId: sheetId("SWATCHES_CRM_SHEET_ID"),

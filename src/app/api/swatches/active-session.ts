@@ -35,6 +35,9 @@ const check = createActiveCodeCheck(async () => (await readCompanies()).map(({ c
 
 export async function hasActiveSession(request: NextRequest) {
   const fingerprint = readSession(request);
+  if (process.env.CRM_BACKEND === "supabase") {
+    return fingerprint ? Boolean(await (await import("@/lib/crm/companies")).resolveFingerprint(fingerprint)) : false;
+  }
   return fingerprint ? check(fingerprint) : false;
 }
 
@@ -43,6 +46,7 @@ export async function hasActiveSession(request: NextRequest) {
 export async function readActiveCompany(request: NextRequest) {
   const fingerprint = readSession(request);
   if (!fingerprint || !matchesVisit(request)) return null;
+  if (process.env.CRM_BACKEND === "supabase") return (await import("@/lib/crm/companies")).resolveFingerprint(fingerprint);
   const matches = (await readCompanies()).filter(({ code }) => equal(codeFingerprint(code), fingerprint));
   return matches.length === 1 ? matches[0] : null;
 }
