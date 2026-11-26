@@ -28,7 +28,9 @@ export async function supabase<T>(path: string, options: RequestInit = {}, token
     if (response.status === 401 || response.status === 403) throw new CrmError(401, '다시 로그인해 주세요.');
     throw new CrmError(response.status === 429 ? 429 : 503, '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
-  return response.status === 204 ? undefined as T : await response.json() as T;
+  // PostgREST return=minimal inserts may succeed with 201 and no body.
+  const body = await response.text();
+  return body.trim() ? JSON.parse(body) as T : undefined as T;
 }
 export function rpc<T>(name: string, body: object) {
   return supabase<T>(`/rest/v1/rpc/${name}`, { method: 'POST', body: JSON.stringify(body) });

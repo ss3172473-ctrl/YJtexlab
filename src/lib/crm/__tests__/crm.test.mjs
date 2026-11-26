@@ -92,3 +92,8 @@ test('Session magic-link exchange requires same origin, validates token, sets bo
   await route.POST({body:{email:'yjtexlab@gmail.com'},headers:{}});
   assert.equal(calls[0][0],'/auth/v1/otp?redirect_to=https%3A%2F%2Fyjtexlab.com%2Fadmin%2Fcrm');assert.equal(JSON.parse(calls[0][1].body).create_user,false);
 });
+
+test('PostgREST return=minimal accepts successful 201 empty bodies',async()=>{
+  const client=load('client',{SUPABASE_URL:'https://fixture.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'secret',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_test'},{},async()=>new Response(null,{status:201}));
+  assert.equal(await client.supabase('/rest/v1/crm_access_events',{method:'POST',headers:{Prefer:'return=minimal'},body:'{}'}),undefined);
+});
