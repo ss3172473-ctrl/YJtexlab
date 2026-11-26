@@ -1,0 +1,40 @@
+name: YJ scoped Vercel preview smoke
+on:
+  push:
+    branches: ['ops/vercel-preview-smoke-20261126']
+permissions:
+  contents: read
+concurrency:
+  group: yj-vercel-preview-smoke
+  cancel-in-progress: false
+jobs:
+  fixture-preview:
+    if: github.repository == 'ss3172473-ctrl/YJtexlab'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Install pinned CLI before loading the deploy credential
+        run: npm install --prefix "$RUNNER_TEMP/yj-cli" vercel@65.0.0 --no-audit --no-fund
+      - name: Deploy isolated fixture without repository contents or production secrets
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.YJ_VERCEL_PREVIEW_SMOKE_20261126 }}
+          PROJECT_ID: prj_OsXUaLMXMpD9syk6enT3ON0Zvumi
+          TEAM_ID: team_AA1YwlFrpTR74cNPVPOVOfHy
+        run: |
+          set -euo pipefail
+          test -n "$VERCEL_TOKEN"
+          C="$RUNNER_TEMP/yj-cli/node_modules/.bin/vercel"
+          mkdir -p "$RUNNER_TEMP/yj-fixture/.vercel/output/static/__yj_deploy_check"
+          cd "$RUNNER_TEMP/yj-fixture"
+          printf '{"orgId":"%s","projectId":"%s"}\n' "$TEAM_ID" "$PROJECT_ID" > .vercel/project.json
+          printf '{"version":3}\n' > .vercel/output/config.json
+          printf 'yj-vercel-scoped-preview-20261126\n' > .vercel/output/static/__yj_deploy_check/index.html
+          url=$("$C" deploy --prebuilt --yes --scope hello-52989247 --token "$VERCEL_TOKEN")
+          [[ "$url" =~ ^https://[a-zA-Z0-9-]+\.vercel\.app$ ]]
+          echo "Preview: $url"
+          case "$(curl -sS --max-time 15 -o "$RUNNER_TEMP/yj-response" -w '%{http_code}' "$url/__yj_deploy_check/index.html")" in
+            200) grep -Fx 'yj-vercel-scoped-preview-20261126' "$RUNNER_TEMP/yj-response";;
+            401|403) echo "Preview deployment access is protected; confirm with Vercel inventory.";;
+            *) echo "Unexpected HTTP status for fixture"; exit 1;;
+          esac
