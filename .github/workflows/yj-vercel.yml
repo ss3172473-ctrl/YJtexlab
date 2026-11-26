@@ -1,0 +1,76 @@
+name: Vercel Preview and verified release
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '.github/workflows/yj-vercel.yml'
+      - '.github/YJ-VERCEL-DEPLOY.md'
+  workflow_dispatch:
+    inputs:
+      promote_reviewed_preview:
+        description: 'Optional: READY Preview deployment ID for this exact main commit'
+        required: false
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: yj-vercel-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.repository == 'ss3172473-ctrl/YJtexlab' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Prepare immutable source and pinned CLI
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir "$RUNNER_TEMP/yj-src"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/yj-src"
+          npm install --prefix "$RUNNER_TEMP/yj-cli" vercel@65.0.0 --no-audit --no-fund
+      - name: Deploy protected Preview or release an explicitly reviewed Preview
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.YJ_VERCEL_DEPLOY_TOKEN }}
+          REVIEWED_PREVIEW: ${{ inputs.promote_reviewed_preview }}
+          PROJECT_ID: prj_OsXUaLMXMpD9syk6enT3ON0Zvumi
+          PROJECT_NAME: yjtexlab
+          TEAM_ID: team_AA1YwlFrpTR74cNPVPOVOfHy
+          PROD_URL: https://yjtexlab.com
+        run: |
+          set -euo pipefail
+          : "${VERCEL_TOKEN:?Set the dedicated Vercel deployment secret}"
+          api() { printf 'Authorization: Bearer %s\n' "$VERCEL_TOKEN" | curl -fsS --max-time 20 -H @- "$@"; }
+          base="https://api.vercel.com"
+          project() { api "$base/v9/projects/$PROJECT_ID?teamId=$TEAM_ID"; }
+          dep() { api "$base/v13/deployments/$1?teamId=$TEAM_ID"; }
+          v="$RUNNER_TEMP/yj-cli/node_modules/.bin/vercel"
+          before=$(project)
+          jq -e --arg id "$PROJECT_ID" --arg name "$PROJECT_NAME" '.id==$id and .name==$name and (.ssoProtection.deploymentType == "preview" or .ssoProtection.deploymentType == "prod_deployment_urls_and_all_previews" or .ssoProtection.deploymentType == "all_except_custom_domains")' <<<"$before" >/dev/null
+          prior=$(jq -er '.targets.production.id' <<<"$before")
+          cd "$RUNNER_TEMP/yj-src"
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s","projectName":"%s"}\n' "$TEAM_ID" "$PROJECT_ID" "$PROJECT_NAME" > .vercel/project.json
+          if [[ -z "$REVIEWED_PREVIEW" ]]; then
+            url=$("$v" deploy --environment preview --archive=tgz --scope hello-52989247 --yes --meta "yjSourceSha=$GITHUB_SHA" --token "$VERCEL_TOKEN")
+            [[ "$url" =~ ^https://[a-zA-Z0-9-]+\.vercel\.app$ ]]
+            result=$(dep "${url#https://}")
+            jq -e --arg id "$PROJECT_ID" --arg sha "$GITHUB_SHA" 'select(.projectId==$id and .meta.yjSourceSha==$sha and .readyState=="READY" and .target!= "production")|{id,url,readyState,target}' <<<"$result"
+            curl -sS --max-time 12 -D "$RUNNER_TEMP/yj-headers" -o /dev/null "$url/"
+            grep -Eiq '^location: https://vercel\.com/sso-api([?]|$)' "$RUNNER_TEMP/yj-headers"
+            test "$(project | jq -er '.targets.production.id')" = "$prior"
+          else
+            test "$GITHUB_EVENT_NAME" = workflow_dispatch
+            [[ "$REVIEWED_PREVIEW" =~ ^dpl_[a-zA-Z0-9]+$ ]]
+            result=$(dep "$REVIEWED_PREVIEW")
+            jq -e --arg id "$PROJECT_ID" --arg sha "$GITHUB_SHA" '.projectId==$id and .meta.yjSourceSha==$sha and .readyState=="READY" and .target!="production"' <<<"$result" >/dev/null
+            echo "Prior production deployment: $prior"
+            "$v" promote "$REVIEWED_PREVIEW" --scope hello-52989247 --yes --token "$VERCEL_TOKEN"
+            curl -fsS --max-time 20 -o /dev/null "$PROD_URL/"
+            project | jq -e '{production:.targets.production.id,state:.targets.production.readyState} | select(.production and .state=="READY")'
+          fi
