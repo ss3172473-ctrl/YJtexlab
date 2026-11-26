@@ -23,9 +23,15 @@ export function emailInput(value: unknown) {
   if (typeof value !== 'string' || value.length > 254 || !/^[^\s@;,]+@[^\s@;,]+\.[^\s@;,]+$/.test(value.trim())) throw new CrmError(400, '이메일 주소 하나를 입력해 주세요.');
   return value.trim().toLowerCase();
 }
-export async function listCompanies(query = '', offset = 0) {
-  const rows = await rpc<Row[]>('crm_list_companies', { p_query: query.trim().slice(0,200), p_offset: offset, p_limit: 101 });
-  return { companies: rows.slice(0,100).map(companyDto), nextOffset: rows.length > 100 ? offset + 100 : null };
+type OutreachState = 'sent' | 'bounced' | 'pending' | 'unknown';
+type DirectoryRow = Row & { outreach_state: OutreachState; code_issued: boolean };
+export async function listCompanies(query = '', offset = 0, status = 'all') {
+  if (!['all','sent','bounced','pending','unknown'].includes(status)) throw new CrmError(400, '지원하지 않는 영업 상태입니다.');
+  const result = await rpc<{ total: number; matched: number; companies: DirectoryRow[] }>('crm_company_directory',
+    { p_query: query.trim().slice(0,200), p_state: status, p_offset: offset, p_limit: 100 });
+  return { total: result.total, matched: result.matched, replyTracking: 'not_connected',
+    companies: result.companies.map(row => ({ ...companyDto(row), codeIssued: row.code_issued, outreachState: row.outreach_state })),
+    nextOffset: offset + 100 < result.matched ? offset + 100 : null };
 }
 export async function getCompany(id: string) {
   const rows = await supabase<Row[]>(`/rest/v1/crm_companies?id=eq.${companyId(id)}&select=${select}`);

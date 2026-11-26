@@ -5,7 +5,7 @@ import { failure } from '@/lib/crm/http';
 import { json } from '@/app/api/swatches/session';
 export const runtime = 'nodejs';
 export async function GET(request: NextRequest) {
-  try { await requireAdmin(request); const offset = Number(request.nextUrl.searchParams.get('offset') ?? '0'); return json(await listCompanies(request.nextUrl.searchParams.get('q') ?? '', Number.isSafeInteger(offset) && offset >= 0 ? offset : 0)); }
+  try { await requireAdmin(request); const offset = Number(request.nextUrl.searchParams.get('offset') ?? '0'); return json(await listCompanies(request.nextUrl.searchParams.get('q') ?? '', Number.isSafeInteger(offset) && offset >= 0 && offset <= 2147483647 ? offset : 0, request.nextUrl.searchParams.get('status') ?? 'all')); }
   catch (error) { return failure(error); }
 }
 export async function POST(request: NextRequest) {

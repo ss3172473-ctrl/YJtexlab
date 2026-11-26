@@ -8,7 +8,9 @@ import Image from "next/image";
 import { createSessionBootstrap } from "./magic-link";
 
 type Contact = { id: string; email: string; isPrimary: boolean; suppressed: boolean };
-type Company = { id: string; name: string; contacts: Contact[]; codeIssued: boolean; canViewPrices: boolean; updatedAt: string };
+const outreachLabels = { bounced: '반송됨', sent: '발송완료', pending: '발송 확인 중', unknown: '확인된 발송 기록 없음' } as const;
+type OutreachState = keyof typeof outreachLabels;
+type Company = { outreachState?: OutreachState; id: string; name: string; contacts: Contact[]; codeIssued: boolean; canViewPrices: boolean; updatedAt: string };
 type Session = { authenticated: boolean; email?: string };
 const adminEmails = ["yjtexlab@gmail.com", "hello@yjtexlab.com"] as const;
 const primaryEmail = (company: Company) => (company.contacts.find((contact) => contact.isPrimary) ?? company.contacts[0])?.email ?? "";
@@ -33,6 +35,8 @@ export default function CrmAdmin() {
   const [adminEmail, setAdminEmail] = useState<string>(adminEmails[0]);
   const bootstrap = useRef<ReturnType<typeof createSessionBootstrap> | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [totals, setTotals] = useState<{ total: number; matched: number } | null>(null);
+  const [status, setStatus] = useState<OutreachState | "all">("all");
   const [query, setQuery] = useState("");
   const [offset, setOffset] = useState(0);
   const [nextOffset, setNextOffset] = useState<number | null>(null);
@@ -57,15 +61,15 @@ export default function CrmAdmin() {
     setError(failure instanceof Error ? failure.message : "요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.");
   }, []);
 
-  const load = useCallback(async (search: string, signal?: AbortSignal, pageOffset = offset) => {
+  const load = useCallback(async (search: string, signal?: AbortSignal, pageOffset = offset, pageStatus = status) => {
     const id = ++requestId.current;
     setLoading(true);
     try {
-      const data = await api<{ companies: Company[]; nextOffset: number | null }>(`/companies?q=${encodeURIComponent(search)}&offset=${pageOffset}`, "GET", undefined, signal);
-      if (id === requestId.current) { setCompanies(data.companies); setNextOffset(data.nextOffset); }
+      const data = await api<{ companies: Company[]; total:number; matched:number; nextOffset: number | null }>(`/companies?q=${encodeURIComponent(search)}&offset=${pageOffset}&status=${pageStatus}`, "GET", undefined, signal);
+      if (id === requestId.current) { setCompanies(data.companies); setTotals({ total:data.total, matched:data.matched }); setNextOffset(data.nextOffset); }
       return data.companies;
     } finally { if (id === requestId.current) setLoading(false); }
-  }, [offset]);
+  }, [offset, status]);
 
   useEffect(() => {
     let active = true;
@@ -87,6 +91,20 @@ export default function CrmAdmin() {
     const timer = setTimeout(() => { load(query, controller.signal).catch((failure) => { if (!controller.signal.aborted) handleError(failure); }); }, 200);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [query, session?.authenticated, load, handleError]);
+
+  // A collector may register companies while this tab is in the background.
+  // Revalidate on return without polling or replacing an in-progress editor.
+  useEffect(() => {
+    if (!session?.authenticated || busy || creating || selectedId) return;
+    const controller = new AbortController();
+    const refresh = () => {
+      if (document.visibilityState === "visible") load(query, controller.signal).catch((failure) => {
+        if (!controller.signal.aborted) handleError(failure);
+      });
+    };
+    document.addEventListener("visibilitychange", refresh);
+    return () => { controller.abort(); document.removeEventListener("visibilitychange", refresh); };
+  }, [session?.authenticated, busy, creating, selectedId, query, load, handleError]);
 
   async function run(action: () => Promise<void>) {
     if (busy) return;
@@ -115,7 +133,7 @@ export default function CrmAdmin() {
       const payload = { name: name.trim(), email: email.trim() };
       if (creating) {
         await api("/companies", "POST", payload);
-        setCreating(false); setQuery(""); setOffset(0); await load("", undefined, 0); setNotice("업체를 등록했어요. 목록에서 선택해 입장 코드를 발급하세요.");
+        setCreating(false); setQuery(""); setStatus("all"); setOffset(0); await load("", undefined, 0, "all"); setNotice("업체를 등록했어요. 목록에서 선택해 입장 코드를 발급하세요.");
       } else if (selected) {
         const result = await api<{ company: Company }>(`/companies/${selected.id}`, "PATCH", { ...payload, expectedUpdatedAt: editVersion }); setEditVersion(result.company.updatedAt); await load(query); setNotice("업체 정보가 저장됐어요.");
       }
@@ -181,17 +199,21 @@ export default function CrmAdmin() {
       {messages}
       <div className={styles.grid}>
         <section className={styles.directory} aria-label="업체 목록">
-          <div className={styles.directoryTop}><h2>업체 목록 <span>{companies.length}</span></h2><button className={styles.iconButton} aria-label="업체 목록 새로고침" disabled={busy || loading} onClick={() => run(async () => { await load(query); })}><RefreshCw size={16} /></button></div>
+          <div className={styles.directoryTop}><h2>전체 업체 <span>{totals?.total ?? "…"}</span></h2><button className={styles.iconButton} aria-label="업체 목록 새로고침" disabled={busy || loading} onClick={() => run(async () => { await load(query); })}><RefreshCw size={16} /></button></div>
           <label className={styles.search}><Search size={17} aria-hidden="true" /><input aria-label="업체명 또는 이메일 검색" placeholder="업체명 또는 이메일 검색" value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} disabled={busy} />{query && <button aria-label="검색어 지우기" onClick={() => { setQuery(""); setOffset(0); }}><X size={15} /></button>}</label>
+          <label className={styles.label}>영업 상태<select value={status} onChange={(event) => {setStatus(event.target.value as OutreachState | "all"); setOffset(0);}} disabled={busy}>
+            <option value="all">전체</option>{Object.entries(outreachLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}<option disabled>회신(연락 중) · 미연동</option>
+          </select></label>
+          <p className={styles.small}>검색·필터 결과 {totals?.matched ?? "…"}곳 · 현재 페이지 {companies.length}곳</p>
           <div className={styles.list} aria-busy={loading}>
             {loading && <p className={styles.listStatus} role="status">목록을 불러오고 있어요…</p>}
-            {!loading && !companies.length && <div className={styles.empty}><Users size={27} /><p>{query ? "검색 결과가 없어요." : "등록된 업체가 없어요."}</p><span>{query ? "다른 업체명이나 이메일로 검색해 보세요." : "첫 업체를 등록하고 코드를 발급하세요."}</span></div>}
+            {!loading && !companies.length && <div className={styles.empty}><Users size={27} /><p>{query || status !== "all" ? "일치하는 업체가 없어요." : "등록된 업체가 없어요."}</p><span>{query || status !== "all" ? "검색어나 영업 상태를 바꿔 보세요." : "첫 업체를 등록하고 코드를 발급하세요."}</span></div>}
             {companies.map((company) => <button key={company.id} className={`${styles.company} ${selectedId === company.id && !creating ? styles.selected : ""}`} onClick={() => choose(company)} disabled={busy} aria-pressed={selectedId === company.id && !creating}>
-              <span className={styles.avatar}>{company.name.slice(0, 1).toUpperCase()}</span><span className={styles.companyInfo}><strong>{company.name}</strong><span>{primaryEmail(company) || "이메일 없음"}</span><span className={styles.badges}><span className={company.codeIssued ? styles.good : styles.neutral}>{company.codeIssued ? "코드 발급됨" : "코드 없음"}</span><span className={styles.neutral}>가격 {company.canViewPrices ? "공개" : "비공개"}</span></span></span>
+              <span className={styles.avatar}>{company.name.slice(0, 1).toUpperCase()}</span><span className={styles.companyInfo}><strong>{company.name}</strong><span>{primaryEmail(company) || "이메일 없음"}</span><span className={styles.badges}><span className={styles.neutral}>{company.outreachState ? outreachLabels[company.outreachState] : "상태 미확인"}</span><span className={company.codeIssued ? styles.good : styles.neutral}>{company.codeIssued ? "코드 발급됨" : "코드 없음"}</span><span className={styles.neutral}>가격 {company.canViewPrices ? "공개" : "비공개"}</span></span></span>
             </button>)}
           </div>
           <div className={styles.pagination}><button disabled={busy || loading || offset === 0} onClick={() => { setSelectedId(null); setIssued(null); setOffset(Math.max(0, offset - 100)); }}>이전</button><span>{Math.floor(offset / 100) + 1} 페이지</span><button disabled={busy || loading || nextOffset === null} onClick={() => { if (nextOffset !== null) { setSelectedId(null); setIssued(null); setOffset(nextOffset); } }}>다음</button></div>
-          <p className={styles.directoryNote}>코드는 업체 상세에서 개별 확인할 수 있어요.</p>
+          <p className={styles.directoryNote}>발송완료는 Gmail 접수 기준이며 수신 확인은 아닙니다. 반송됨은 영구 반송 통지가 확인된 경우입니다. 고객 회신은 아직 자동 연동하지 않습니다.</p>
         </section>
         <section className={styles.detail} aria-label="업체 상세">
           {!creating && !selected ? <div className={styles.placeholder}><div className={styles.iconTile}><Users size={25} /></div><h2>관리할 업체를 선택하세요</h2><p>입장 화면의 업체명과 발송 이메일은<br />같은 업체 정보에 연결됩니다.</p><button className={styles.textButton} onClick={startCreate} disabled={busy}>새 업체 등록 <ArrowUpRight size={15} /></button></div> : <>
