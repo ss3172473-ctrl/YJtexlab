@@ -1,4 +1,4 @@
-name: YJ scoped Vercel preview smoke
+name: YJ actual application Vercel Preview
 on:
   push:
     branches: ['ops/vercel-preview-smoke-20261126']
@@ -8,42 +8,44 @@ concurrency:
   group: yj-vercel-preview-smoke
   cancel-in-progress: false
 jobs:
-  fixture-preview:
+  actual-preview:
     if: github.repository == 'ss3172473-ctrl/YJtexlab'
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 18
     steps:
-      - name: Deploy only an inline fixture using the existing project ID and a scoped token
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: a5e98915aa9a50dd5c975148a8e236553fa3be06
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Prepare exact GitHub source without exposing build credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = a5e98915aa9a50dd5c975148a8e236553fa3be06
+          mkdir "$RUNNER_TEMP/yj-src"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/yj-src"
+          npm install --prefix "$RUNNER_TEMP/yj-cli" vercel@65.0.0 --no-audit --no-fund
+      - name: Upload unchanged source to existing protected Preview only
         shell: bash
         env:
           VERCEL_TOKEN: ${{ secrets.YJ_VERCEL_PREVIEW_SMOKE_20261126 }}
           PROJECT_ID: prj_OsXUaLMXMpD9syk6enT3ON0Zvumi
-          PROJECT_NAME: yjtexlab
           TEAM_ID: team_AA1YwlFrpTR74cNPVPOVOfHy
         run: |
           set -euo pipefail
           test -n "$VERCEL_TOKEN"
-          api() { printf 'Authorization: Bearer %s\n' "$VERCEL_TOKEN" | curl -sS --max-time 20 -H @- "$@"; }
-          base="https://api.vercel.com"
-          before=$(api "$base/v9/projects/$PROJECT_ID?teamId=$TEAM_ID")
-          jq -e --arg id "$PROJECT_ID" '.id==$id' <<<"$before" >/dev/null
-          prod=$(jq -er '.targets.production.id' <<<"$before")
-          jq -n --arg p "$PROJECT_ID" --arg n "$PROJECT_NAME" '{name:$n,project:$p,files:[{file:"index.html",data:"yj-vercel-rest-preview-20261126",encoding:"utf-8"}],projectSettings:{framework:null,buildCommand:null,installCommand:null,outputDirectory:null},meta:{purpose:"scoped-preview-fixture"}}' > "$RUNNER_TEMP/yj-input.json"
-          api -H 'Content-Type: application/json' -X POST --data-binary @"$RUNNER_TEMP/yj-input.json" "$base/v13/deployments?teamId=$TEAM_ID" > "$RUNNER_TEMP/yj-deployment.json"
-          jq '{id,url,target,readyState,error:(.error|if . then {code,message} else null end)}' "$RUNNER_TEMP/yj-deployment.json"
-          id=$(jq -er 'select(.target != "production") | .id | select(startswith("dpl_"))' "$RUNNER_TEMP/yj-deployment.json")
-          for i in $(seq 1 18); do
-            result=$(api "$base/v13/deployments/$id?teamId=$TEAM_ID")
-            state=$(jq -r '.readyState // "UNKNOWN"' <<<"$result")
-            if [ "$state" = READY ]; then break; fi
-            if [ "$state" = ERROR ] || [ "$state" = CANCELED ]; then echo "Preview build did not complete: $state"; exit 1; fi
-            sleep 5
-          done
-          test "$state" = READY
-          url=$(jq -er '.url' <<<"$result")
-          [[ "$url" =~ ^[a-zA-Z0-9-]+\.vercel\.app$ ]]
-          status=$(curl -sS --max-time 12 -o "$RUNNER_TEMP/yj-output" -w '%{http_code}' "https://$url/")
-          if [ "$status" = 200 ]; then grep -Fx 'yj-vercel-rest-preview-20261126' "$RUNNER_TEMP/yj-output"; else test "$status" = 401 || test "$status" = 403; fi
-          after=$(api "$base/v9/projects/$PROJECT_ID?teamId=$TEAM_ID" | jq -er '.targets.production.id')
-          test "$after" = "$prod"
-          echo "READY Preview fixture HTTP $status; production deployment unchanged."
+          api() { printf 'Authorization: Bearer %s\n' "$VERCEL_TOKEN" | curl -fsS --max-time 20 -H @- "$@"; }
+          current_only() { api "https://api.vercel.com/v9/projects/$PROJECT_ID?teamId=$TEAM_ID"; }
+          current=$(current_only)
+          jq -e --arg id "$PROJECT_ID" --arg name yjtexlab '.id==$id and .name==$name' <<<"$current" >/dev/null
+          prod=$(jq -er '.targets.production.id' <<<"$current")
+          cd "$RUNNER_TEMP/yj-src"
+          mkdir -p .vercel
+          printf '{"orgId":"%s","projectId":"%s","projectName":"%s"}\n' "$TEAM_ID" "$PROJECT_ID" yjtexlab > .vercel/project.json
+          url=$("$RUNNER_TEMP/yj-cli/node_modules/.bin/vercel" deploy --environment preview --archive=tgz --scope hello-52989247 --yes --meta yjSourceSha=a5e98915aa9a50dd5c975148a8e236553fa3be06 --token "$VERCEL_TOKEN")
+          [[ "$url" =~ ^https://[a-zA-Z0-9-]+\.vercel\.app$ ]]
+          host=${url#https://}
+          api "https://api.vercel.com/v13/deployments/$host?teamId=$TEAM_ID" | jq -e --arg p "$PROJECT_ID" 'select(.projectId==$p and .readyState=="READY" and .target!="production")|{id,url,readyState,target}'
+          test "$(current_only | jq -er '.targets.production.id')" = "$prod"
+          echo "Approved source a5e98915aa9a50dd5c975148a8e236553fa3be06 ready as Preview; Production was not changed."
