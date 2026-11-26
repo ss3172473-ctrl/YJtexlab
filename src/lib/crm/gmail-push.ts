@@ -59,8 +59,12 @@ export function notificationInput(value: unknown, expectedSubscription: string) 
     data = object(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)));
   } catch { throw new CrmError(400, 'Invalid notification data.'); }
   if (Object.keys(data).some(k => !['emailAddress', 'historyId'].includes(k)) || data.emailAddress !== mailbox) throw new CrmError(403, 'Unexpected notification mailbox.');
-  if (typeof data.historyId !== 'string' || !/^[1-9][0-9]{0,39}$/.test(data.historyId)) throw new CrmError(400, 'Invalid mailbox history ID.');
-  const notification = { subscription: expectedSubscription, messageId: message.messageId, mailbox, historyId: data.historyId, publishedAt: new Date(message.publishTime).toISOString() };
+  // Some notification producers encode history IDs as JSON numbers. Only normalize
+  // safe integers: larger numeric literals may already have lost precision in JSON.parse.
+  const historyId = typeof data.historyId === 'number' && Number.isSafeInteger(data.historyId)
+    ? String(data.historyId) : data.historyId;
+  if (typeof historyId !== 'string' || !/^[1-9][0-9]{0,39}$/.test(historyId)) throw new CrmError(400, 'Invalid mailbox history ID.');
+  const notification = { subscription: expectedSubscription, messageId: message.messageId, mailbox, historyId, publishedAt: new Date(message.publishTime).toISOString() };
   return { ...notification, digest: createHash('sha256').update(JSON.stringify(notification)).digest('hex') };
 }
 export async function pushBody(request: NextRequest) {

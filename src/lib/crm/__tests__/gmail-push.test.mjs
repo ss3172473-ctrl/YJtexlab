@@ -36,11 +36,11 @@ test('unsigned/tampered JWTs, missing bearer and configuration fail closed',asyn
  await assert.rejects(p.verifyGmailPush(new Headers()),e=>e.status===401);
  await assert.rejects(load({CRM_GMAIL_PUSH_SERVICE_ACCOUNT_ID:''}).verifyGmailPush(headers(jwt)),e=>e.status===503);
 });
-test('notification accepts only bound subscription/mailbox, string history and no email content',()=>{
+test('notification accepts only bound subscription/mailbox and no email content',()=>{
  const p=load(),value=envelope();const parsed=p.notificationInput(value,env.CRM_GMAIL_PUSH_SUBSCRIPTION);
  assert.equal(parsed.historyId,'987654321012345678901234567890');assert.equal(parsed.publishedAt,'2026-01-01T12:34:56.123Z');
  assert.equal(parsed.digest,p.notificationInput({...value,deliveryAttempt:10},env.CRM_GMAIL_PUSH_SUBSCRIPTION).digest);
- for(const data of [{emailAddress:'personal@example.test',historyId:'123'},{emailAddress:'hello@yjtexlab.com',historyId:123},{emailAddress:'hello@yjtexlab.com',historyId:'1',textBody:'mail contents'}])assert.throws(()=>p.notificationInput(envelope(data),env.CRM_GMAIL_PUSH_SUBSCRIPTION),e=>[400,403].includes(e.status));
+ for(const data of [{emailAddress:'personal@example.test',historyId:'123'},{emailAddress:'hello@yjtexlab.com',historyId:'1',textBody:'mail contents'}])assert.throws(()=>p.notificationInput(envelope(data),env.CRM_GMAIL_PUSH_SUBSCRIPTION),e=>[400,403].includes(e.status));
  assert.throws(()=>p.notificationInput({...value,subscription:'projects/other/subscriptions/other'},env.CRM_GMAIL_PUSH_SUBSCRIPTION),e=>e.status===403);
 });
 test('malformed base64/JSON, oversize bodies and future timestamps rejected',async()=>{
@@ -58,4 +58,25 @@ test('route verifies identity before reading data and only ACKs after persistenc
  let read=false,recorded=false;const denied=route({verifyGmailPush:async()=>{throw new CrmError(401,'no');},pushBody:async()=>{read=true;}});assert.equal((await denied.POST({headers:new Headers()})).status,401);assert.equal(read,false);
  let release;const gate=new Promise(r=>release=r);const allowed=route({verifyGmailPush:async()=>({subscription:'x'}),pushBody:async()=>({}),notificationInput:()=>({}),recordPush:async()=>{await gate;recorded=true;}});
  let completed=false;const response=allowed.POST({headers:new Headers()}).then(r=>{completed=true;return r;});await new Promise(r=>setImmediate(r));assert.equal(completed,false);release();assert.equal((await response).status,204);assert.equal(recorded,true);
+});
+
+// Regression: a diagnostic copy of the initial live notification carried a JSON
+// number (9873). Do not store the captured envelope or mailbox data in fixtures.
+test('safe numeric history IDs normalize without changing durable replay digest',()=>{
+ const p=load();
+ for(const historyId of [1,9873,Number.MAX_SAFE_INTEGER]){
+  const numeric=p.notificationInput(envelope({emailAddress:'hello@yjtexlab.com',historyId}),env.CRM_GMAIL_PUSH_SUBSCRIPTION);
+  const string=p.notificationInput(envelope({emailAddress:'hello@yjtexlab.com',historyId:String(historyId)}),env.CRM_GMAIL_PUSH_SUBSCRIPTION);
+  assert.equal(numeric.historyId,String(historyId));assert.equal(numeric.digest,string.digest);
+ }
+});
+test('unsafe, fractional, nonpositive and nonnumeric history IDs remain rejected',()=>{
+ const p=load();
+ for(const historyId of [Number.MAX_SAFE_INTEGER+1,0,-1,1.5,null,true,{},[], '0','01','1.5','1e3','9'.repeat(41)])
+  assert.throws(()=>p.notificationInput(envelope({emailAddress:'hello@yjtexlab.com',historyId}),env.CRM_GMAIL_PUSH_SUBSCRIPTION),e=>e.status===400);
+ // Exercise a raw JSON integer that would round during decoding, not just JS fixtures.
+ const value=envelope();value.message.data=Buffer.from('{"emailAddress":"hello@yjtexlab.com","historyId":9007199254740993}').toString('base64url');
+ assert.throws(()=>p.notificationInput(value,env.CRM_GMAIL_PUSH_SUBSCRIPTION),e=>e.status===400);
+ const huge='987654321012345678901234567890';
+ assert.equal(p.notificationInput(envelope({emailAddress:'hello@yjtexlab.com',historyId:huge}),env.CRM_GMAIL_PUSH_SUBSCRIPTION).historyId,huge);
 });
