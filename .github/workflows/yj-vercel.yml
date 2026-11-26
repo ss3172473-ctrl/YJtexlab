@@ -21,6 +21,8 @@ jobs:
     if: github.repository == 'ss3172473-ctrl/YJtexlab' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 26
+    outputs:
+      production_deployment_id: ${{ steps.vercel.outputs.production_deployment_id }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
@@ -34,6 +36,7 @@ jobs:
           git archive HEAD | tar -x -C "$RUNNER_TEMP/yj-src"
           npm install --prefix "$RUNNER_TEMP/yj-cli" vercel@65.0.0 --no-audit --no-fund
       - name: Deploy protected Preview or release an explicitly reviewed Preview
+        id: vercel
         shell: bash
         env:
           VERCEL_TOKEN: ${{ secrets.YJ_VERCEL_DEPLOY_TOKEN }}
@@ -108,7 +111,7 @@ jobs:
           mkdir -p .vercel
           printf '{"orgId":"%s","projectId":"%s","projectName":"%s"}\n' "$TEAM_ID" "$PROJECT_ID" "$PROJECT_NAME" > .vercel/project.json
           if [[ -z "$REVIEWED_PREVIEW" ]]; then
-            url=$("$v" deploy --environment preview --archive=tgz --scope hello-52989247 --yes --meta "yjSourceSha=$GITHUB_SHA" --token "$VERCEL_TOKEN")
+            url=$("$v" deploy --environment preview --archive=tgz --scope hello-52989247 --yes --meta "yjSourceSha=$GITHUB_SHA" --meta "yjGitHubCommit=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA" --token "$VERCEL_TOKEN")
             [[ "$url" =~ ^https://[a-zA-Z0-9-]+\.vercel\.app$ ]]
             result=$(dep "${url#https://}")
             jq -e --arg id "$PROJECT_ID" --arg sha "$GITHUB_SHA" 'select(.projectId==$id and .meta.yjSourceSha==$sha and .readyState=="READY" and .target!= "production")|{id,url,readyState,target}' <<<"$result"
@@ -126,7 +129,7 @@ jobs:
               info=$(dep "$active")
               jq -e --arg id "$PROJECT_ID" '.projectId==$id and .readyState=="READY" and .target=="production"' <<<"$info" >/dev/null
               if ! smoke; then
-                for i in 1 2; do sleep 4; if smoke; then exit 0; fi; done
+                for i in 1 2; do sleep 4; if smoke; then printf "production_deployment_id=%s\n" "$active" >> "$GITHUB_OUTPUT"; exit 0; fi; done
                 if [[ "$(project | jq -er '.targets.production.id')" = "$active" ]] &&
                    [[ "$(current_main)" = "$GITHUB_SHA" ]]; then
                   "$v" rollback "$prior" --scope hello-52989247 --yes --token "$VERCEL_TOKEN"
@@ -137,6 +140,7 @@ jobs:
                 fi
                 exit 1
               fi
+              printf "production_deployment_id=%s\n" "$active" >> "$GITHUB_OUTPUT"
               echo "Production promotion verified: $active"
             fi
           else
@@ -147,5 +151,39 @@ jobs:
             echo "Prior production deployment: $prior"
             active=$(promote_and_wait "$REVIEWED_PREVIEW" "$prior")
             smoke
+            printf "production_deployment_id=%s\n" "$active" >> "$GITHUB_OUTPUT"
             echo "Verified production deployment: $active"
           fi
+  record:
+    name: Link verified Vercel release to the GitHub commit
+    needs: deploy
+    if: needs.deploy.outputs.production_deployment_id != ''
+    permissions:
+      deployments: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERCEL_DEPLOYMENT: ${{ needs.deploy.outputs.production_deployment_id }}
+    steps:
+      - name: Record deployment and status without triggering a release
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$VERCEL_DEPLOYMENT" =~ ^dpl_[A-Za-z0-9]+$ ]]
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
+          repo="repos/$GITHUB_REPOSITORY"
+          vercel_url="https://vercel.com/hello-52989247/yjtexlab/${VERCEL_DEPLOYMENT#dpl_}"
+          receipt=$(gh api "$repo/deployments?sha=$GITHUB_SHA&environment=Production&per_page=100" |
+            jq -r --arg dep "$VERCEL_DEPLOYMENT" '[.[] | select(.task=="vercel-production-receipt" and .payload.vercelDeploymentId==$dep) | .id][0] // empty')
+          if [[ -z "$receipt" ]]; then
+            receipt=$(jq -n --arg sha "$GITHUB_SHA" --arg id "$VERCEL_DEPLOYMENT" --arg url "$vercel_url" '{ref:$sha,task:"vercel-production-receipt",auto_merge:false,required_contexts:[],environment:"Production",production_environment:true,description:"Verified Vercel production",payload:{vercelDeploymentId:$id,vercelDashboard:$url}}' |
+              gh api "$repo/deployments" --input - --jq .id)
+          fi
+          [[ "$receipt" =~ ^[0-9]+$ ]]
+          latest=$(gh api "$repo/deployments/$receipt/statuses" --jq '.[0].state // ""')
+          if [[ "$latest" != success ]]; then
+            jq -n --arg dashboard "$vercel_url" '{state:"success",environment_url:"https://yjtexlab.com",log_url:$dashboard,auto_inactive:false,description:"Vercel production verified"}' |
+              gh api "$repo/deployments/$receipt/statuses" --input - --jq '{state,environment_url,log_url}'
+          fi
+          printf 'GitHub Deployment: %s\n' "$receipt"
