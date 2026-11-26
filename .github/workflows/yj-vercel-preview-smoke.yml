@@ -11,30 +11,39 @@ jobs:
   fixture-preview:
     if: github.repository == 'ss3172473-ctrl/YJtexlab'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 8
     steps:
-      - name: Install pinned CLI before loading the deploy credential
-        run: npm install --prefix "$RUNNER_TEMP/yj-cli" vercel@65.0.0 --no-audit --no-fund
-      - name: Deploy isolated fixture without repository contents or production secrets
+      - name: Deploy only an inline fixture using the existing project ID and a scoped token
         shell: bash
         env:
           VERCEL_TOKEN: ${{ secrets.YJ_VERCEL_PREVIEW_SMOKE_20261126 }}
           PROJECT_ID: prj_OsXUaLMXMpD9syk6enT3ON0Zvumi
+          PROJECT_NAME: yjtexlab
           TEAM_ID: team_AA1YwlFrpTR74cNPVPOVOfHy
         run: |
           set -euo pipefail
           test -n "$VERCEL_TOKEN"
-          C="$RUNNER_TEMP/yj-cli/node_modules/.bin/vercel"
-          mkdir -p "$RUNNER_TEMP/yj-fixture/.vercel/output/static/__yj_deploy_check"
-          cd "$RUNNER_TEMP/yj-fixture"
-          printf '{"orgId":"%s","projectId":"%s"}\n' "$TEAM_ID" "$PROJECT_ID" > .vercel/project.json
-          printf '{"version":3}\n' > .vercel/output/config.json
-          printf 'yj-vercel-scoped-preview-20261126\n' > .vercel/output/static/__yj_deploy_check/index.html
-          url=$("$C" deploy --prebuilt --yes --scope hello-52989247 --token "$VERCEL_TOKEN")
-          [[ "$url" =~ ^https://[a-zA-Z0-9-]+\.vercel\.app$ ]]
-          echo "Preview: $url"
-          case "$(curl -sS --max-time 15 -o "$RUNNER_TEMP/yj-response" -w '%{http_code}' "$url/__yj_deploy_check/index.html")" in
-            200) grep -Fx 'yj-vercel-scoped-preview-20261126' "$RUNNER_TEMP/yj-response";;
-            401|403) echo "Preview deployment access is protected; confirm with Vercel inventory.";;
-            *) echo "Unexpected HTTP status for fixture"; exit 1;;
-          esac
+          api() { printf 'Authorization: Bearer %s\n' "$VERCEL_TOKEN" | curl -sS --max-time 20 -H @- "$@"; }
+          base="https://api.vercel.com"
+          before=$(api "$base/v9/projects/$PROJECT_ID?teamId=$TEAM_ID")
+          jq -e --arg id "$PROJECT_ID" '.id==$id' <<<"$before" >/dev/null
+          prod=$(jq -er '.targets.production.id' <<<"$before")
+          jq -n --arg p "$PROJECT_ID" --arg n "$PROJECT_NAME" '{name:$n,project:$p,files:[{file:"index.html",data:"yj-vercel-rest-preview-20261126",encoding:"utf-8"}],projectSettings:{framework:null,buildCommand:null,installCommand:null,outputDirectory:null},meta:{purpose:"scoped-preview-fixture"}}' > "$RUNNER_TEMP/yj-input.json"
+          api -H 'Content-Type: application/json' -X POST --data-binary @"$RUNNER_TEMP/yj-input.json" "$base/v13/deployments?teamId=$TEAM_ID" > "$RUNNER_TEMP/yj-deployment.json"
+          jq '{id,url,target,readyState,error:(.error|if . then {code,message} else null end)}' "$RUNNER_TEMP/yj-deployment.json"
+          id=$(jq -er 'select(.target != "production") | .id | select(startswith("dpl_"))' "$RUNNER_TEMP/yj-deployment.json")
+          for i in $(seq 1 18); do
+            result=$(api "$base/v13/deployments/$id?teamId=$TEAM_ID")
+            state=$(jq -r '.readyState // "UNKNOWN"' <<<"$result")
+            if [ "$state" = READY ]; then break; fi
+            if [ "$state" = ERROR ] || [ "$state" = CANCELED ]; then echo "Preview build did not complete: $state"; exit 1; fi
+            sleep 5
+          done
+          test "$state" = READY
+          url=$(jq -er '.url' <<<"$result")
+          [[ "$url" =~ ^[a-zA-Z0-9-]+\.vercel\.app$ ]]
+          status=$(curl -sS --max-time 12 -o "$RUNNER_TEMP/yj-output" -w '%{http_code}' "https://$url/")
+          if [ "$status" = 200 ]; then grep -Fx 'yj-vercel-rest-preview-20261126' "$RUNNER_TEMP/yj-output"; else test "$status" = 401 || test "$status" = 403; fi
+          after=$(api "$base/v9/projects/$PROJECT_ID?teamId=$TEAM_ID" | jq -er '.targets.production.id')
+          test "$after" = "$prod"
+          echo "READY Preview fixture HTTP $status; production deployment unchanged."
